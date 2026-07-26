@@ -1,183 +1,168 @@
 using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Tools;
 
 namespace Pharma.UiTests;
 
 /// <summary>
 /// Choosing a medicine on a prescription. Searching our pharmacy has to work,
 /// and a medicine we do not stock has to be prescribable anyway.
+///
+/// The consultation is a layer over the shell, not a window, so everything here
+/// is found in the main window.
 /// </summary>
 public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
-    private Window OpenConsultationFor(string patient)
+    private void OpenConsultationFor(string patient)
     {
         OpdUiTests.BookWalkIn(app, patient, "9001002003", "5");
 
         AppFixture.WaitUntil(() => app.HasTile("OpdWaitingList", patient), "the tile to appear");
+
+        // One left over from the previous test would sit on top of this one.
+        app.CloseConsultation();
+
         app.ClickTile("OpdWaitingList", "TileConsult", patient);
-
-        var window = Retry.WhileNull(
-            () => app.MainWindow.ModalWindows.FirstOrDefault(
-                w => w.Title.Contains("Consultation", StringComparison.OrdinalIgnoreCase)),
-            TimeSpan.FromSeconds(15)).Result;
-
-        Assert.NotNull(window);
-
-        AppFixture.WaitUntil(
-            () => (window!.FindFirstDescendant(cf => cf.ByAutomationId("ConsultationHeader"))
-                          ?.AsLabel().Text ?? "").Contains(patient),
-            "the consultation to load");
-
-        return window!;
+        app.WaitForConsultation(patient);
     }
 
-    private static void Type(Window window, string automationId, string text)
-    {
-        var box = window.FindFirstDescendant(cf => cf.ByAutomationId(automationId))!.AsTextBox();
-        box.Focus();
-        box.Text = text;
-    }
-
-    private static string TextOf(Window window, string automationId)
-        => window.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.AsLabel().Text ?? "";
-
-    /// <summary>Picks a morning, afternoon or night dose from its list.</summary>
-    private static void Dose(Window window, string automationId, string value)
-        => window.FindFirstDescendant(cf => cf.ByAutomationId(automationId))!.AsComboBox().Select(value);
-
-    private static AutomationElement[] Matches(Window window)
-        => window.FindFirstDescendant(cf => cf.ByAutomationId("RxMatches"))
-                 ?.FindAllDescendants(cf => cf.ByAutomationId("RxMatch")) ?? [];
+    private AutomationElement[] Matches()
+        => app.Find("RxMatches")?.FindAllDescendants(cf => cf.ByAutomationId("RxMatch")) ?? [];
 
     [Fact]
     public void Typing_part_of_a_name_searches_our_pharmacy()
     {
-        var window = OpenConsultationFor($"Rx Search {DateTime.Now:HHmmssfff}");
+        OpenConsultationFor($"Rx Search {DateTime.Now:HHmmssfff}");
 
         // "Paracetamol 500mg" is seeded on first run.
-        Type(window, "RxMedicine", "Parac");
+        app.Type("RxMedicine", "Parac");
 
-        AppFixture.WaitUntil(() => Matches(window).Length > 0, "the medicine search results");
+        AppFixture.WaitUntil(() => Matches().Length > 0, "the medicine search results");
 
-        var names = Matches(window).Select(m => m.Name ?? "").ToList();
+        var names = Matches().Select(m => m.Name ?? "").ToList();
         Assert.Contains(names, n => n.Contains("Paracetamol", StringComparison.OrdinalIgnoreCase));
 
-        window.Close();
+        app.CloseConsultation();
     }
 
     [Fact]
     public void Choosing_a_result_links_the_line_to_our_stock()
     {
-        var window = OpenConsultationFor($"Rx Pick {DateTime.Now:HHmmssfff}");
+        OpenConsultationFor($"Rx Pick {DateTime.Now:HHmmssfff}");
 
-        Type(window, "RxMedicine", "Cetiriz");
-        AppFixture.WaitUntil(() => Matches(window).Length > 0, "the medicine search results");
+        app.Type("RxMedicine", "Cetiriz");
+        AppFixture.WaitUntil(() => Matches().Length > 0, "the medicine search results");
 
-        Matches(window)[0].AsButton().Invoke();
+        Matches()[0].AsButton().Invoke();
 
         AppFixture.WaitUntil(
-            () => TextOf(window, "RxMedicineHint").Contains("In our pharmacy"),
+            () => app.TextOf("RxMedicineHint").Contains("In our pharmacy"),
             "the linked-to-stock note");
 
-        Assert.Contains("In our pharmacy", TextOf(window, "RxMedicineHint"));
+        Assert.Contains("In our pharmacy", app.TextOf("RxMedicineHint"));
 
         // Choosing one closes the list.
-        Assert.Empty(Matches(window));
+        Assert.Empty(Matches());
 
-        window.Close();
+        app.CloseConsultation();
     }
 
     [Fact]
     public void A_medicine_we_do_not_stock_can_still_be_prescribed()
     {
-        var window = OpenConsultationFor($"Rx Outside {DateTime.Now:HHmmssfff}");
+        OpenConsultationFor($"Rx Outside {DateTime.Now:HHmmssfff}");
 
-        Type(window, "RxMedicine", "Imported Ointment 20g");
+        app.Type("RxMedicine", "Imported Ointment 20g");
 
         AppFixture.WaitUntil(
-            () => TextOf(window, "RxMedicineHint").Contains("Not in our pharmacy"),
+            () => app.TextOf("RxMedicineHint").Contains("Not in our pharmacy"),
             "the not-stocked note");
 
-        Assert.Contains("prescription only", TextOf(window, "RxMedicineHint"));
+        Assert.Contains("prescription only", app.TextOf("RxMedicineHint"));
 
         // Nothing is pre-filled, so the course has to be stated.
-        Dose(window, "RxMorning", "1");
-        Dose(window, "RxNight", "1");
-        Type(window, "RxDays", "3");
+        app.ComboBox("RxMorning").Select("1");
+        app.ComboBox("RxNight").Select("1");
+        app.Type("RxDays", "3");
 
-        AppFixture.WaitUntil(
-            () => window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text == "6",
-            "the course to be worked out");
+        AppFixture.WaitUntil(() => app.TextBox("RxQuantity").Text == "6", "the course to be worked out");
 
-        window.FindFirstDescendant(cf => cf.ByAutomationId("RxAdd"))!.AsButton().Invoke();
+        app.Click("RxAdd");
 
-        AppFixture.WaitUntil(
-            () => window.FindFirstDescendant(cf => cf.ByAutomationId("RxGrid"))!.AsGrid().RowCount == 1,
-            "the line to be added");
+        AppFixture.WaitUntil(() => app.Grid("RxGrid").RowCount == 1, "the line to be added");
 
-        var cells = window.FindFirstDescendant(cf => cf.ByAutomationId("RxGrid"))!
-                          .AsGrid().Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
+        var cells = app.Grid("RxGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
 
         Assert.Equal("Imported Ointment 20g", cells[0]);
 
-        window.Close();
+        app.CloseConsultation();
     }
 
     [Fact]
     public void Nothing_is_filled_in_before_the_doctor_types_it()
     {
-        var window = OpenConsultationFor($"Rx Blank {DateTime.Now:HHmmssfff}");
+        OpenConsultationFor($"Rx Blank {DateTime.Now:HHmmssfff}");
 
         // A pre-filled dose is a clinical decision the software should not make.
-        Assert.Equal("", window.FindFirstDescendant(cf => cf.ByAutomationId("RxMedicine"))!.AsTextBox().Text);
-        Assert.Equal("", window.FindFirstDescendant(cf => cf.ByAutomationId("RxDose"))!.AsTextBox().Text);
-        Assert.Equal("0", window.FindFirstDescendant(cf => cf.ByAutomationId("RxMorning"))!
-                                .AsComboBox().SelectedItems[0].Text);
-        Assert.Equal("0", window.FindFirstDescendant(cf => cf.ByAutomationId("RxDays"))!.AsTextBox().Text);
-        Assert.Equal("0", window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text);
-        Assert.Equal("", TextOf(window, "RxCourseHint"));
+        Assert.Equal("", app.TextBox("RxMedicine").Text);
+        Assert.Equal("", app.TextBox("RxDose").Text);
+        Assert.Equal("0", app.ComboBox("RxMorning").SelectedItems[0].Text);
+        Assert.Equal("0", app.TextBox("RxDays").Text);
+        Assert.Equal("0", app.TextBox("RxQuantity").Text);
+        Assert.Equal("", app.TextOf("RxCourseHint"));
 
-        window.Close();
+        app.CloseConsultation();
     }
 
     [Fact]
     public void The_course_is_worked_out_in_individual_units()
     {
-        var window = OpenConsultationFor($"Rx Course {DateTime.Now:HHmmssfff}");
+        OpenConsultationFor($"Rx Course {DateTime.Now:HHmmssfff}");
 
         // One morning, one afternoon, one night.
-        Dose(window, "RxMorning", "1");
-        Dose(window, "RxAfternoon", "1");
-        Dose(window, "RxNight", "1");
-        Type(window, "RxDays", "5");
+        app.ComboBox("RxMorning").Select("1");
+        app.ComboBox("RxAfternoon").Select("1");
+        app.ComboBox("RxNight").Select("1");
+        app.Type("RxDays", "5");
 
-        AppFixture.WaitUntil(
-            () => window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text == "15",
-            "the course to be worked out");
+        AppFixture.WaitUntil(() => app.TextBox("RxQuantity").Text == "15", "the course to be worked out");
 
         // Three a day for five days is fifteen tablets, not fifteen strips.
-        Assert.Equal("15", window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text);
-        Assert.Contains("15 units", TextOf(window, "RxCourseHint"));
+        Assert.Equal("15", app.TextBox("RxQuantity").Text);
+        Assert.Contains("15 units", app.TextOf("RxCourseHint"));
 
-        window.Close();
+        app.CloseConsultation();
     }
 
     [Fact]
     public void A_half_dose_morning_and_night_is_understood()
     {
-        var window = OpenConsultationFor($"Rx Half {DateTime.Now:HHmmssfff}");
+        OpenConsultationFor($"Rx Half {DateTime.Now:HHmmssfff}");
 
         // Half a tablet twice a day for six days is six tablets.
-        Dose(window, "RxMorning", "1/2");
-        Dose(window, "RxNight", "1/2");
-        Type(window, "RxDays", "6");
+        app.ComboBox("RxMorning").Select("1/2");
+        app.ComboBox("RxNight").Select("1/2");
+        app.Type("RxDays", "6");
 
-        AppFixture.WaitUntil(
-            () => window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text == "6",
-            "the half-dose course to be worked out");
+        AppFixture.WaitUntil(() => app.TextBox("RxQuantity").Text == "6",
+                             "the half-dose course to be worked out");
 
-        Assert.Equal("6", window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text);
+        Assert.Equal("6", app.TextBox("RxQuantity").Text);
 
-        window.Close();
+        app.CloseConsultation();
+    }
+
+    [Fact]
+    public void The_consultation_cannot_be_left_open_behind_the_shell()
+    {
+        var patient = $"Rx Layer {DateTime.Now:HHmmssfff}";
+        OpenConsultationFor(patient);
+
+        // While it is open the shell behind it takes no input, so its buttons
+        // are not reachable — nothing can be started and then forgotten.
+        Assert.False(app.Button("NavSettings").IsEnabled);
+
+        app.CloseConsultation();
+
+        Assert.True(app.Button("NavSettings").IsEnabled);
+        Assert.False(app.IsConsultationOpen);
     }
 }

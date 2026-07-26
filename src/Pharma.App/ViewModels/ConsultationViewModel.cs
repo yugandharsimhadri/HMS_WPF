@@ -109,6 +109,9 @@ public partial class ConsultationViewModel : ObservableObject
 
     public event Action? RequestClose;
 
+    /// <summary>The form as it was last read from or written to the database.</summary>
+    private string _savedSnapshot = "";
+
     public ConsultationViewModel(Guid visitId, OpdService opd, PharmacyService pharmacy, SettingsService settings)
     {
         _visitId = visitId;
@@ -155,6 +158,7 @@ public partial class ConsultationViewModel : ObservableObject
         }
 
         RecalculateCourse();
+        _savedSnapshot = Snapshot();
     }
 
     // Recompute the course whenever anything it depends on changes.
@@ -319,6 +323,40 @@ public partial class ConsultationViewModel : ObservableObject
         RequestClose?.Invoke();
     }
 
+    /// <summary>
+    /// Leaves the consultation. Anything typed but not saved is worth one
+    /// question — a half-entered prescription is not recoverable.
+    /// </summary>
+    [RelayCommand]
+    private void Close()
+    {
+        if (HasUnsavedWork())
+        {
+            var answer = MessageBox.Show(
+                "This consultation has changes that have not been saved.\n\nClose it and lose them?",
+                "Consultation", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (answer != MessageBoxResult.Yes) return;
+        }
+
+        RequestClose?.Invoke();
+    }
+
+    /// <summary>
+    /// Compares the form against how it looked when it was last read or written.
+    /// Cheaper and harder to get wrong than a dirty flag on every field.
+    /// </summary>
+    private bool HasUnsavedWork() => Snapshot() != _savedSnapshot;
+
+    private string Snapshot()
+    {
+        var lines = string.Join("|", Lines.Select(
+            l => $"{l.Medicine}~{l.Dosage}~{l.Frequency}~{l.Days}~{l.Quantity}~{l.Instructions}"));
+
+        return string.Join("~", Complaint, Diagnosis, Notes, Weight, BloodPressure,
+                           Temperature, Fee, FollowUpOn, lines);
+    }
+
     [RelayCommand]
     private async Task PrintAsync()
     {
@@ -361,6 +399,7 @@ public partial class ConsultationViewModel : ObservableObject
         try
         {
             await _opd.SaveConsultationAsync(Visit, items, complete);
+            _savedSnapshot = Snapshot();
             if (message is not null) Status = message;
         }
         catch (Exception ex)

@@ -23,23 +23,11 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
             "medicine to save");
 
         // Stock now lives on its own screen; find the medicine there.
-
-
         app.Navigate("NavInventory", "Inventory");
-
-
         app.Type("InventorySearch", name);
-
-
         app.Click("InventorySearchButton");
-
-
         AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine in inventory");
-
-
         app.Grid("InventoryProductsGrid").Rows[0].Select();
-
-
 
         app.Type("StockBatchNo", $"B{suffix}");
         app.Type("StockQuantity", quantity.ToString());
@@ -60,6 +48,7 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         var suffix = DateTime.Now.ToString("HHmmssfff");
         var name = CreateMedicineWithStock(suffix, gstRate: 12m, quantity: 100, mrp: 50m);
 
+        app.Navigate("NavProducts", "Medicines");
         app.Type("ProductSearch", name);
         app.Click("ProductsSearchButton");
 
@@ -68,7 +57,7 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
 
         Assert.Equal(name, cells[0]);
-        Assert.Equal("100", cells[7]);   // stock on hand — column 6 is now units per pack
+        Assert.Equal("100", cells[8]);   // stock on hand; 7 is units per pack
     }
 
     [Fact]
@@ -128,7 +117,7 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine to be listed");
 
         var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
-        Assert.Equal("36", cells[7]);
+        Assert.Equal("36", cells[8]);
     }
 
     [Fact]

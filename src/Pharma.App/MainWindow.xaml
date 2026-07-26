@@ -5,11 +5,16 @@
         xmlns:vm="clr-namespace:Pharma.App.ViewModels"
         xmlns:views="clr-namespace:Pharma.App.Views"
         Title="Twinkle Children's Hospital — OPD &amp; Pharmacy"
-        Height="820" Width="1360" WindowStartupLocation="CenterScreen"
+        Height="820" Width="1360" WindowStartupLocation="Manual"
         Background="{StaticResource Bg}">
 
     <Window.Resources>
         <local:NavBrushConverter x:Key="NavBrush"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVisible"/>
+
+        <DataTemplate DataType="{x:Type vm:ConsultationViewModel}">
+            <views:ConsultationView/>
+        </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:OpdViewModel}">
             <views:OpdView/>
@@ -57,6 +62,8 @@
     </Window.Resources>
 
     <Grid>
+
+    <Grid IsEnabled="{Binding IsShellEnabled}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="212"/>
             <ColumnDefinition Width="*"/>
@@ -123,5 +130,19 @@
 
             <ContentControl Content="{Binding CurrentPage}" Margin="0"/>
         </DockPanel>
+    </Grid>
+
+        <!-- Anything opened over the shell. Nothing else can be running at the
+             same time, so it can be neither lost nor duplicated. -->
+        <Border Background="#8C0B1F24" Visibility="{Binding IsOverlayOpen, Converter={StaticResource BoolToVisible}}">
+            <Border Margin="28" Background="{StaticResource Bg}" CornerRadius="10"
+                    BorderBrush="{StaticResource Border}" BorderThickness="1"
+                    AutomationProperties.AutomationId="Overlay">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.45" Color="#000000"/>
+                </Border.Effect>
+                <ContentControl Content="{Binding Overlay}"/>
+            </Border>
+        </Border>
     </Grid>
 </Window>

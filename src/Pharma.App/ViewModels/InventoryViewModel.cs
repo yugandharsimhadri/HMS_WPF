@@ -70,6 +70,14 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     partial void OnSelectedProductChanged(Product? value)
     {
         OnPropertyChanged(nameof(Subtitle));
+
+        // A price left over from the last medicine is how the wrong MRP ends up
+        // on a batch, so the receiving form starts clean for each one.
+        BatchNo = "";
+        Packs = FreePacks = 0;
+        PurchaseRate = Mrp = 0;
+        ExpiryDate = DateTime.Today.AddYears(2);
+
         UpdateIntakePreview();
 
         Batches.Clear();

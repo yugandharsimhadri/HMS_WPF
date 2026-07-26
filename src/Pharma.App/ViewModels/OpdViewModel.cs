@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -331,12 +332,21 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         {
             await opd.SetStatusAsync(visit.Id, VisitStatus.InConsultation);
 
-            var window = new Views.ConsultationWindow(visit.Id)
-            {
-                Owner = Application.Current.MainWindow
-            };
+            var consultation = new ConsultationViewModel(
+                visit.Id,
+                opd,
+                App.Services.GetRequiredService<PharmacyService>(),
+                App.Services.GetRequiredService<SettingsService>());
 
-            window.ShowDialog();
+            var shell = App.Services.GetRequiredService<MainViewModel>();
+
+            // Shown over the shell rather than in its own window: a window can
+            // get lost behind another application, and then the doctor is
+            // clicking a main window that cannot answer.
+            var showing = shell.ShowOverlayAsync(consultation, close => consultation.RequestClose += () => close());
+
+            await consultation.LoadAsync();
+            await showing;
 
             // Completing the consultation sets the status, so the tile lands in
             // the other column as soon as this refresh runs.

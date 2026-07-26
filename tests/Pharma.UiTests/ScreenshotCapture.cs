@@ -55,36 +55,31 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
 
         // ── Consultation ───────────────────────────────────────────────────
         app.ClickTile("OpdWaitingList", "TileConsult", "Baby Anika");
-
-        var consultation = Retry.WhileNull(
-            () => app.MainWindow.ModalWindows.FirstOrDefault(
-                w => w.Title.Contains("Consultation", StringComparison.OrdinalIgnoreCase)),
-            TimeSpan.FromSeconds(15)).Result;
-
-        AppFixture.WaitUntil(
-            () => (consultation!.FindFirstDescendant(cf => cf.ByAutomationId("ConsultationHeader"))
-                                ?.AsLabel().Text ?? "").Contains("Baby Anika"),
-            "the consultation to load");
+        app.WaitForConsultation("Baby Anika");
 
         Settle();
-        CaptureWindow(consultation!, "consultation");
-        consultation!.Close();
+        Capture("consultation");
+        app.CloseConsultation();
 
         // ── Medicines ──────────────────────────────────────────────────────
         StockMedicine("Calpol Syrup 60ml", "PC2601", 60, 112m, 12m);
         StockMedicine("Amoxyclav Drops 15ml", "AM2604", 40, 96m, 12m);
+
+        app.Navigate("NavProducts", "Medicines");
+        app.Click("ProductsSearchButton");
         Settle();
         Capture("medicines");
 
-
+        // ── Inventory ──────────────────────────────────────────────────────
         app.Navigate("NavInventory", "Inventory");
-
+        app.Type("InventorySearch", "Calpol");
+        app.Click("InventorySearchButton");
+        AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount >= 1, "the medicine in inventory");
+        app.Grid("InventoryProductsGrid").Rows[0].Select();
         Settle();
-
         Capture("inventory");
 
         // ── Importing a supplier bill ──────────────────────────────────────
-        app.Navigate("NavInventory", "Inventory");
         app.Click("InventoryImport");
 
         var import = Retry.WhileNull(

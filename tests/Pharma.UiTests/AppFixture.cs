@@ -176,6 +176,38 @@ public class AppFixture : IDisposable
 
     public void Click(string automationId) => Button(automationId).Invoke();
 
+    // ── The consultation layer ─────────────────────────────────────────────
+    // It is part of the main window rather than a window of its own, so that it
+    // cannot be lost behind another application.
+
+    public bool IsConsultationOpen => Find("ConsultationHeader") is not null;
+
+    public void WaitForConsultation(string patient)
+        => WaitUntil(() => TextOf("ConsultationHeader").Contains(patient),
+                     $"the consultation for {patient}");
+
+    /// <summary>Closes it, answering the unsaved-changes question if it appears.</summary>
+    public void CloseConsultation()
+    {
+        if (!IsConsultationOpen) return;
+
+        Click("ConsultationClose");
+        ConfirmDiscard();
+
+        WaitUntil(() => !IsConsultationOpen, "the consultation to close");
+    }
+
+    /// <summary>Says yes to "close and lose them?" if the app asks.</summary>
+    private void ConfirmDiscard()
+    {
+        Thread.Sleep(250);
+
+        var dialog = MainWindow.ModalWindows.FirstOrDefault();
+        var yes = dialog?.FindFirstDescendant(cf => cf.ByName("Yes"))?.AsButton();
+
+        yes?.Invoke();
+    }
+
     /// <summary>
     /// Closes anything modal left open. The suite shares one app, so a test that
     /// fails while a preview or a message box is up would otherwise poison every
