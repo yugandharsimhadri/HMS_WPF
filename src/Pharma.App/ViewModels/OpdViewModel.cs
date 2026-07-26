@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pharma.App.Printing;
 using Pharma.Core;
 using Pharma.Data;
 
@@ -11,7 +12,7 @@ namespace Pharma.App.ViewModels;
 /// OPD desk: today's queue on the left, a three-step booking panel on the right.
 /// Find patient → choose doctor → Book.
 /// </summary>
-public partial class OpdViewModel(OpdService opd) : ObservableObject, IPage
+public partial class OpdViewModel(OpdService opd, SettingsService settings) : ObservableObject, IPage
 {
     public string Title => "OPD";
     public string Subtitle => $"{Visits.Count(v => v.Status != VisitStatus.Cancelled)} visits on {Date:ddd, dd MMM}";
@@ -39,8 +40,10 @@ public partial class OpdViewModel(OpdService opd) : ObservableObject, IPage
     [ObservableProperty] private decimal _fee;
 
     [ObservableProperty] private string _status = "";
+    [ObservableProperty] private PaymentMode _feePaymentMode = PaymentMode.Cash;
 
     public Array Genders => Enum.GetValues<Gender>();
+    public Array PaymentModes => Enum.GetValues<PaymentMode>();
 
     public async Task LoadAsync()
     {
@@ -163,13 +166,63 @@ public partial class OpdViewModel(OpdService opd) : ObservableObject, IPage
         await RefreshAsync();
     }
 
+    /// <summary>Takes the fee, issues a numbered receipt, and offers to print it.</summary>
     [RelayCommand]
     private async Task CollectFeeAsync()
     {
         if (SelectedVisit is null) return;
-        await opd.CollectFeeAsync(SelectedVisit.Id);
-        Status = $"Consultation fee received for token {SelectedVisit.TokenNo}.";
+
+        if (SelectedVisit.FeePaid)
+        {
+            Status = $"Token {SelectedVisit.TokenNo} has already paid — use Reprint receipt.";
+            return;
+        }
+
+        var visit = await opd.CollectFeeAsync(SelectedVisit.Id, FeePaymentMode);
+        if (visit is null) return;
+
+        Status = $"Receipt {visit.FeeReceiptNo} — ₹{visit.Fee:0.00} received from {visit.Patient.Name}.";
         await RefreshAsync();
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop), $"Receipt {visit.FeeReceiptNo}");
+    }
+
+    [RelayCommand]
+    private async Task ReprintReceiptAsync()
+    {
+        if (SelectedVisit is null) return;
+
+        if (!SelectedVisit.FeePaid)
+        {
+            Status = $"Token {SelectedVisit.TokenNo} has not paid yet — there is no receipt to reprint.";
+            return;
+        }
+
+        var visit = await opd.GetVisitAsync(SelectedVisit.Id);
+        if (visit is null) return;
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop, isReprint: true),
+                             $"Receipt {visit.FeeReceiptNo} (duplicate)");
+    }
+
+    [RelayCommand]
+    private async Task PrintPrescriptionAsync()
+    {
+        if (SelectedVisit is null) return;
+
+        var visit = await opd.GetVisitAsync(SelectedVisit.Id);
+        if (visit is null) return;
+
+        if (visit.Prescription.Count == 0)
+        {
+            Status = $"Token {visit.TokenNo} has no prescription yet.";
+            return;
+        }
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => PrescriptionPrinter.Build(visit, shop), $"Prescription {visit.VisitNo}");
     }
 
     [RelayCommand]

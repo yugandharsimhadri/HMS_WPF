@@ -11,6 +11,33 @@ internal static class DocumentBuilder
     public static readonly Brush Muted = new SolidColorBrush(Color.FromRgb(0x61, 0x70, 0x7E));
     public static readonly Brush Line = new SolidColorBrush(Color.FromRgb(0xC8, 0xD0, 0xD8));
 
+    /// <summary>
+    /// The clinic identity block every printed document opens with. Kept in one
+    /// place so a bill, a receipt and a prescription can never disagree about the
+    /// shop's name, GSTIN or licence number.
+    /// </summary>
+    public static void AddClinicHeader(FlowDocument doc, Pharma.Data.ShopProfile shop, string? documentTitle)
+    {
+        doc.Blocks.Add(Text(shop.Name, 18, FontWeights.Bold, align: TextAlignment.Center));
+
+        var contact = new List<string>();
+        if (!string.IsNullOrWhiteSpace(shop.AddressLine)) contact.Add(shop.AddressLine);
+        if (!string.IsNullOrWhiteSpace(shop.Phone)) contact.Add($"Ph {shop.Phone}");
+        if (contact.Count > 0)
+            doc.Blocks.Add(Text(string.Join("  ·  ", contact), 10, brush: Muted, align: TextAlignment.Center));
+
+        var licences = new List<string>();
+        if (!string.IsNullOrWhiteSpace(shop.Gstin)) licences.Add($"GSTIN: {shop.Gstin}");
+        if (!string.IsNullOrWhiteSpace(shop.DrugLicenceNo)) licences.Add($"D.L. No: {shop.DrugLicenceNo}");
+        if (licences.Count > 0)
+            doc.Blocks.Add(Text(string.Join("  ·  ", licences), 10, brush: Muted, align: TextAlignment.Center));
+
+        if (!string.IsNullOrWhiteSpace(documentTitle))
+            doc.Blocks.Add(Text(documentTitle, 11, FontWeights.SemiBold, align: TextAlignment.Center, topMargin: 8));
+
+        doc.Blocks.Add(Rule());
+    }
+
     public static FlowDocument NewDocument() => new()
     {
         PageWidth = 794,           // A4 at 96 dpi

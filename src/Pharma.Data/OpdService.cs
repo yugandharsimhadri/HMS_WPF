@@ -156,14 +156,31 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         await db.SaveChangesAsync();
     }
 
-    public async Task CollectFeeAsync(Guid visitId)
+    /// <summary>
+    /// Records the consultation fee and allocates a receipt number. Collecting
+    /// twice is a no-op so a double click cannot burn a number or restate the date.
+    /// </summary>
+    public async Task<Visit?> CollectFeeAsync(Guid visitId, PaymentMode mode = PaymentMode.Cash)
     {
         await using var db = await factory.CreateDbContextAsync();
-        var visit = await db.Visits.FirstOrDefaultAsync(v => v.Id == visitId);
-        if (visit is null) return;
+
+        var visit = await db.Visits
+            .Include(v => v.Patient)
+            .Include(v => v.Doctor)
+            .FirstOrDefaultAsync(v => v.Id == visitId);
+
+        if (visit is null) return null;
+        if (visit.FeePaid) return visit;
 
         visit.FeePaid = true;
+        visit.FeeReceiptNo = await NumberService.NextAsync(db, NumberService.FeeReceipt);
+        visit.FeePaidOn = DateTime.Now;
+        visit.FeePaymentMode = mode;
+
         await db.SaveChangesAsync();
+
+        AppLog.Info($"Receipt {visit.FeeReceiptNo} for {visit.Fee:0.00} ({mode}) against visit {visit.VisitNo}.");
+        return visit;
     }
 
     /// <summary>Saves the consultation and replaces the prescription in one step.</summary>

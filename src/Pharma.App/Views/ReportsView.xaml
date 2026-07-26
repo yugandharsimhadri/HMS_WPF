@@ -36,7 +36,13 @@
             <TabControl BorderThickness="0" Background="Transparent">
 
                 <TabItem Header="Day book">
-                    <DataGrid ItemsSource="{Binding Sales}" Margin="0,10,0,0">
+                  <DockPanel Margin="0,10,0,0">
+                    <Button DockPanel.Dock="Bottom" Content="Reprint selected bill" HorizontalAlignment="Left"
+                            Style="{StaticResource BtnGhost}" Margin="0,10,0,0"
+                            Command="{Binding ReprintBillCommand}"
+                            AutomationProperties.AutomationId="ReprintBill"/>
+                    <DataGrid ItemsSource="{Binding Sales}" SelectedItem="{Binding SelectedSale, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="DayBookGrid">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
                             <DataGridTextColumn Header="TIME" Binding="{Binding BillDate, StringFormat=HH:mm}" Width="70"/>
@@ -50,6 +56,7 @@
                             <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                  </DockPanel>
                 </TabItem>
 
                 <TabItem Header="GST summary">

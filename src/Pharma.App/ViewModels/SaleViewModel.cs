@@ -25,7 +25,7 @@ public partial class SaleRow : ObservableObject
     [ObservableProperty] private decimal _mrp;
     [ObservableProperty] private decimal _discountPercent;
 
-    public string Expiry => ExpiryDate.ToString("MM/yy");
+    public string Expiry => ExpiryDate.ToString("MM'/'yy");
     public decimal Amount => GstCalculator.Line(Mrp, Quantity, DiscountPercent, GstRate).Net;
 
     partial void OnQuantityChanged(int value) => OnPropertyChanged(nameof(Amount));
@@ -297,7 +297,11 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             if (print)
             {
                 var full = await pharmacy.GetSaleAsync(saved.Id);
-                if (full is not null) BillPrinter.Print(full, await settings.GetAsync());
+                if (full is not null)
+                {
+                    var shop = await settings.GetAsync();
+                    PrintService.Preview(() => BillPrinter.Build(full, shop), $"Bill {full.BillNo}");
+                }
             }
 
             NewBill();

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
+using Pharma.App.Printing;
 using Pharma.Core;
 using Pharma.Data;
 
@@ -13,6 +14,7 @@ public record GstSlab(decimal Rate, decimal Taxable, decimal Cgst, decimal Sgst,
 public partial class ReportsViewModel(
     PharmacyService pharmacy,
     OpdService opd,
+    SettingsService settings,
     IDbContextFactory<AppDbContext> factory) : ObservableObject, IPage
 {
     public string Title => "Reports";
@@ -26,6 +28,8 @@ public partial class ReportsViewModel(
     public ObservableCollection<H1RegisterEntry> H1Register { get; } = [];
 
     [ObservableProperty] private DateTime _date = DateTime.Today;
+    [ObservableProperty] private Sale? _selectedSale;
+    [ObservableProperty] private Visit? _selectedVisit;
     [ObservableProperty] private decimal _totalCollected;
     [ObservableProperty] private decimal _cashTotal;
     [ObservableProperty] private decimal _upiTotal;
@@ -87,4 +91,31 @@ public partial class ReportsViewModel(
 
     [RelayCommand]
     private Task RefreshAsync() => LoadAsync();
+
+    /// <summary>Reprints a bill from the day book, marked as a duplicate.</summary>
+    [RelayCommand]
+    private async Task ReprintBillAsync()
+    {
+        if (SelectedSale is null) return;
+
+        var sale = await pharmacy.GetSaleAsync(SelectedSale.Id);
+        if (sale is null) return;
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => BillPrinter.Build(sale, shop, isReprint: true),
+                             $"Bill {sale.BillNo} (duplicate)");
+    }
+
+    [RelayCommand]
+    private async Task ReprintReceiptAsync()
+    {
+        if (SelectedVisit is null || !SelectedVisit.FeePaid) return;
+
+        var visit = await opd.GetVisitAsync(SelectedVisit.Id);
+        if (visit is null) return;
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop, isReprint: true),
+                             $"Receipt {visit.FeeReceiptNo} (duplicate)");
+    }
 }

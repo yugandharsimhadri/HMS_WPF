@@ -12,29 +12,11 @@ namespace Pharma.App.Printing;
 /// </summary>
 public static class BillPrinter
 {
-    public static void Print(Sale sale, ShopProfile shop)
-        => Send(Build(sale, shop), $"Bill {sale.BillNo}");
-
-    public static FlowDocument Build(Sale sale, ShopProfile shop)
+    public static FlowDocument Build(Sale sale, ShopProfile shop, bool isReprint = false)
     {
         var doc = NewDocument();
 
-        doc.Blocks.Add(Text(shop.Name, 18, FontWeights.Bold, align: TextAlignment.Center));
-
-        var identity = new List<string>();
-        if (!string.IsNullOrWhiteSpace(shop.AddressLine)) identity.Add(shop.AddressLine);
-        if (!string.IsNullOrWhiteSpace(shop.Phone)) identity.Add($"Ph {shop.Phone}");
-        if (identity.Count > 0)
-            doc.Blocks.Add(Text(string.Join("  ·  ", identity), 10, brush: Muted, align: TextAlignment.Center));
-
-        var licences = new List<string>();
-        if (!string.IsNullOrWhiteSpace(shop.Gstin)) licences.Add($"GSTIN: {shop.Gstin}");
-        if (!string.IsNullOrWhiteSpace(shop.DrugLicenceNo)) licences.Add($"D.L. No: {shop.DrugLicenceNo}");
-        if (licences.Count > 0)
-            doc.Blocks.Add(Text(string.Join("  ·  ", licences), 10, brush: Muted, align: TextAlignment.Center));
-
-        doc.Blocks.Add(Text("TAX INVOICE", 11, FontWeights.SemiBold, align: TextAlignment.Center, topMargin: 8));
-        doc.Blocks.Add(Rule());
+        AddClinicHeader(doc, shop, isReprint ? "TAX INVOICE (DUPLICATE)" : "TAX INVOICE");
 
         var head = NewTable(1, 1);
         var headGroup = new TableRowGroup();
@@ -56,7 +38,9 @@ public static class BillPrinter
             itemGroup.Rows.Add(Row(false,
                 item.ProductName,
                 item.BatchNo,
-                item.ExpiryDate.ToString("MM/yy"),
+                // Quoted separator: a bare "/" is replaced by the machine's date
+                // separator, which made the printed expiry differ between PCs.
+                item.ExpiryDate.ToString("MM'/'yy"),
                 item.Quantity.ToString(),
                 item.Mrp.ToString("0.00"),
                 item.GstRate.ToString("0.#"),
@@ -112,6 +96,7 @@ public static class BillPrinter
         doc.Blocks.Add(Text($"NET PAYABLE   ₹{sale.NetAmount:0.00}", 16, FontWeights.Bold,
                             align: TextAlignment.Right, topMargin: 2));
         doc.Blocks.Add(Text($"Paid by {sale.PaymentMode}", 10, brush: Muted, align: TextAlignment.Right));
+        doc.Blocks.Add(Text(FeeReceiptDocument.InWords(sale.NetAmount), 10, brush: Muted, topMargin: 4));
 
         doc.Blocks.Add(Rule());
 

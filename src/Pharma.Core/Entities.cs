@@ -64,6 +64,13 @@ public class Visit : BaseEntity
 
     public decimal Fee { get; set; }
     public bool FeePaid { get; set; }
+
+    // A receipt has to carry its own number and date, or it cannot be reprinted
+    // or reconciled against the day's collection.
+    public string? FeeReceiptNo { get; set; }
+    public DateTime? FeePaidOn { get; set; }
+    public PaymentMode? FeePaymentMode { get; set; }
+
     public DateTime? FollowUpOn { get; set; }
 
     public ICollection<PrescriptionItem> Prescription { get; set; } = [];
@@ -124,7 +131,7 @@ public class Batch : BaseEntity
     public DateTime ReceivedOn { get; set; } = DateTime.Today;
 
     public bool IsExpired => ExpiryDate.Date < DateTime.Today;
-    public string Display => $"{BatchNo} · exp {ExpiryDate:MM/yy} · ₹{Mrp:0.00} · {QtyOnHand} left";
+    public string Display => $"{BatchNo} · exp {ExpiryDate:MM'/'yy} · ₹{Mrp:0.00} · {QtyOnHand} left";
 }
 
 public class StockEntry : BaseEntity

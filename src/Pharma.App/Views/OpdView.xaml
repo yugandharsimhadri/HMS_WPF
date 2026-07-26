@@ -33,8 +33,21 @@
                         <Button Content="Open consultation" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
                                 Command="{Binding ConsultCommand}"
                                 AutomationProperties.AutomationId="OpdConsult"/>
+
+                        <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding FeePaymentMode, Mode=TwoWay}"
+                                  Width="90" Margin="0,0,6,0" VerticalAlignment="Center"
+                                  ToolTip="How the consultation fee was paid"
+                                  AutomationProperties.AutomationId="OpdFeeMode"/>
                         <Button Content="Fee received" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
-                                Command="{Binding CollectFeeCommand}"/>
+                                Command="{Binding CollectFeeCommand}"
+                                AutomationProperties.AutomationId="OpdCollectFee"/>
+                        <Button Content="Reprint receipt" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
+                                Command="{Binding ReprintReceiptCommand}"
+                                AutomationProperties.AutomationId="OpdReprintReceipt"/>
+                        <Button Content="Print Rx" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
+                                Command="{Binding PrintPrescriptionCommand}"
+                                AutomationProperties.AutomationId="OpdPrintRx"/>
+
                         <Button Content="Cancel visit" Style="{StaticResource BtnDanger}"
                                 Command="{Binding CancelVisitCommand}"/>
                     </StackPanel>
