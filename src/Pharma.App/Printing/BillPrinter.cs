@@ -41,7 +41,7 @@ public static class BillPrinter
                 // Quoted separator: a bare "/" is replaced by the machine's date
                 // separator, which made the printed expiry differ between PCs.
                 item.ExpiryDate.ToString("MM'/'yy"),
-                item.Quantity.ToString(),
+                item.UnitsPerPack > 1 ? item.QuantityDescription : item.Quantity.ToString(),
                 item.Mrp.ToString("0.00"),
                 item.GstRate.ToString("0.#"),
                 item.LineTotal.ToString("0.00")));

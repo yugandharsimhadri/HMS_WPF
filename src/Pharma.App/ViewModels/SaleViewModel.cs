@@ -20,15 +20,26 @@ public partial class SaleRow : ObservableObject
     public decimal GstRate { get; init; }
     public DrugSchedule Schedule { get; init; }
     public int Available { get; init; }
+    public int UnitsPerPack { get; init; } = 1;
+    public string? PackLabel { get; init; }
 
     [ObservableProperty] private int _quantity = 1;
     [ObservableProperty] private decimal _mrp;
     [ObservableProperty] private decimal _discountPercent;
 
     public string Expiry => ExpiryDate.ToString("MM'/'yy");
-    public decimal Amount => GstCalculator.Line(Mrp, Quantity, DiscountPercent, GstRate).Net;
 
-    partial void OnQuantityChanged(int value) => OnPropertyChanged(nameof(Amount));
+    /// <summary>"2 × 10 TAB + 3" so the operator can see what is being handed over.</summary>
+    public string Packs => PackMath.Describe(Quantity, UnitsPerPack, PackLabel);
+
+    public decimal Amount => GstCalculator.Line(Mrp, UnitsPerPack, Quantity, DiscountPercent, GstRate).Net;
+
+    partial void OnQuantityChanged(int value)
+    {
+        OnPropertyChanged(nameof(Amount));
+        OnPropertyChanged(nameof(Packs));
+    }
+
     partial void OnMrpChanged(decimal value) => OnPropertyChanged(nameof(Amount));
     partial void OnDiscountPercentChanged(decimal value) => OnPropertyChanged(nameof(Amount));
 }
@@ -161,6 +172,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             GstRate = SelectedProduct.GstRate,
             Schedule = SelectedProduct.Schedule,
             Available = SelectedBatch.QtyOnHand,
+            UnitsPerPack = SelectedBatch.UnitsPerPack,
+            PackLabel = SelectedProduct.PackSize,
             Quantity = Quantity,
             Mrp = SelectedBatch.Mrp,
             DiscountPercent = DiscountPercent
@@ -236,6 +249,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                 GstRate = product.GstRate,
                 Schedule = product.Schedule,
                 Available = batch.QtyOnHand,
+                UnitsPerPack = batch.UnitsPerPack,
+                PackLabel = product.PackSize,
                 Quantity = Math.Max(1, Math.Min(item.Quantity, batch.QtyOnHand)),
                 Mrp = batch.Mrp
             };
@@ -283,6 +298,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             ExpiryDate = l.ExpiryDate,
             HsnCode = l.HsnCode,
             Quantity = l.Quantity,
+            UnitsPerPack = l.UnitsPerPack,
+            PackLabel = l.PackLabel,
             Mrp = l.Mrp,
             DiscountPercent = l.DiscountPercent,
             GstRate = l.GstRate,

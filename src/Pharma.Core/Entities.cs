@@ -135,6 +135,15 @@ public class Product : BaseEntity
     public string? Manufacturer { get; set; }
     /// <summary>Printed pack, e.g. "10 TAB" or "100 ML". Free text — shops describe packs their own way.</summary>
     public string? PackSize { get; set; }
+
+    /// <summary>
+    /// Sellable units in one pack: 10 for a ten-tablet strip, 1 for a syrup
+    /// bottle. Stock is counted in these units so part of a strip can be sold.
+    /// </summary>
+    public int UnitsPerPack { get; set; } = 1;
+
+    /// <summary>Off for anything that must leave the shop whole.</summary>
+    public bool AllowLooseSale { get; set; } = true;
     public string HsnCode { get; set; } = "3004";
     public decimal GstRate { get; set; } = 12m;
     public DrugSchedule Schedule { get; set; } = DrugSchedule.None;
@@ -158,14 +167,32 @@ public class Batch : BaseEntity
 
     public string BatchNo { get; set; } = string.Empty;
     public DateTime ExpiryDate { get; set; }
+
+    /// <summary>The price printed on the pack. What a tax invoice must show.</summary>
     public decimal Mrp { get; set; }
+
     public decimal PurchaseRate { get; set; }
+
+    /// <summary>Stock in base units, not packs.</summary>
     public int QtyOnHand { get; set; }
+
+    /// <summary>
+    /// Snapshotted from the product when the batch was received. A manufacturer
+    /// changes pack size between consignments, and old stock has to keep pricing
+    /// against the pack it actually came in.
+    /// </summary>
+    public int UnitsPerPack { get; set; } = 1;
+
     public string? SupplierName { get; set; }
     public DateTime ReceivedOn { get; set; } = DateTime.Today;
 
     public bool IsExpired => ExpiryDate.Date < DateTime.Today;
-    public string Display => $"{BatchNo} · exp {ExpiryDate:MM'/'yy} · ₹{Mrp:0.00} · {QtyOnHand} left";
+
+    public decimal UnitPrice => PackMath.UnitPrice(Mrp, UnitsPerPack);
+
+    public string OnHand => PackMath.Describe(QtyOnHand, UnitsPerPack, Product?.PackSize);
+
+    public string Display => $"{BatchNo} · exp {ExpiryDate:MM'/'yy} · ₹{Mrp:0.00} · {OnHand} left";
 }
 
 public class StockEntry : BaseEntity
@@ -177,7 +204,30 @@ public class StockEntry : BaseEntity
     public decimal TotalAmount { get; set; }
     public string? Notes { get; set; }
 
+    // Set when the entry came from a vendor file rather than being keyed in.
+    // The invoice number is what stops the same bill being imported twice.
+    public string? ImportedFile { get; set; }
+    public string? ImportProfile { get; set; }
+    public decimal NetAmount { get; set; }
+    public decimal DiscountPercent { get; set; }
+
+    public bool WasImported => ImportedFile is not null;
+
     public ICollection<StockEntryItem> Items { get; set; } = [];
+}
+
+/// <summary>
+/// A vendor's own code for a medicine. Two suppliers call the same drug 000071
+/// and 31435, so the mapping is per vendor. Recording it on the first import is
+/// what makes every later import of that vendor match without being asked.
+/// </summary>
+public class VendorProductCode : BaseEntity
+{
+    public string VendorProfile { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+
+    public Guid ProductId { get; set; }
+    public Product Product { get; set; } = null!;
 }
 
 public class StockEntryItem : BaseEntity
@@ -190,13 +240,22 @@ public class StockEntryItem : BaseEntity
 
     public string BatchNo { get; set; } = string.Empty;
     public DateTime ExpiryDate { get; set; }
+    /// <summary>Packs received, as the vendor billed them.</summary>
     public int Quantity { get; set; }
+
     /// <summary>Scheme quantity (the "+1" in 10+1). Adds to stock, costs nothing.</summary>
     public int FreeQuantity { get; set; }
+
+    /// <summary>Units in each pack received; multiplies into base-unit stock.</summary>
+    public int UnitsPerPack { get; set; } = 1;
+
     public decimal PurchaseRate { get; set; }
     public decimal Mrp { get; set; }
 
     public decimal LineTotal => Quantity * PurchaseRate;
+
+    /// <summary>Base units this line puts on the shelf, free goods included.</summary>
+    public int UnitsReceived => (Quantity + FreeQuantity) * Math.Max(1, UnitsPerPack);
 }
 
 public class Sale : BaseEntity
@@ -244,7 +303,12 @@ public class SaleItem : BaseEntity
     public DateTime ExpiryDate { get; set; }
     public string HsnCode { get; set; } = string.Empty;
 
+    /// <summary>Base units sold — 5 means five tablets, not five strips.</summary>
     public int Quantity { get; set; }
+
+    /// <summary>Snapshotted so a reprint shows what the pack was at the time.</summary>
+    public int UnitsPerPack { get; set; } = 1;
+
     public decimal Mrp { get; set; }
     public decimal DiscountPercent { get; set; }
     public decimal GstRate { get; set; }
@@ -252,6 +316,11 @@ public class SaleItem : BaseEntity
     public decimal TaxableAmount { get; set; }
     public decimal GstAmount { get; set; }
     public decimal LineTotal { get; set; }
+
+    /// <summary>"2 × 10 TAB + 5" for the printed bill.</summary>
+    public string QuantityDescription => PackMath.Describe(Quantity, UnitsPerPack, PackLabel);
+
+    public string? PackLabel { get; set; }
 }
 
 // ── Shared ─────────────────────────────────────────────────────────────────

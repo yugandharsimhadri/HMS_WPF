@@ -16,6 +16,10 @@
                     <Button DockPanel.Dock="Right" Content="+ New medicine" Style="{StaticResource BtnPrimary}"
                             Margin="8,0,0,0" Command="{Binding NewProductCommand}"
                             AutomationProperties.AutomationId="ProductsNew"/>
+                    <Button DockPanel.Dock="Right" Content="Import bill" Style="{StaticResource BtnGhost}"
+                            Margin="8,0,0,0" Command="{Binding ImportBillCommand}"
+                            ToolTip="Load a supplier's file instead of typing each medicine"
+                            AutomationProperties.AutomationId="ProductsImport"/>
                     <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
                             Margin="8,0,0,0" Command="{Binding FindCommand}"
                             AutomationProperties.AutomationId="ProductsSearchButton"/>
@@ -37,6 +41,7 @@
                         <DataGridTextColumn Header="RACK" Binding="{Binding RackLocation}" Width="60"/>
                         <DataGridTextColumn Header="GST %" Binding="{Binding GstRate, StringFormat=N1}" Width="60"/>
                         <DataGridTextColumn Header="SCH" Binding="{Binding Schedule}" Width="60"/>
+                        <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="75"/>
                         <DataGridTextColumn Header="STOCK" Binding="{Binding StockOnHand}" Width="70"/>
                     </DataGrid.Columns>
                 </DataGrid>
@@ -68,7 +73,8 @@
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Pack size" Style="{StaticResource Label}"/>
                                 <TextBox Text="{Binding PackSize, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="As printed, e.g. 10 TAB"/>
+                                         ToolTip="As printed, e.g. 10 TAB"
+                                         AutomationProperties.AutomationId="ProductPackSize"/>
                             </StackPanel>
                         </Grid>
 
@@ -108,6 +114,25 @@
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Reorder level" Style="{StaticResource Label}"/>
                                 <TextBox Text="{Binding ReorderLevel, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Width="90">
+                                <TextBlock Text="Units per pack" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding UnitsPerPack, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="10 for a ten-tablet strip. 1 for a syrup bottle."
+                                         AutomationProperties.AutomationId="ProductUnitsPerPack"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,8,0,10">
+                                <CheckBox Content="Sell loose units" IsChecked="{Binding AllowLooseSale, Mode=TwoWay}"
+                                          ToolTip="Allows part of a strip to be sold"
+                                          AutomationProperties.AutomationId="ProductAllowLoose"/>
                             </StackPanel>
                         </Grid>
 

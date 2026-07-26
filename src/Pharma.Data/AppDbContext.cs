@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<Counter> Counters => Set<Counter>();
     public DbSet<H1RegisterEntry> H1Register => Set<H1RegisterEntry>();
     public DbSet<ImportProfile> ImportProfiles => Set<ImportProfile>();
+    public DbSet<VendorProductCode> VendorProductCodes => Set<VendorProductCode>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -74,16 +75,33 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
             e.Ignore(x => x.IsExpired);
             e.Ignore(x => x.Display);
+            e.Ignore(x => x.UnitPrice);
+            e.Ignore(x => x.OnHand);
+        });
+
+        b.Entity<VendorProductCode>(e =>
+        {
+            e.HasIndex(x => new { x.VendorProfile, x.Code }).IsUnique();
+            e.HasOne(x => x.Product).WithMany()
+                .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<StockEntry>(e =>
         {
             e.HasIndex(x => x.EntryNo).IsUnique();
+            e.HasIndex(x => x.SupplierInvoiceNo);
+            e.Ignore(x => x.WasImported);
             e.HasMany(x => x.Items).WithOne(i => i.StockEntry)
                 .HasForeignKey(i => i.StockEntryId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        b.Entity<StockEntryItem>(e => e.Ignore(x => x.LineTotal));
+        b.Entity<StockEntryItem>(e =>
+        {
+            e.Ignore(x => x.LineTotal);
+            e.Ignore(x => x.UnitsReceived);
+        });
+
+        b.Entity<SaleItem>(e => e.Ignore(x => x.QuantityDescription));
 
         b.Entity<Sale>(e =>
         {

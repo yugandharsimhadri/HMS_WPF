@@ -12,7 +12,11 @@ public class SaleLine
     public string BatchNo { get; set; } = string.Empty;
     public DateTime ExpiryDate { get; set; }
     public string HsnCode { get; set; } = "3004";
+    /// <summary>Base units — 5 tablets, not 5 strips.</summary>
     public int Quantity { get; set; }
+
+    public int UnitsPerPack { get; set; } = 1;
+    public string? PackLabel { get; set; }
     public decimal Mrp { get; set; }
     public decimal DiscountPercent { get; set; }
     public decimal GstRate { get; set; }
@@ -103,7 +107,10 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             db.StockEntryItems.Add(item);
             entry.TotalAmount += item.Quantity * item.PurchaseRate;
 
-            // Same drug + same batch number in the same consignment tops up one batch.
+            // Receiving the same drug and batch number again ADDS to what is on the
+            // shelf — it never replaces it. Whether the quantity was keyed in or
+            // read from a vendor file, a second delivery of batch B123 leaves you
+            // holding both. Overwriting here would quietly destroy stock.
             var batch = await db.Batches.FirstOrDefaultAsync(
                 b => b.ProductId == item.ProductId && b.BatchNo == item.BatchNo && !b.IsDeleted);
 
@@ -116,15 +123,20 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
                     ExpiryDate = item.ExpiryDate,
                     Mrp = item.Mrp,
                     PurchaseRate = item.PurchaseRate,
-                    QtyOnHand = item.Quantity + item.FreeQuantity,
+                    UnitsPerPack = Math.Max(1, item.UnitsPerPack),
+                    QtyOnHand = item.UnitsReceived,
                     SupplierName = entry.SupplierName,
                     ReceivedOn = entry.EntryDate
                 });
             }
             else
             {
-                batch.QtyOnHand += item.Quantity + item.FreeQuantity;
-                batch.Mrp = item.Mrp;                 // latest printed MRP wins
+                batch.QtyOnHand += item.UnitsReceived;
+
+                // Price and expiry take the newest consignment's values; the pack
+                // size does not, because stock already counted in the old units
+                // would be silently repriced.
+                batch.Mrp = item.Mrp;
                 batch.PurchaseRate = item.PurchaseRate;
                 batch.ExpiryDate = item.ExpiryDate;
             }
@@ -172,9 +184,11 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
             if (batch.QtyOnHand < line.Quantity)
                 throw new InvalidOperationException(
-                    $"Only {batch.QtyOnHand} left of {line.ProductName} (batch {batch.BatchNo}).");
+                    $"Only {PackMath.Describe(batch.QtyOnHand, batch.UnitsPerPack, line.PackLabel)} " +
+                    $"left of {line.ProductName} (batch {batch.BatchNo}).");
 
-            var amounts = GstCalculator.Line(line.Mrp, line.Quantity, line.DiscountPercent, line.GstRate);
+            var amounts = GstCalculator.Line(line.Mrp, line.UnitsPerPack, line.Quantity,
+                                             line.DiscountPercent, line.GstRate);
             computed.Add(amounts);
 
             batch.QtyOnHand -= line.Quantity;
@@ -189,6 +203,8 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
                 ExpiryDate = line.ExpiryDate,
                 HsnCode = line.HsnCode,
                 Quantity = line.Quantity,
+                UnitsPerPack = line.UnitsPerPack,
+                PackLabel = line.PackLabel,
                 Mrp = line.Mrp,
                 DiscountPercent = line.DiscountPercent,
                 GstRate = line.GstRate,

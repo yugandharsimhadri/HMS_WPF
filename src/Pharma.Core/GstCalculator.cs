@@ -35,8 +35,16 @@ public readonly record struct BillAmounts(
 public static class GstCalculator
 {
     public static LineAmounts Line(decimal mrp, int quantity, decimal discountPercent, decimal gstRate)
+        => Line(mrp, unitsPerPack: 1, quantity, discountPercent, gstRate);
+
+    /// <summary>
+    /// A line sold in base units. Whole packs price from the pack MRP and only
+    /// the remainder is priced per unit — see <see cref="PackMath.Gross"/>. GST
+    /// still comes back out of the total, exactly as before.
+    /// </summary>
+    public static LineAmounts Line(decimal mrp, int unitsPerPack, int quantity, decimal discountPercent, decimal gstRate)
     {
-        var gross = R(mrp * quantity);
+        var gross = PackMath.Gross(mrp, unitsPerPack, quantity);
         var discount = R(gross * discountPercent / 100m);
         var net = gross - discount;
 

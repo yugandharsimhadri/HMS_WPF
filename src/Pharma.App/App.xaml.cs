@@ -42,6 +42,7 @@ public partial class App : Application
         services.AddSingleton<OpdService>();
         services.AddSingleton<PharmacyService>();
         services.AddSingleton<SettingsService>();
+        services.AddSingleton<Pharma.Data.Import.PurchaseImportService>();
 
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<OpdViewModel>();

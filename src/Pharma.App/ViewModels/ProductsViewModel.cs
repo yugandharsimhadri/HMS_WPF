@@ -33,6 +33,8 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     [ObservableProperty] private string _rackLocation = "";
     [ObservableProperty] private int _reorderLevel;
     [ObservableProperty] private bool _isActive = true;
+    [ObservableProperty] private int _unitsPerPack = 1;
+    [ObservableProperty] private bool _allowLooseSale = true;
 
     // Stock intake form
     [ObservableProperty] private string _batchNo = "";
@@ -82,6 +84,8 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         RackLocation = value.RackLocation ?? "";
         ReorderLevel = value.ReorderLevel;
         IsActive = value.IsActive;
+        UnitsPerPack = value.UnitsPerPack;
+        AllowLooseSale = value.AllowLooseSale;
         Mrp = 0;
 
         LoadBatchesAsync(value.Id).Forget("Loading batches");
@@ -91,6 +95,20 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     {
         Batches.Clear();
         foreach (var b in await pharmacy.GetSellableBatchesAsync(productId)) Batches.Add(b);
+    }
+
+    /// <summary>Receives a whole supplier bill instead of keying it in line by line.</summary>
+    [RelayCommand]
+    private async Task ImportBillAsync()
+    {
+        var window = new Views.ImportWindow { Owner = Application.Current.MainWindow };
+        window.ShowDialog();
+
+        if (window.Imported)
+        {
+            await FindAsync();
+            Status = "Stock imported. It was added to what was already on the shelf.";
+        }
     }
 
     [RelayCommand]
@@ -103,6 +121,8 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         Schedule = DrugSchedule.None;
         ReorderLevel = 0;
         IsActive = true;
+        UnitsPerPack = 1;
+        AllowLooseSale = true;
         Status = "Enter the medicine name and save.";
     }
 
@@ -125,6 +145,8 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         product.RackLocation = Empty(RackLocation);
         product.ReorderLevel = ReorderLevel;
         product.IsActive = IsActive;
+        product.UnitsPerPack = Math.Max(1, UnitsPerPack);
+        product.AllowLooseSale = AllowLooseSale && product.UnitsPerPack > 1;
 
         await pharmacy.SaveProductAsync(product);
         Status = $"{product.Name} saved.";

@@ -58,7 +58,8 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="4">
-                            <TextBlock Text="Qty" Style="{StaticResource Label}"/>
+                            <TextBlock Text="Qty (units)" Style="{StaticResource Label}"
+                                       ToolTip="Tablets, not strips — 5 sells five out of a strip"/>
                             <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
                                      AutomationProperties.AutomationId="SaleQuantity">
                                 <TextBox.InputBindings>
@@ -112,6 +113,7 @@
                             <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="110" IsReadOnly="True"/>
                             <DataGridTextColumn Header="EXPIRY" Binding="{Binding Expiry}" Width="70" IsReadOnly="True"/>
                             <DataGridTextColumn Header="QTY" Binding="{Binding Quantity, UpdateSourceTrigger=LostFocus}" Width="60"/>
+                            <DataGridTextColumn Header="PACKS" Binding="{Binding Packs}" Width="110" IsReadOnly="True"/>
                             <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="80"/>
                             <DataGridTextColumn Header="DISC %" Binding="{Binding DiscountPercent}" Width="70"/>
                             <DataGridTextColumn Header="GST %" Binding="{Binding GstRate, StringFormat=N1}" Width="60" IsReadOnly="True"/>
