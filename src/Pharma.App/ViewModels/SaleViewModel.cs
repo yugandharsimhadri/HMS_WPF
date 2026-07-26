@@ -183,6 +183,18 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
         var product = SelectedProduct;
 
+        // Some things cannot be broken open — a sealed bottle, a sachet strip
+        // the manufacturer seals as one. The checkbox on the medicine says so
+        // and this is where it has to mean something.
+        if (!product.AllowLooseSale && product.UnitsPerPack > 1 && Quantity % product.UnitsPerPack != 0)
+        {
+            var packs = (Quantity / product.UnitsPerPack) + 1;
+
+            Warn($"{product.Name} is not sold loose — it goes out in whole packs of " +
+                 $"{product.UnitsPerPack}. Enter {packs * product.UnitsPerPack} for {packs} pack(s).");
+            return;
+        }
+
         // Whatever is already on this bill is committed as far as stock goes.
         var alreadyOnBill = Lines.Where(l => l.ProductId == product.Id).Sum(l => l.Quantity);
 
@@ -385,6 +397,19 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         if (Lines.Count == 0)
         {
             Warn("Add at least one medicine to the bill.");
+            return;
+        }
+
+        // The H1 register is a statutory record kept for three years, and the
+        // prescriber is the whole point of it. Recording the sale without one
+        // leaves a hole in a book an inspector can ask to see.
+        if (Lines.Any(l => l.Schedule == DrugSchedule.H1) && string.IsNullOrWhiteSpace(DoctorName))
+        {
+            var h1 = string.Join(", ", Lines.Where(l => l.Schedule == DrugSchedule.H1)
+                                            .Select(l => l.ProductName).Distinct());
+
+            Warn($"{h1} is Schedule H1. Enter the prescribing doctor's name before saving — " +
+                 $"it goes in the H1 register, which has to be kept for three years.");
             return;
         }
 

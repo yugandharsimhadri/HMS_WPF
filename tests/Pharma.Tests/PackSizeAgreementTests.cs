@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Pharma.Core;
 using Pharma.Data;
 
@@ -42,6 +44,47 @@ public class PackSizeAgreementTests
 
             Assert.Equal(stated ?? 1, product.UnitsPerPack);
         }
+    }
+
+    /// <summary>
+    /// Editing an existing medicine used to keep only some of the fields. The
+    /// four it dropped included units-per-pack, so a shop that spotted the
+    /// problem and corrected it saw the form accept the change and the counter
+    /// go on selling strips.
+    /// </summary>
+    [Fact]
+    public async Task Editing_a_medicine_keeps_every_field()
+    {
+        var dbPath = Path.Combine(Path.GetTempPath(), $"pharma-edit-{Guid.NewGuid():N}.db");
+
+        var services = new ServiceCollection();
+        services.AddDbContextFactory<AppDbContext>(o => o.UseSqlite($"Data Source={dbPath}"));
+
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+        using (var db = factory.CreateDbContext()) db.Database.Migrate();
+
+        var pharmacy = new PharmacyService(factory);
+
+        var product = new Product { Name = "Edit Me", PackSize = "10 TAB", UnitsPerPack = 1 };
+        await pharmacy.SaveProductAsync(product);
+
+        product.GenericName = "Paracetamol";
+        product.PackSize = "15 TAB";
+        product.UnitsPerPack = 15;
+        product.AllowLooseSale = false;
+        product.DispensingUnit = DispensingUnit.Capsule;
+        await pharmacy.SaveProductAsync(product);
+
+        var saved = (await pharmacy.SearchProductsAsync("Edit Me")).Single();
+
+        Assert.Equal("Paracetamol", saved.GenericName);
+        Assert.Equal("15 TAB", saved.PackSize);
+        Assert.Equal(15, saved.UnitsPerPack);
+        Assert.False(saved.AllowLooseSale);
+        Assert.Equal(DispensingUnit.Capsule, saved.DispensingUnit);
+
+        try { File.Delete(dbPath); } catch (IOException) { }
     }
 
     [Fact]

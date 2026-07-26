@@ -187,7 +187,11 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
             product.ReorderLevel = ReorderLevel;
             product.IsActive = IsActive;
             product.UnitsPerPack = Math.Max(1, UnitsPerPack);
-            product.AllowLooseSale = AllowLooseSale && product.UnitsPerPack > 1;
+            // Keep what was actually chosen. Forcing it false when a pack holds
+            // one unit looks harmless — every sale is a whole pack anyway — but
+            // it sticks, so correcting a wrong pack size later left the medicine
+            // refusing to be sold loose with no clue why.
+            product.AllowLooseSale = AllowLooseSale;
             product.DispensingUnit = DispensingUnit;
 
             await pharmacy.SaveProductAsync(product);

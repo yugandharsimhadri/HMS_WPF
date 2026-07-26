@@ -64,6 +64,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         {
             var existing = await db.Products.FirstAsync(p => p.Id == product.Id);
             existing.Name = product.Name;
+            existing.GenericName = product.GenericName;
             existing.Manufacturer = product.Manufacturer;
             existing.PackSize = product.PackSize;
             existing.HsnCode = product.HsnCode;
@@ -72,6 +73,13 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             existing.RackLocation = product.RackLocation;
             existing.ReorderLevel = product.ReorderLevel;
             existing.IsActive = product.IsActive;
+
+            // These four were missing, so editing an existing medicine looked
+            // like it worked and quietly changed nothing — and units-per-pack
+            // is the one field that decides whether a tablet or a strip is sold.
+            existing.UnitsPerPack = Math.Max(1, product.UnitsPerPack);
+            existing.AllowLooseSale = product.AllowLooseSale;
+            existing.DispensingUnit = product.DispensingUnit;
         }
         else
         {

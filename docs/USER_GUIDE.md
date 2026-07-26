@@ -34,7 +34,8 @@ dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
 10. [Patients](#10-patients)
 11. [Reports](#11-reports)
 12. [Printing](#12-printing)
-13. [When something goes wrong](#13-when-something-goes-wrong)
+13. [What the system will and will not do](#13-what-the-system-will-and-will-not-do)
+14. [When something goes wrong](#14-when-something-goes-wrong)
 
 **[Common tasks, step by step](#common-tasks-step-by-step)** — the short version of
 everything above. Start here if you just want to get through a day.
@@ -44,7 +45,7 @@ everything above. Start here if you just want to get through a day.
 # Common tasks, step by step
 
 Each task below is complete on its own. Screen-by-screen detail follows in
-sections 1 to 13.
+sections 1 to 14.
 
 ## A. Set the clinic up — once, before anything else
 
@@ -532,7 +533,7 @@ rack. Typing `paracetamol` finds Calpol; typing `calpol` finds it too.
 | **Rack** | Where it sits on the shelf. Searchable |
 | **Reorder level** | Below this it appears in the Low stock report |
 | **Units per pack** | **10 for a ten-tablet strip. 1 for a syrup bottle** |
-| **Sell loose units** | Allows part of a strip to be sold |
+| **Sell loose units** | Ticked, part of a strip can be sold. Unticked, the counter insists on whole packs |
 | **Active** | Uncheck to hide it from the counter |
 | **Save medicine** | Saves it |
 
@@ -875,7 +876,56 @@ it cannot be mistaken for the original.
 
 ---
 
-# 13. When something goes wrong
+# 13. What the system will and will not do
+
+Worth reading once. It is the difference between trusting a number and checking it.
+
+## Situations it handles for you
+
+| Situation | What happens |
+|---|---|
+| **A child needs 9 tablets from a strip of 10** | Priced per tablet, nine come off the shelf, and the bill shows `0 × 10 TAB + 9` |
+| **A course needs 20 but the oldest batch holds 15** | Split across two batches, two lines, both batch numbers on the bill. Nearest expiry goes first |
+| **A course needs 20 and there are only 12** | It bills 12 and says *"Short: Amoxicillin (12 of 20)"*. It never quietly bills less without telling you |
+| **A strip of 15 and a strip of 10 of the same drug** | Each batch prices against the pack it actually came in. Old stock is never repriced |
+| **A medicine is prescribed that you do not stock** | Written on the prescription, named at the counter, never added to your records |
+| **A medicine has run out mid-queue** | Add it from the counter — see [section 9](#the-medicine-is-in-the-shop-but-the-screen-says-none) |
+| **Stock is expired** | Never dispensed. It stays on the shelf listing so you can see it and return it |
+| **A sealed pack that cannot be split** | Untick **Sell loose units** and the counter insists on whole packs, telling you the number to type |
+| **A Schedule H1 medicine** | Cannot be saved without the prescribing doctor. It goes in the register automatically |
+| **Two people on one phone number** | Both appear when you search. You pick which child is here |
+| **The same supplier bill loaded twice** | Refused. The invoice number is what stops it |
+| **The same batch delivered again** | **Added** to what is there. Never replaced |
+| **The count on the shelf is wrong** | Correct it with a reason. Every correction is recorded with was, now and why |
+| **A printer is not attached** | Everything previews on screen first. Nothing is lost by not printing |
+| **The power goes off mid-bill** | Nothing is half-saved. A bill either exists completely or not at all |
+| **Something unexpected fails** | It says so in plain words and keeps running. Your saved data is safe |
+
+## Situations it does not handle — check these yourself
+
+| Situation | What you need to know |
+|---|---|
+| **A customer returns medicine** | **There are no returns in this version.** Do it on paper and correct the stock count with reason *Other* and a note |
+| **Part payment, or paying later** | Not supported, on purpose. A bill is paid in full when it is saved |
+| **Purchases balanced against sales** | Will **not** tie out while anything sits in **Reports → Stock to reconcile**. That list is the gap, and it is deliberate |
+| **The rate paid on counter-added stock** | Defaults to zero, so anything added that way looks like pure margin until you fill the real rate in |
+| **Editing MRP or Disc % on a bill line** | Allowed, and **not recorded anywhere**. Whoever is at the counter can change a price and nothing will show it later |
+| **A batch that expires next week** | Sold first, correctly, but you are not warned at the till. Watch **Expiring soon** |
+| **Two people billing at once** | One PC, one till. This is not built for two counters on the same data |
+| **Changing units per pack after stock exists** | Offered as a re-count, and you should accept it. Declining leaves the shelf being sold by the pack |
+| **A medicine deleted or made inactive with stock on it** | It disappears from the counter but the stock is still counted in reports |
+| **Anyone can do anything** | There are no logins or permissions. Everyone using the PC has the same rights |
+
+> ### The one number to sanity-check daily
+>
+> **Reports → the totals along the top.** If the day's takings in the drawer do
+> not match pharmacy sales plus fees collected, the difference is almost always
+> a bill line whose MRP or discount was edited. That is the one thing the system
+> does not record for you.
+
+---
+
+# 14. When something goes wrong
 
 ## The application does not close on an error
 
