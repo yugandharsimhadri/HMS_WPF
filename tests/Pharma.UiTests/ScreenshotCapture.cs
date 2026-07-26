@@ -109,10 +109,8 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         // ── Pharmacy counter ───────────────────────────────────────────────
         app.Navigate("NavSale", "Pharmacy counter");
         app.Type("SaleSearch", "Calpol");
-        app.Click("SaleFind");
         AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length >= 1, "the medicine");
         app.ListBox("SaleMatches").Items[0].Select();
-        AppFixture.WaitUntil(() => app.ComboBox("SaleBatch").SelectedItems.Length == 1, "a batch");
 
         app.Type("SaleCustomerName", "Baby Anika");
         app.Type("SaleQuantity", "10");

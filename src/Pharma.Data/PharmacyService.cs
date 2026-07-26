@@ -35,7 +35,9 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         if (!string.IsNullOrWhiteSpace(term))
         {
             term = term.Trim();
+            // Brand, drug, maker or rack — staff search by whichever they know.
             q = q.Where(p => p.Name.Contains(term)
+                          || (p.GenericName != null && p.GenericName.Contains(term))
                           || (p.Manufacturer != null && p.Manufacturer.Contains(term))
                           || (p.RackLocation != null && p.RackLocation.Contains(term)));
         }
@@ -78,6 +80,39 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             .Where(b => !b.IsDeleted && b.ProductId == productId && b.QtyOnHand > 0)
             .OrderBy(b => b.ExpiryDate)
             .ToListAsync();
+    }
+
+    /// <summary>How many units of a requested quantity come from which batch.</summary>
+    public record Allocation(Batch Batch, int Units);
+
+    /// <summary>
+    /// Works out which batches fill a requested quantity, nearest expiry first.
+    ///
+    /// A request can span batches — asking for 20 tablets when the oldest batch
+    /// holds 15 takes those 15 and 5 from the next. Each batch stays a separate
+    /// bill line because the batch number and expiry of what was actually handed
+    /// over has to appear on the invoice.
+    /// </summary>
+    public async Task<(List<Allocation> Allocations, int Shortfall)> AllocateAsync(Guid productId, int units)
+    {
+        var allocations = new List<Allocation>();
+        if (units <= 0) return (allocations, 0);
+
+        var remaining = units;
+
+        foreach (var batch in await GetSellableBatchesAsync(productId))
+        {
+            if (remaining == 0) break;
+            if (batch.IsExpired) continue;          // never dispense expired stock
+
+            var take = Math.Min(remaining, batch.QtyOnHand);
+            if (take <= 0) continue;
+
+            allocations.Add(new Allocation(batch, take));
+            remaining -= take;
+        }
+
+        return (allocations, remaining);
     }
 
     public async Task<List<Batch>> GetAllBatchesAsync()

@@ -56,17 +56,18 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
     public ObservableCollection<SaleRow> Lines { get; } = [];
     public ObservableCollection<Product> Matches { get; } = [];
-    public ObservableCollection<Batch> Batches { get; } = [];
     public ObservableCollection<Visit> PrescribedVisits { get; } = [];
 
-    // Step 1 — find the medicine
+    // Step 1 — find the medicine. Filters as it is typed; no button to press.
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private Product? _selectedProduct;
-    [ObservableProperty] private Batch? _selectedBatch;
 
     // Step 2 — quantity
     [ObservableProperty] private int _quantity = 1;
     [ObservableProperty] private decimal _discountPercent;
+
+    /// <summary>What is in stock and what a unit costs, for the chosen medicine.</summary>
+    [ObservableProperty] private string _selectedSummary = "";
 
     // Bill header
     [ObservableProperty] private string _customerName = "Cash";
@@ -105,8 +106,38 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Recalculate();
     }
 
-    partial void OnSelectedProductChanged(Product? value)
-        => LoadBatchesAsync(value).Forget("Loading batches for the counter");
+    /// <summary>Filters as the operator types — two letters is enough.</summary>
+    partial void OnSearchChanged(string value) => FindAsync().Forget("Searching medicines");
+
+    partial void OnSelectedProductChanged(Product? value) => UpdateSelectedSummary();
+
+    private void UpdateSelectedSummary()
+    {
+        if (SelectedProduct is null)
+        {
+            SelectedSummary = "";
+            return;
+        }
+
+        var stock = SelectedProduct.StockOnHand;
+        var unit = SelectedProduct.DispensingUnit.Name(stock);
+
+        SelectedSummary = stock > 0
+            ? $"{SelectedProduct.Name} · {stock} {unit} in stock · {UnitPriceOf(SelectedProduct):₹0.00} each"
+            : $"{SelectedProduct.Name} · out of stock";
+    }
+
+    /// <summary>Cheapest-to-read price: what one unit costs from the batch that
+    /// would actually be dispensed.</summary>
+    private static decimal UnitPriceOf(Product product)
+    {
+        var next = product.Batches
+            .Where(b => !b.IsDeleted && b.QtyOnHand > 0)
+            .OrderBy(b => b.ExpiryDate)
+            .FirstOrDefault();
+
+        return next is null ? 0m : next.UnitPrice;
+    }
 
     partial void OnSelectedVisitChanged(Visit? value)
     {
@@ -126,24 +157,21 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         if (Matches.Count == 1) SelectedProduct = Matches[0];
     }
 
-    private async Task LoadBatchesAsync(Product? product)
-    {
-        Batches.Clear();
-        SelectedBatch = null;
-        if (product is null) return;
+    // Batch selection is gone from the counter: nearest expiry is chosen for the
+    // operator, and a quantity larger than one batch simply spans several. The
+    // batch still reaches the bill, because it has to be printed.
 
-        foreach (var b in await pharmacy.GetSellableBatchesAsync(product.Id)) Batches.Add(b);
-
-        // Nearest expiry first — dispensing order, and the default the counter wants.
-        SelectedBatch = Batches.FirstOrDefault();
-    }
-
+    /// <summary>
+    /// Adds the requested quantity, taken from whichever batches fill it — nearest
+    /// expiry first. The operator never picks a batch; asking for 20 when the
+    /// oldest holds 15 quietly becomes two lines rather than an error.
+    /// </summary>
     [RelayCommand]
-    private void AddLine()
+    private async Task AddLineAsync()
     {
-        if (SelectedProduct is null || SelectedBatch is null)
+        if (SelectedProduct is null)
         {
-            Warn("Pick a medicine that has stock before adding it to the bill.");
+            Warn("Choose a medicine from the list first.");
             return;
         }
 
@@ -153,52 +181,67 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             return;
         }
 
-        var alreadyOnBill = Lines.Where(l => l.BatchId == SelectedBatch.Id).Sum(l => l.Quantity);
-        if (alreadyOnBill + Quantity > SelectedBatch.QtyOnHand)
+        var product = SelectedProduct;
+
+        // Whatever is already on this bill is committed as far as stock goes.
+        var alreadyOnBill = Lines.Where(l => l.ProductId == product.Id).Sum(l => l.Quantity);
+
+        var (allocations, shortfall) = await pharmacy.AllocateAsync(product.Id, alreadyOnBill + Quantity);
+
+        if (shortfall > 0)
         {
-            Warn($"Only {SelectedBatch.QtyOnHand - alreadyOnBill} left of {SelectedProduct.Name} in batch {SelectedBatch.BatchNo}.");
+            var have = allocations.Sum(a => a.Units) - alreadyOnBill;
+            var unit = product.DispensingUnit.Name(Math.Max(have, 2));
+
+            Warn(have <= 0
+                ? $"{product.Name} has none left that can be sold."
+                : $"Only {have} {unit} of {product.Name} left to sell.");
             return;
         }
 
-        if (SelectedBatch.IsExpired)
+        // Re-lay the lines for this medicine from the fresh allocation, so a second
+        // Add of the same medicine does not double-count against the same batch.
+        foreach (var existing in Lines.Where(l => l.ProductId == product.Id).ToList())
+            Lines.Remove(existing);
+
+        foreach (var allocation in allocations)
         {
-            Warn($"Batch {SelectedBatch.BatchNo} expired on {SelectedBatch.ExpiryDate:dd MMM yyyy} and cannot be sold.");
-            return;
+            var row = new SaleRow
+            {
+                ProductId = product.Id,
+                BatchId = allocation.Batch.Id,
+                ProductName = product.Name,
+                BatchNo = allocation.Batch.BatchNo,
+                ExpiryDate = allocation.Batch.ExpiryDate,
+                HsnCode = product.HsnCode,
+                // Zero when the clinic is not registered, so no tax is extracted
+                // from the MRP and the bill carries none.
+                GstRate = _gstRegistered ? product.GstRate : 0m,
+                Schedule = product.Schedule,
+                Available = allocation.Batch.QtyOnHand,
+                UnitsPerPack = allocation.Batch.UnitsPerPack,
+                PackLabel = product.PackSize,
+                Quantity = allocation.Units,
+                Mrp = allocation.Batch.Mrp,
+                DiscountPercent = DiscountPercent
+            };
+
+            row.PropertyChanged += (_, _) => Recalculate();
+            Lines.Add(row);
         }
 
-        var row = new SaleRow
-        {
-            ProductId = SelectedProduct.Id,
-            BatchId = SelectedBatch.Id,
-            ProductName = SelectedProduct.Name,
-            BatchNo = SelectedBatch.BatchNo,
-            ExpiryDate = SelectedBatch.ExpiryDate,
-            HsnCode = SelectedProduct.HsnCode,
-            // Zero when the clinic is not registered, so no tax is extracted from
-            // the MRP and the bill carries none.
-            GstRate = _gstRegistered ? SelectedProduct.GstRate : 0m,
-            Schedule = SelectedProduct.Schedule,
-            Available = SelectedBatch.QtyOnHand,
-            UnitsPerPack = SelectedBatch.UnitsPerPack,
-            PackLabel = SelectedProduct.PackSize,
-            Quantity = Quantity,
-            Mrp = SelectedBatch.Mrp,
-            DiscountPercent = DiscountPercent
-        };
-
-        row.PropertyChanged += (_, _) => Recalculate();
-        Lines.Add(row);
         Recalculate();
 
-        if (SelectedProduct.Schedule is DrugSchedule.H1)
-            Status = $"{SelectedProduct.Name} is Schedule H1 — record the prescriber's name on this bill.";
+        Status = product.Schedule is DrugSchedule.H1
+            ? $"{product.Name} is Schedule H1 — record the prescriber's name on this bill."
+            : allocations.Count > 1
+                ? $"{product.Name} added from {allocations.Count} batches."
+                : $"{product.Name} added.";
 
-        // Reset for the next line, keeping the cursor flow moving.
-        Search = "";
+        // The search and its results stay put, so the next medicine is one click
+        // away and the operator can see what else is on the shelf.
         Quantity = 1;
         DiscountPercent = 0;
-        SelectedProduct = null;
-        Matches.Clear();
     }
 
     [RelayCommand]
@@ -349,7 +392,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         SelectedProduct = null;
         SelectedVisit = null;
         Matches.Clear();
-        Batches.Clear();
+
         Recalculate();
     }
 

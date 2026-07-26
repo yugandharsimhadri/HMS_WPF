@@ -131,7 +131,15 @@ public class PrescriptionItem : BaseEntity
 
 public class Product : BaseEntity
 {
+    /// <summary>The brand on the pack — what a customer usually asks for.</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The drug itself, e.g. "Paracetamol 500mg" behind the brand "Calpol".
+    /// Searched alongside the brand, because staff know medicines by both.
+    /// </summary>
+    public string? GenericName { get; set; }
+
     public string? Manufacturer { get; set; }
     /// <summary>Printed pack, e.g. "10 TAB" or "100 ML". Free text — shops describe packs their own way.</summary>
     public string? PackSize { get; set; }
@@ -163,6 +171,25 @@ public class Product : BaseEntity
     public ICollection<Batch> Batches { get; set; } = [];
 
     public int StockOnHand => Batches.Where(b => !b.IsDeleted).Sum(b => b.QtyOnHand);
+
+    /// <summary>The batch that would actually be dispensed — nearest expiry with stock.</summary>
+    private Batch? NextBatch => Batches
+        .Where(b => !b.IsDeleted && b.QtyOnHand > 0)
+        .OrderBy(b => b.ExpiryDate)
+        .FirstOrDefault();
+
+    /// <summary>What one unit costs, so the counter can quote without opening anything.</summary>
+    public string UnitPriceLabel => NextBatch is { } b
+        ? $"₹{b.UnitPrice:0.00}"
+        : "—";
+
+    /// <summary>The pack price behind it, shown only when a pack is more than one unit.</summary>
+    public string PackPriceLabel => NextBatch is { } b && b.UnitsPerPack > 1
+        ? $"₹{b.Mrp:0.00} / pack"
+        : "";
+
+    /// <summary>Blank rather than a dangling "rack" when no location is recorded.</summary>
+    public string RackLabel => string.IsNullOrWhiteSpace(RackLocation) ? "" : $"rack {RackLocation}";
 }
 
 /// <summary>

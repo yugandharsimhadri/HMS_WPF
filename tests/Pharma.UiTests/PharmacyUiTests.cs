@@ -63,12 +63,9 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Navigate("NavSale", "Pharmacy counter");
 
         app.Type("SaleSearch", name);
-        app.Click("SaleFind");
 
         AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine to be found");
         app.ListBox("SaleMatches").Items[0].Select();
-
-        AppFixture.WaitUntil(() => app.ComboBox("SaleBatch").SelectedItems.Length == 1, "a batch to be chosen");
 
         app.Type("SaleQuantity", "10");
         app.Click("SaleAddLine");
@@ -88,10 +85,8 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Navigate("NavSale", "Pharmacy counter");
 
         app.Type("SaleSearch", name);
-        app.Click("SaleFind");
         AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine to be found");
         app.ListBox("SaleMatches").Items[0].Select();
-        AppFixture.WaitUntil(() => app.ComboBox("SaleBatch").SelectedItems.Length == 1, "a batch to be chosen");
 
         app.Type("SaleCustomerName", "UI Counter Customer");
         app.Type("SaleQuantity", "4");
@@ -126,10 +121,8 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         app.Navigate("NavSale", "Pharmacy counter");
         app.Type("SaleSearch", name);
-        app.Click("SaleFind");
         AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine to be found");
         app.ListBox("SaleMatches").Items[0].Select();
-        AppFixture.WaitUntil(() => app.ComboBox("SaleBatch").SelectedItems.Length == 1, "a batch to be chosen");
 
         app.Type("SaleQuantity", "2");
         app.Click("SaleAddLine");
