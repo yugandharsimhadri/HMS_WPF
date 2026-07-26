@@ -129,6 +129,12 @@ transaction as the bill that consumes it.
 **No login.** Single PC, single operator. Add authentication when a second
 terminal appears, not before.
 
+**Every bill is settled in full.** The clinic takes no credit and no part
+payment, so `PaymentMode` offers Cash, UPI and Card only. A Credit option existed
+briefly and recorded nothing — a bill could look paid in the day book while the
+money was never collected — so it was removed rather than left as a trap. There
+is no receivable, no balance, and nothing to reconcile anywhere in the system.
+
 **One `DbContext` per operation.** WPF has no request scope, so the app uses
 `IDbContextFactory` and each service call opens and disposes its own context.
 This avoids the stale-data and change-tracker problems a long-lived context

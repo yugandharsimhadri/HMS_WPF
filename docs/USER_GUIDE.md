@@ -428,10 +428,16 @@ NET PAYABLE      what the customer hands over
 
 | Control | What it does |
 |---|---|
-| **Payment** | Cash, UPI, Card or Credit |
+| **Payment** | Cash, UPI or Card |
 | **Save & print bill** | Saves and opens the preview |
 | **Save without printing** | Saves only |
 | **Clear bill** | Empties the counter without saving |
+
+> ### Every bill is settled in full
+>
+> There is no credit and no part payment — by design, because the clinic does not
+> offer them. A bill is paid before it is saved, so nothing is ever outstanding
+> and there is no balance to chase.
 
 > ### MRP already includes GST
 >
@@ -559,13 +565,13 @@ reporting a problem.
 
 ## Not in this version
 
-Sales returns and credit notes · purchase returns · a credit ledger showing who
-owes what · a stock adjustment screen for breakage · inter-state IGST ·
-e-invoicing · multi-terminal use · the Schedule X narcotic register.
+Sales returns and credit notes · purchase returns · a stock adjustment screen for
+breakage · inter-state IGST · e-invoicing · multi-terminal use · the Schedule X
+narcotic register.
 
-**Credit** appears as a payment method but nothing yet tracks who owes what — a
-bill marked Credit is recorded and the stock leaves, but the money is not
-followed up. Use Cash or UPI until that is built.
+**Credit and part payment are not missing — they are deliberately absent.** The
+clinic settles every bill in full at the counter, so there is no outstanding
+balance anywhere in the system and nothing to reconcile.
 
 The GST arithmetic and the invoice layout are correct for a retail counter, but
 this is not a certified e-invoicing integration. Have a CA review the GST summary

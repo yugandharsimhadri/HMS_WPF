@@ -29,12 +29,19 @@ public enum DrugSchedule
     X = 3
 }
 
+/// <summary>
+/// How a bill or a consultation fee was settled.
+///
+/// Every sale is paid in full at the counter — the clinic does not take credit
+/// and does not take part payments, so there is deliberately no Credit option
+/// and no outstanding balance anywhere in the system. The numbers are fixed so
+/// existing records keep their meaning.
+/// </summary>
 public enum PaymentMode
 {
     Cash = 1,
-    Upi,
-    Card,
-    Credit
+    Upi = 2,
+    Card = 3
 }
 
 public enum SaleStatus

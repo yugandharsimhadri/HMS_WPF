@@ -2,6 +2,30 @@ using Pharma.Core;
 
 namespace Pharma.Tests;
 
+public class PaymentPolicyTests
+{
+    [Fact]
+    public void Only_settled_in_full_payment_methods_are_offered()
+    {
+        // The clinic takes no credit and no part payments. Credit existed as an
+        // option that recorded nothing, so a bill could look paid while the money
+        // was never collected. Re-adding it needs this test changed first.
+        Assert.Equal(
+            ["Cash", "Upi", "Card"],
+            Enum.GetNames<PaymentMode>());
+    }
+
+    [Fact]
+    public void The_stored_numbers_do_not_move()
+    {
+        // Payment mode is persisted as a number, so existing bills would be
+        // re-labelled if these ever shifted.
+        Assert.Equal(1, (int)PaymentMode.Cash);
+        Assert.Equal(2, (int)PaymentMode.Upi);
+        Assert.Equal(3, (int)PaymentMode.Card);
+    }
+}
+
 public class GstCalculatorTests
 {
     [Fact]
