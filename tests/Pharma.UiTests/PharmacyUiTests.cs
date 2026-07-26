@@ -22,7 +22,25 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
             () => app.TextOf("ProductsStatus").Contains("saved", StringComparison.OrdinalIgnoreCase),
             "medicine to save");
 
-        // Saving selects the new medicine, so the stock form applies to it.
+        // Stock now lives on its own screen; find the medicine there.
+
+
+        app.Navigate("NavInventory", "Inventory");
+
+
+        app.Type("InventorySearch", name);
+
+
+        app.Click("InventorySearchButton");
+
+
+        AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine in inventory");
+
+
+        app.Grid("InventoryProductsGrid").Rows[0].Select();
+
+
+
         app.Type("StockBatchNo", $"B{suffix}");
         app.Type("StockQuantity", quantity.ToString());
         app.Type("StockPurchaseRate", (mrp * 0.7m).ToString("0.00"));
@@ -30,7 +48,7 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("StockAdd");
 
         AppFixture.WaitUntil(
-            () => app.TextOf("ProductsStatus").Contains("added to batch", StringComparison.OrdinalIgnoreCase),
+            () => app.TextOf("InventoryStatus").Contains("added to batch", StringComparison.OrdinalIgnoreCase),
             "stock to be added");
 
         return name;

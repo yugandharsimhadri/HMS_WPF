@@ -160,11 +160,31 @@
                                     <TextBox Text="{Binding NewDosage, UpdateSourceTrigger=PropertyChanged}"
                                              AutomationProperties.AutomationId="RxDose"/>
                                 </StackPanel>
+                                <!-- Chosen, not typed. This is how a prescription is
+                                     written, and it rules out "1-0-l" or "1_0_1". -->
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Frequency" Style="{StaticResource Label}"/>
-                                    <TextBox Text="{Binding NewFrequency, UpdateSourceTrigger=PropertyChanged}"
-                                             ToolTip="1-0-1, 1-1-1, OD, BD, TDS, SOS"
-                                             AutomationProperties.AutomationId="RxFrequency"/>
+                                    <TextBlock Text="Morning · Afternoon · Night" Style="{StaticResource Label}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="6"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="6"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox Grid.Column="0" ItemsSource="{Binding DoseOptions}"
+                                                  SelectedItem="{Binding MorningDose, Mode=TwoWay}"
+                                                  ToolTip="Morning dose"
+                                                  AutomationProperties.AutomationId="RxMorning"/>
+                                        <ComboBox Grid.Column="2" ItemsSource="{Binding DoseOptions}"
+                                                  SelectedItem="{Binding AfternoonDose, Mode=TwoWay}"
+                                                  ToolTip="Afternoon dose"
+                                                  AutomationProperties.AutomationId="RxAfternoon"/>
+                                        <ComboBox Grid.Column="4" ItemsSource="{Binding DoseOptions}"
+                                                  SelectedItem="{Binding NightDose, Mode=TwoWay}"
+                                                  ToolTip="Night dose"
+                                                  AutomationProperties.AutomationId="RxNight"/>
+                                    </Grid>
                                 </StackPanel>
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Text="Days" Style="{StaticResource Label}"/>

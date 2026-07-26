@@ -80,8 +80,29 @@ public partial class ConsultationViewModel : ObservableObject
     // Deliberately empty. A pre-filled dose is a clinical decision made by the
     // software, and one that is easy to leave in place by accident.
     [ObservableProperty] private string _newDosage = "";
-    [ObservableProperty] private string _newFrequency = "";
     [ObservableProperty] private int _newDays;
+
+    // Morning, afternoon and night, chosen rather than typed. A prescription is
+    // written this way, and picking from a list rules out "1-0-l" and "1_0_1".
+    [ObservableProperty] private string _morningDose = "0";
+    [ObservableProperty] private string _afternoonDose = "0";
+    [ObservableProperty] private string _nightDose = "0";
+
+    /// <summary>Half and quarter doses are normal on a paediatric prescription.</summary>
+    public string[] DoseOptions { get; } = ["0", "1/4", "1/2", "1", "2"];
+
+    /// <summary>The "1-0-1" that gets saved and printed, built from the three boxes.</summary>
+    public string NewFrequency => $"{MorningDose}-{AfternoonDose}-{NightDose}";
+
+    partial void OnMorningDoseChanged(string value) => FrequencyChanged();
+    partial void OnAfternoonDoseChanged(string value) => FrequencyChanged();
+    partial void OnNightDoseChanged(string value) => FrequencyChanged();
+
+    private void FrequencyChanged()
+    {
+        OnPropertyChanged(nameof(NewFrequency));
+        RecalculateCourse();
+    }
     [ObservableProperty] private int _newQuantity;
     [ObservableProperty] private string _newInstructions = "";
     [ObservableProperty] private string _courseHint = "";
@@ -137,7 +158,6 @@ public partial class ConsultationViewModel : ObservableObject
     }
 
     // Recompute the course whenever anything it depends on changes.
-    partial void OnNewFrequencyChanged(string value) => RecalculateCourse();
     partial void OnNewDaysChanged(int value) => RecalculateCourse();
     partial void OnNewMedicineChanged(Product? value) => RecalculateCourse();
 
@@ -219,9 +239,12 @@ public partial class ConsultationViewModel : ObservableObject
 
         if (units is null)
         {
-            CourseHint = string.IsNullOrWhiteSpace(NewFrequency)
+            // Nothing chosen yet is not the same as an as-needed dose.
+            var nothingChosen = MorningDose == "0" && AfternoonDose == "0" && NightDose == "0";
+
+            CourseHint = nothingChosen
                 ? ""
-                : $"'{NewFrequency}' has no fixed daily dose — enter the quantity yourself.";
+                : $"'{NewFrequency}' for {NewDays} day(s) — enter the quantity yourself.";
             return;
         }
 

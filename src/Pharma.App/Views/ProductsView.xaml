@@ -16,10 +16,6 @@
                     <Button DockPanel.Dock="Right" Content="+ New medicine" Style="{StaticResource BtnPrimary}"
                             Margin="8,0,0,0" Command="{Binding NewProductCommand}"
                             AutomationProperties.AutomationId="ProductsNew"/>
-                    <Button DockPanel.Dock="Right" Content="Import bill" Style="{StaticResource BtnGhost}"
-                            Margin="8,0,0,0" Command="{Binding ImportBillCommand}"
-                            ToolTip="Load a supplier's file instead of typing each medicine"
-                            AutomationProperties.AutomationId="ProductsImport"/>
                     <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
                             Margin="8,0,0,0" Command="{Binding FindCommand}"
                             AutomationProperties.AutomationId="ProductsSearchButton"/>
@@ -35,7 +31,8 @@
                 <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
                           AutomationProperties.AutomationId="ProductsGrid">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}" Width="*" MinWidth="150"/>
+                        <DataGridTextColumn Header="DRUG" Binding="{Binding GenericName}" Width="140"/>
                         <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="80"/>
                         <DataGridTextColumn Header="MAKER" Binding="{Binding Manufacturer}" Width="130"/>
                         <DataGridTextColumn Header="RACK" Binding="{Binding RackLocation}" Width="60"/>
@@ -56,9 +53,15 @@
                     <StackPanel>
                         <TextBlock Text="Medicine details" Style="{StaticResource H2}"/>
 
-                        <TextBlock Text="Name" Style="{StaticResource Label}"/>
+                        <TextBlock Text="Brand name" Style="{StaticResource Label}"/>
                         <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="What is printed on the pack, e.g. Calpol"
                                  AutomationProperties.AutomationId="ProductName"/>
+
+                        <TextBlock Text="Drug / generic name" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding GenericName, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="The drug itself, e.g. Paracetamol 250mg. Searched too."
+                                 AutomationProperties.AutomationId="ProductGenericName"/>
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -144,92 +147,14 @@
 
                         <CheckBox Content="Active" IsChecked="{Binding IsActive, Mode=TwoWay}" Margin="0,0,0,12"/>
 
+                        <!-- Reads back what a pack means, so 15-per-strip is obvious. -->
+                        <TextBlock Text="{Binding PackHint}" Style="{StaticResource Muted}"
+                                   TextWrapping="Wrap" Margin="0,0,0,10"
+                                   AutomationProperties.AutomationId="ProductPackHint"/>
+
                         <Button Content="Save medicine" Style="{StaticResource BtnPrimary}"
                                 Command="{Binding SaveProductCommand}"
                                 AutomationProperties.AutomationId="ProductSave"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Style="{StaticResource Card}">
-                    <StackPanel>
-                        <TextBlock Text="Add stock to the selected medicine" Style="{StaticResource H2}"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Batch no" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding BatchNo, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.AutomationId="StockBatchNo"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Expiry" Style="{StaticResource Label}"/>
-                                <DatePicker SelectedDate="{Binding ExpiryDate, Mode=TwoWay}"
-                                            AutomationProperties.AutomationId="StockExpiry"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Packs" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="Strips, boxes or bottles received — not individual tablets"
-                                         AutomationProperties.AutomationId="StockQuantity"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Free" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding FreeQuantity, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="Scheme quantity, e.g. the +1 in 10+1"
-                                         AutomationProperties.AutomationId="StockFreeQuantity"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="4">
-                                <TextBlock Text="Rate" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding PurchaseRate, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.AutomationId="StockPurchaseRate"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="6">
-                                <TextBlock Text="MRP" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding Mrp, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.AutomationId="StockMrp"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Supplier" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding SupplierName, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Supplier bill no" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding SupplierInvoiceNo, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Spells out packs in, units out, so "Qty" cannot be misread. -->
-                        <TextBlock Text="{Binding IntakePreview}" Style="{StaticResource Muted}"
-                                   TextWrapping="Wrap" Margin="0,0,0,8"
-                                   AutomationProperties.AutomationId="StockIntakePreview"/>
-
-                        <Button Content="Add stock" Style="{StaticResource BtnPrimary}"
-                                Command="{Binding AddStockCommand}"
-                                AutomationProperties.AutomationId="StockAdd"/>
 
                         <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"
                                    TextWrapping="Wrap" Margin="0,12,0,0"
@@ -237,64 +162,6 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Correcting a count. Stock otherwise only moves by receiving or
-                     selling, so a manual change has to leave its own record. -->
-                <Border Style="{StaticResource Card}" Margin="0,14,0,0">
-                    <StackPanel>
-                        <TextBlock Text="Correct the stock count" Style="{StaticResource H2}"/>
-
-                        <TextBlock Text="Batch" Style="{StaticResource Label}"/>
-                        <ComboBox ItemsSource="{Binding Batches}" SelectedItem="{Binding SelectedBatch, Mode=TwoWay}"
-                                  AutomationProperties.AutomationId="CorrectBatch">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="True count" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding CorrectedQuantity, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="What is actually on the shelf, in units"
-                                         AutomationProperties.AutomationId="CorrectQuantity"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Reason" Style="{StaticResource Label}"/>
-                                <ComboBox ItemsSource="{Binding AdjustmentReasons}"
-                                          SelectedItem="{Binding AdjustmentReason, Mode=TwoWay}"
-                                          AutomationProperties.AutomationId="CorrectReason"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="Notes" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding AdjustmentNotes, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.AutomationId="CorrectNotes"/>
-
-                        <Button Content="Correct count" Style="{StaticResource BtnPrimary}"
-                                HorizontalAlignment="Left" Command="{Binding CorrectStockCommand}"
-                                AutomationProperties.AutomationId="CorrectStock"/>
-
-                        <TextBlock Text="Recent corrections" Style="{StaticResource Label}" Margin="0,14,0,4"/>
-                        <DataGrid ItemsSource="{Binding Adjustments}" MaxHeight="150"
-                                  AutomationProperties.AutomationId="AdjustmentsGrid">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="WHEN" Binding="{Binding AdjustedOn, StringFormat='dd MMM HH:mm'}" Width="95"/>
-                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*"/>
-                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="85"/>
-                                <DataGridTextColumn Header="WAS" Binding="{Binding QuantityBefore}" Width="50"/>
-                                <DataGridTextColumn Header="NOW" Binding="{Binding QuantityAfter}" Width="50"/>
-                                <DataGridTextColumn Header="CHANGE" Binding="{Binding Direction}" Width="65"/>
-                                <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="90"/>
-                                <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="140"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </StackPanel>
-                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>

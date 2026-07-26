@@ -17,6 +17,7 @@ public partial class MainViewModel : ObservableObject
     private readonly PatientsViewModel _patients;
     private readonly SaleViewModel _sale;
     private readonly ProductsViewModel _products;
+    private readonly InventoryViewModel _inventory;
     private readonly ReportsViewModel _reports;
     private readonly SettingsViewModel _settings;
 
@@ -30,6 +31,7 @@ public partial class MainViewModel : ObservableObject
         PatientsViewModel patients,
         SaleViewModel sale,
         ProductsViewModel products,
+        InventoryViewModel inventory,
         ReportsViewModel reports,
         SettingsViewModel settings)
     {
@@ -37,6 +39,7 @@ public partial class MainViewModel : ObservableObject
         _patients = patients;
         _sale = sale;
         _products = products;
+        _inventory = inventory;
         _reports = reports;
         _settings = settings;
 
@@ -51,6 +54,7 @@ public partial class MainViewModel : ObservableObject
             "patients" => _patients,
             "sale" => _sale,
             "products" => _products,
+            "inventory" => _inventory,
             "reports" => _reports,
             "settings" => _settings,
             _ => _opd

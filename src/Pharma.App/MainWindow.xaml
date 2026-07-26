@@ -23,6 +23,9 @@
         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
             <views:ProductsView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:InventoryViewModel}">
+            <views:InventoryView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:ReportsViewModel}">
             <views:ReportsView/>
         </DataTemplate>
@@ -90,6 +93,10 @@
                             Command="{Binding GoCommand}" CommandParameter="products"
                             AutomationProperties.AutomationId="NavProducts"
                             Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=products}"/>
+                    <Button Style="{StaticResource NavButton}" Content="Inventory"
+                            Command="{Binding GoCommand}" CommandParameter="inventory"
+                            AutomationProperties.AutomationId="NavInventory"
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=inventory}"/>
                     <Button Style="{StaticResource NavButton}" Content="Reports"
                             Command="{Binding GoCommand}" CommandParameter="reports"
                             AutomationProperties.AutomationId="NavReports"

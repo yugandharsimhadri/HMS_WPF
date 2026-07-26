@@ -41,6 +41,10 @@ public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
     private static string TextOf(Window window, string automationId)
         => window.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.AsLabel().Text ?? "";
 
+    /// <summary>Picks a morning, afternoon or night dose from its list.</summary>
+    private static void Dose(Window window, string automationId, string value)
+        => window.FindFirstDescendant(cf => cf.ByAutomationId(automationId))!.AsComboBox().Select(value);
+
     private static AutomationElement[] Matches(Window window)
         => window.FindFirstDescendant(cf => cf.ByAutomationId("RxMatches"))
                  ?.FindAllDescendants(cf => cf.ByAutomationId("RxMatch")) ?? [];
@@ -97,7 +101,8 @@ public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
         Assert.Contains("prescription only", TextOf(window, "RxMedicineHint"));
 
         // Nothing is pre-filled, so the course has to be stated.
-        Type(window, "RxFrequency", "1-0-1");
+        Dose(window, "RxMorning", "1");
+        Dose(window, "RxNight", "1");
         Type(window, "RxDays", "3");
 
         AppFixture.WaitUntil(
@@ -126,7 +131,8 @@ public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
         // A pre-filled dose is a clinical decision the software should not make.
         Assert.Equal("", window.FindFirstDescendant(cf => cf.ByAutomationId("RxMedicine"))!.AsTextBox().Text);
         Assert.Equal("", window.FindFirstDescendant(cf => cf.ByAutomationId("RxDose"))!.AsTextBox().Text);
-        Assert.Equal("", window.FindFirstDescendant(cf => cf.ByAutomationId("RxFrequency"))!.AsTextBox().Text);
+        Assert.Equal("0", window.FindFirstDescendant(cf => cf.ByAutomationId("RxMorning"))!
+                                .AsComboBox().SelectedItems[0].Text);
         Assert.Equal("0", window.FindFirstDescendant(cf => cf.ByAutomationId("RxDays"))!.AsTextBox().Text);
         Assert.Equal("0", window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text);
         Assert.Equal("", TextOf(window, "RxCourseHint"));
@@ -139,7 +145,10 @@ public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
     {
         var window = OpenConsultationFor($"Rx Course {DateTime.Now:HHmmssfff}");
 
-        Type(window, "RxFrequency", "1-1-1");
+        // One morning, one afternoon, one night.
+        Dose(window, "RxMorning", "1");
+        Dose(window, "RxAfternoon", "1");
+        Dose(window, "RxNight", "1");
         Type(window, "RxDays", "5");
 
         AppFixture.WaitUntil(
@@ -149,6 +158,25 @@ public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
         // Three a day for five days is fifteen tablets, not fifteen strips.
         Assert.Equal("15", window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text);
         Assert.Contains("15 units", TextOf(window, "RxCourseHint"));
+
+        window.Close();
+    }
+
+    [Fact]
+    public void A_half_dose_morning_and_night_is_understood()
+    {
+        var window = OpenConsultationFor($"Rx Half {DateTime.Now:HHmmssfff}");
+
+        // Half a tablet twice a day for six days is six tablets.
+        Dose(window, "RxMorning", "1/2");
+        Dose(window, "RxNight", "1/2");
+        Type(window, "RxDays", "6");
+
+        AppFixture.WaitUntil(
+            () => window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text == "6",
+            "the half-dose course to be worked out");
+
+        Assert.Equal("6", window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text);
 
         window.Close();
     }

@@ -76,9 +76,16 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("medicines");
 
+
+        app.Navigate("NavInventory", "Inventory");
+
+        Settle();
+
+        Capture("inventory");
+
         // ── Importing a supplier bill ──────────────────────────────────────
-        app.Navigate("NavProducts", "Medicines");
-        app.Click("ProductsImport");
+        app.Navigate("NavInventory", "Inventory");
+        app.Click("InventoryImport");
 
         var import = Retry.WhileNull(
             () => app.MainWindow.ModalWindows.FirstOrDefault(
@@ -188,12 +195,19 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductSave");
         AppFixture.WaitUntil(() => app.TextOf("ProductsStatus").Contains("saved"), $"{name} to save");
 
+        // Stock lives on its own screen now.
+        app.Navigate("NavInventory", "Inventory");
+        app.Type("InventorySearch", name);
+        app.Click("InventorySearchButton");
+        AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine in inventory");
+        app.Grid("InventoryProductsGrid").Rows[0].Select();
+
         app.Type("StockBatchNo", batch);
         app.Type("StockQuantity", quantity.ToString());
         app.Type("StockPurchaseRate", (mrp * 0.72m).ToString("0.00"));
         app.Type("StockMrp", mrp.ToString("0.00"));
         app.Click("StockAdd");
-        AppFixture.WaitUntil(() => app.TextOf("ProductsStatus").Contains("added to batch"), "stock");
+        AppFixture.WaitUntil(() => app.TextOf("InventoryStatus").Contains("added to batch"), "stock");
     }
 
     private void ClosePreview()

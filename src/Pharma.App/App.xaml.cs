@@ -56,6 +56,7 @@ public partial class App : Application
         services.AddSingleton<PatientsViewModel>();
         services.AddSingleton<SaleViewModel>();
         services.AddSingleton<ProductsViewModel>();
+        services.AddSingleton<InventoryViewModel>();
         services.AddSingleton<ReportsViewModel>();
         services.AddSingleton<SettingsViewModel>();
 
