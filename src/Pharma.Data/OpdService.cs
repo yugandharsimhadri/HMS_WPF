@@ -34,8 +34,13 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
 
         if (!string.IsNullOrWhiteSpace(term))
         {
-            term = term.Trim();
-            q = q.Where(p => p.Name.Contains(term) || p.Phone.Contains(term) || p.PatientNo.Contains(term));
+            // Like, not Contains — Contains becomes instr(), which is case
+            // sensitive, so a name typed in lower case found nothing.
+            var pattern = $"%{term.Trim()}%";
+
+            q = q.Where(p => EF.Functions.Like(p.Name, pattern)
+                          || EF.Functions.Like(p.Phone, pattern)
+                          || EF.Functions.Like(p.PatientNo, pattern));
         }
 
         var found = await q.OrderByDescending(p => p.CreatedAt).Take(take).ToListAsync();
@@ -132,11 +137,12 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
 
         if (!string.IsNullOrWhiteSpace(term))
         {
-            term = term.Trim();
-            q = q.Where(v => v.VisitNo.Contains(term)
-                          || (v.FeeReceiptNo != null && v.FeeReceiptNo.Contains(term))
-                          || v.Patient.Name.Contains(term)
-                          || v.Patient.Phone.Contains(term));
+            var pattern = $"%{term.Trim()}%";
+
+            q = q.Where(v => EF.Functions.Like(v.VisitNo, pattern)
+                          || (v.FeeReceiptNo != null && EF.Functions.Like(v.FeeReceiptNo, pattern))
+                          || EF.Functions.Like(v.Patient.Name, pattern)
+                          || EF.Functions.Like(v.Patient.Phone, pattern));
         }
 
         var visits = await q.OrderByDescending(v => v.ScheduledOn).Take(take).ToListAsync();

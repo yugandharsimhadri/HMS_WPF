@@ -86,6 +86,16 @@
                            AutomationProperties.AutomationId="SettingsStatus"/>
 
                 <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,16,0,12"/>
+
+                <TextBlock Text="Data health" Style="{StaticResource Label}"/>
+                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                           Text="Finds medicines whose pack size and units-per-pack disagree — the records that make the counter sell strips to someone asking for tablets — and puts them right together."/>
+                <Button Content="Check data health" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
+                        Margin="0,0,0,12"
+                        Command="{Binding CheckDataHealthCommand}"
+                        AutomationProperties.AutomationId="CheckDataHealth"/>
+
+                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
                 <TextBlock Text="Database file" Style="{StaticResource Label}"/>
                 <TextBlock Text="{Binding DatabasePath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
                            Margin="0,0,0,10"/>

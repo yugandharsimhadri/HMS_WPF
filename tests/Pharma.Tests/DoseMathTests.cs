@@ -63,7 +63,7 @@ public class DoseMathTests
         var units = DoseMath.UnitsForCourse("1-1-1", 5);
 
         Assert.Equal(15, units);
-        Assert.Equal("1 × 10 TAB + 5", PackMath.Describe(units!.Value, 10, "10 TAB"));
+        Assert.Equal("1 × 10 TAB + 5 tablets", PackMath.Describe(units!.Value, 10, "10 TAB"));
 
         // The same course from a strip of fifteen is exactly one strip.
         Assert.Equal("1 × 15 TAB", PackMath.Describe(units.Value, 15, "15 TAB"));

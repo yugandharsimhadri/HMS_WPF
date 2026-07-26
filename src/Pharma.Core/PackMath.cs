@@ -64,20 +64,38 @@ public static partial class PackMath
         => unitsPerPack <= 1 ? packMrp : Round(packMrp / unitsPerPack);
 
     /// <summary>"3 strips + 4" — how stock and bill lines read to a human.</summary>
-    public static string Describe(int quantityUnits, int unitsPerPack, string? packLabel = null)
+    public static string Describe(int quantityUnits, int unitsPerPack,
+                                  string? packLabel = null, string? unitName = null)
     {
         if (unitsPerPack <= 1) return quantityUnits.ToString();
 
         var packs = quantityUnits / unitsPerPack;
         var loose = quantityUnits % unitsPerPack;
-        var unit = string.IsNullOrWhiteSpace(packLabel) ? "pack" : packLabel.Trim();
+        var pack = string.IsNullOrWhiteSpace(packLabel) ? "pack" : packLabel.Trim();
+
+        // "9 loose" says nothing about what nine of. Name the thing being handed
+        // over — the caller passes it when it knows, and the pack tells us when
+        // it does not.
+        var each = string.IsNullOrWhiteSpace(unitName) ? UnitWordFrom(packLabel) : unitName.Trim();
 
         return (packs, loose) switch
         {
-            (0, _) => $"{loose} loose",
-            (_, 0) => $"{packs} × {unit}",
-            _ => $"{packs} × {unit} + {loose}"
+            (0, _) => $"{loose} {each}",
+            (_, 0) => $"{packs} × {pack}",
+            _ => $"{packs} × {pack} + {loose} {each}"
         };
+    }
+
+    /// <summary>Reads the unit off what is printed on the pack: "10 TAB" is tablets.</summary>
+    private static string UnitWordFrom(string? packLabel)
+    {
+        var text = (packLabel ?? "").ToUpperInvariant();
+
+        if (text.Contains("CAP")) return "capsules";
+        if (text.Contains("TAB")) return "tablets";
+        if (text.Contains("ML")) return "bottles";
+
+        return "units";
     }
 
     private static decimal Round(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);

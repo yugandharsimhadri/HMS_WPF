@@ -77,6 +77,17 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
     }
 
     /// <summary>
+    /// Opens the data health check — the one place that finds medicines whose
+    /// pack size and units-per-pack disagree, and repairs them together.
+    /// </summary>
+    [RelayCommand]
+    private void CheckDataHealth()
+    {
+        var window = new Views.DataHealthWindow { Owner = System.Windows.Application.Current.MainWindow };
+        window.ShowDialog();
+    }
+
+    /// <summary>
     /// Empties the shop form. What is already saved stays saved — this is for
     /// starting the entry again, not for wiping the clinic's details.
     /// </summary>

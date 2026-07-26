@@ -78,10 +78,10 @@ public class PackMathTests
     }
 
     [Theory]
-    [InlineData(0, 10, "0 loose")]
-    [InlineData(5, 10, "5 loose")]
+    [InlineData(0, 10, "0 tablets")]
+    [InlineData(5, 10, "5 tablets")]
     [InlineData(10, 10, "1 × 10 TAB")]
-    [InlineData(23, 10, "2 × 10 TAB + 3")]
+    [InlineData(23, 10, "2 × 10 TAB + 3 tablets")]
     public void Stock_reads_the_way_the_counter_says_it(int qty, int units, string expected)
         => Assert.Equal(expected, PackMath.Describe(qty, units, "10 TAB"));
 

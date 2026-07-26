@@ -253,7 +253,7 @@ public class Batch : BaseEntity
 
     public decimal UnitPrice => PackMath.UnitPrice(Mrp, UnitsPerPack);
 
-    public string OnHand => PackMath.Describe(QtyOnHand, UnitsPerPack, Product?.PackSize);
+    public string OnHand => PackMath.Describe(QtyOnHand, UnitsPerPack, Product?.PackSize, Product?.DispensingUnit.Name(QtyOnHand));
 
     public string Display => $"{BatchNo} · exp {ExpiryDate:MM'/'yy} · ₹{Mrp:0.00} · {OnHand} left";
 }

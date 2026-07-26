@@ -30,7 +30,10 @@ public partial class SaleRow : ObservableObject
     public string Expiry => ExpiryDate.ToString("MM'/'yy");
 
     /// <summary>"2 × 10 TAB + 3" so the operator can see what is being handed over.</summary>
-    public string Packs => PackMath.Describe(Quantity, UnitsPerPack, PackLabel);
+    public string Packs => PackMath.Describe(Quantity, UnitsPerPack, PackLabel, UnitName);
+
+    /// <summary>What one of them is called, so "9 loose" reads "9 tablets".</summary>
+    public string? UnitName { get; init; }
 
     public decimal Amount => GstCalculator.Line(Mrp, UnitsPerPack, Quantity, DiscountPercent, GstRate).Net;
 
@@ -303,6 +306,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                     Available = allocation.Batch.QtyOnHand,
                     UnitsPerPack = allocation.Batch.UnitsPerPack,
                     PackLabel = product.PackSize,
+                    UnitName = product.DispensingUnit.Name(2),
                     Quantity = allocation.Units,
                     Mrp = allocation.Batch.Mrp,
                     DiscountPercent = NoDiscount
@@ -409,6 +413,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                 Available = allocation.Batch.QtyOnHand,
                 UnitsPerPack = allocation.Batch.UnitsPerPack,
                 PackLabel = product.PackSize,
+                UnitName = product.DispensingUnit.Name(2),
                 Quantity = allocation.Units,
                 Mrp = allocation.Batch.Mrp,
                 DiscountPercent = NoDiscount
@@ -551,6 +556,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                     Available = allocation.Batch.QtyOnHand,
                     UnitsPerPack = allocation.Batch.UnitsPerPack,
                     PackLabel = product.PackSize,
+                    UnitName = product.DispensingUnit.Name(2),
                     Quantity = allocation.Units,
                     Mrp = allocation.Batch.Mrp
                 };

@@ -47,12 +47,17 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
         if (!string.IsNullOrWhiteSpace(term))
         {
-            term = term.Trim();
             // Brand, drug, maker or rack — staff search by whichever they know.
-            q = q.Where(p => p.Name.Contains(term)
-                          || (p.GenericName != null && p.GenericName.Contains(term))
-                          || (p.Manufacturer != null && p.Manufacturer.Contains(term))
-                          || (p.RackLocation != null && p.RackLocation.Contains(term)));
+            //
+            // Like, not Contains: Contains becomes instr(), which is case
+            // sensitive, so typing "cetirizine" found nothing while "Cetirizine"
+            // did. Nobody at a counter types capitals.
+            var pattern = $"%{term.Trim()}%";
+
+            q = q.Where(p => EF.Functions.Like(p.Name, pattern)
+                          || (p.GenericName != null && EF.Functions.Like(p.GenericName, pattern))
+                          || (p.Manufacturer != null && EF.Functions.Like(p.Manufacturer, pattern))
+                          || (p.RackLocation != null && EF.Functions.Like(p.RackLocation, pattern)));
         }
 
         var found = await q.OrderBy(p => p.Name).Take(take).ToListAsync();
@@ -679,7 +684,10 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         if (!string.IsNullOrWhiteSpace(term))
         {
             term = term.Trim();
-            q = q.Where(s => s.BillNo.Contains(term) || s.CustomerName.Contains(term));
+            var pattern = $"%{term}%";
+
+            q = q.Where(s => EF.Functions.Like(s.BillNo, pattern)
+                          || EF.Functions.Like(s.CustomerName, pattern));
         }
 
         var sales = await q.OrderByDescending(s => s.BillDate).Take(take).ToListAsync();
