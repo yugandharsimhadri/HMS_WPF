@@ -22,7 +22,14 @@ public partial class App : Application
 
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
         AppLog.Info($"---- {ProductName} starting (v{version}) ----");
+        AppLog.Info($"Settings: {AppConfig.FilePath}");
         AppLog.Info($"Database: {DbBootstrapper.DatabasePath}");
+        AppLog.Info($"Logs:     {AppLog.LogDirectory}");
+
+        // Both of these are the sort of thing that is invisible until someone
+        // goes looking for a log that is not where they expected.
+        if (AppConfig.LoadError is { } configError) AppLog.Warn(configError);
+        if (AppLog.FallbackReason is { } fallback) AppLog.Warn(fallback);
 
         Services = BuildServices();
 

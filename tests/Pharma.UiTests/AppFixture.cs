@@ -18,6 +18,7 @@ public class AppFixture : IDisposable
     public UIA3Automation Automation { get; }
     public Window MainWindow { get; }
     public string DatabasePath { get; }
+    public string LogDirectory { get; private set; } = "";
 
     public AppFixture()
     {
@@ -28,6 +29,10 @@ public class AppFixture : IDisposable
 
         var startInfo = new ProcessStartInfo(FindExecutable()) { UseShellExecute = false };
         startInfo.Environment[DbBootstrapper.PathOverrideVariable] = DatabasePath;
+
+        // Keep test runs out of the clinic's real log folder.
+        LogDirectory = Path.Combine(Path.GetTempPath(), $"twinkle-ui-logs-{Guid.NewGuid():N}");
+        startInfo.Environment[AppLog.DirectoryOverrideVariable] = LogDirectory;
 
         _app = Application.Launch(startInfo);
         Automation = new UIA3Automation();
@@ -237,6 +242,8 @@ public class AppFixture : IDisposable
         {
             try { File.Delete(DatabasePath + suffix); } catch (IOException) { }
         }
+
+        try { Directory.Delete(LogDirectory, recursive: true); } catch (Exception) { }
     }
 }
 

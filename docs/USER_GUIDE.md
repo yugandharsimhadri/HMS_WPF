@@ -610,9 +610,38 @@ and you have copied the clinic.
 keeping the last 14. That protects against mistakes, **not against the PC dying**.
 Copy the folder to a pen drive weekly.
 
-**The log** is at `C:\ProgramData\TwinkleHMS\logs`, one file per day, 30 days
-kept. Settings has an **Open log folder** button. Send that day's file when
+**The log** is at `C:\HMS\Logs`, one file per day, 30 days kept. Settings has an
+**Open log folder** button and shows the exact path. Send that day's file when
 reporting a problem.
+
+## Changing where things are kept
+
+`appsettings.json` sits next to the application and can be edited in Notepad.
+Restart the application afterwards.
+
+```json
+{
+  "LogDirectory": "C:\\HMS\\Logs",
+  "DatabasePath": null,
+  "BackupsToKeep": 14,
+  "LogDaysToKeep": 30
+}
+```
+
+| Setting | Notes |
+|---|---|
+| `LogDirectory` | Where daily logs are written |
+| `DatabasePath` | Full path to the database file. `null` uses `C:\ProgramData\TwinkleHMS\twinkle.db` |
+| `BackupsToKeep` | Daily database backups kept before the oldest is deleted |
+| `LogDaysToKeep` | Days of logs kept |
+
+Use double backslashes in paths, as above.
+
+> If the folder cannot be written to — a locked-down PC, or a network drive that
+> is offline — the application does **not** fail. It falls back to
+> `C:\ProgramData\TwinkleHMS\logs`, and the first line of the log says which
+> folder it wanted and which it used. The same applies to a settings file with a
+> typo in it: built-in defaults are used and the log says so.
 
 ## Not in this version
 

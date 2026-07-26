@@ -16,6 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Sits beside the exe so a clinic can change paths without a rebuild. -->
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- AppLog and its Forget() extension are used across every view model. -->
     <Using Include="Pharma.Data" />
   </ItemGroup>

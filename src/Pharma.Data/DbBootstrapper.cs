@@ -16,7 +16,11 @@ public static class DbBootstrapper
     {
         get
         {
+            // Environment first so a test can point somewhere harmless, then the
+            // config file, then the default under ProgramData.
             var overridden = Environment.GetEnvironmentVariable(PathOverrideVariable);
+            if (string.IsNullOrWhiteSpace(overridden)) overridden = AppConfig.Current.DatabasePath;
+
             if (!string.IsNullOrWhiteSpace(overridden))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(overridden)!);
@@ -96,7 +100,7 @@ public static class DbBootstrapper
             foreach (var stale in new DirectoryInfo(backupDir)
                          .GetFiles("twinkle-*.db")
                          .OrderByDescending(f => f.Name)
-                         .Skip(14))
+                         .Skip(Math.Max(1, AppConfig.Current.BackupsToKeep)))
             {
                 stale.Delete();
             }
