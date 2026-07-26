@@ -86,6 +86,12 @@ public class Visit : BaseEntity
 
     public string FeeBadge => FeePaid ? "Fee paid" : "Fee due";
 
+    /// <summary>One line for the row layout, with no dangling separator when
+    /// the complaint was left blank.</summary>
+    public string RowSummary => string.IsNullOrWhiteSpace(Complaint)
+        ? PatientLine
+        : $"{PatientLine}  ·  {Complaint}";
+
     /// <summary>How long they have been sitting there, in words the desk uses.</summary>
     public string WaitedFor
     {

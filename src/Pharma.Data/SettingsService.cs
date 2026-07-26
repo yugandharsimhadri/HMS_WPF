@@ -12,6 +12,19 @@ public class ShopProfile
     public string DrugLicenceNo { get; set; } = "";
     public string PharmacistName { get; set; } = "";
     public string BillFooter { get; set; } = "Get well soon. Medicines once sold are not returnable.";
+
+    /// <summary>
+    /// How the OPD queue is drawn. Tiles suit a short list read at a glance; rows
+    /// fit more people on screen. Which is better depends on how busy the clinic
+    /// is, so it is the user's choice rather than ours.
+    /// </summary>
+    public QueueLayout QueueLayout { get; set; } = QueueLayout.Tiles;
+}
+
+public enum QueueLayout
+{
+    Tiles = 0,
+    Rows = 1
 }
 
 public class SettingsService(IDbContextFactory<AppDbContext> factory)
@@ -23,6 +36,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     private const string KeyLicence = "shop.licence";
     private const string KeyPharmacist = "shop.pharmacist";
     private const string KeyFooter = "shop.footer";
+    private const string KeyQueueLayout = "opd.queuelayout";
 
     public async Task<ShopProfile> GetAsync()
     {
@@ -38,7 +52,10 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
             Gstin = Get(map, KeyGstin, fallback.Gstin),
             DrugLicenceNo = Get(map, KeyLicence, fallback.DrugLicenceNo),
             PharmacistName = Get(map, KeyPharmacist, fallback.PharmacistName),
-            BillFooter = Get(map, KeyFooter, fallback.BillFooter)
+            BillFooter = Get(map, KeyFooter, fallback.BillFooter),
+            QueueLayout = Enum.TryParse<QueueLayout>(Get(map, KeyQueueLayout, ""), out var layout)
+                ? layout
+                : fallback.QueueLayout
         };
     }
 
@@ -53,6 +70,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         await SetAsync(db, KeyLicence, profile.DrugLicenceNo);
         await SetAsync(db, KeyPharmacist, profile.PharmacistName);
         await SetAsync(db, KeyFooter, profile.BillFooter);
+        await SetAsync(db, KeyQueueLayout, profile.QueueLayout.ToString());
 
         await db.SaveChangesAsync();
     }

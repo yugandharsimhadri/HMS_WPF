@@ -57,6 +57,7 @@ public class AppDbContext : DbContext
             e.Ignore(x => x.IsWaiting);
             e.Ignore(x => x.PatientLine);
             e.Ignore(x => x.FeeBadge);
+            e.Ignore(x => x.RowSummary);
             e.Ignore(x => x.WaitedFor);
         });
 

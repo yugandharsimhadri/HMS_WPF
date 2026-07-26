@@ -23,7 +23,19 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
 
         app.Navigate("NavOpd", "OPD");
         Thread.Sleep(600);
-        Capture("opd");
+        Capture("opd-tiles");
+
+        // The same queue in the other layout, for comparison.
+        app.Navigate("NavSettings", "Settings");
+        app.ComboBox("QueueLayout").Select("Rows");
+        app.Click("ShopSave");
+        app.Navigate("NavOpd", "OPD");
+        Thread.Sleep(2000);          // let the layout swap settle before the shot
+        Capture("opd-rows");
+
+        app.Navigate("NavSettings", "Settings");
+        app.ComboBox("QueueLayout").Select("Tiles");
+        app.Click("ShopSave");
 
         app.Navigate("NavProducts", "Medicines");
         Thread.Sleep(400);

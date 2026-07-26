@@ -30,6 +30,9 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
     [ObservableProperty] private DateTime _date = DateTime.Today;
     [ObservableProperty] private string _status = "";
+
+    /// <summary>Chosen in Settings; re-read every time the screen is opened.</summary>
+    [ObservableProperty] private bool _useTiles = true;
     [ObservableProperty] private PaymentMode _feePaymentMode = PaymentMode.Cash;
 
     // Booking is a panel now, not a permanent third of the screen.
@@ -53,6 +56,8 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
     public async Task LoadAsync()
     {
+        UseTiles = (await settings.GetAsync()).QueueLayout == QueueLayout.Tiles;
+
         Doctors.Clear();
         foreach (var d in await opd.GetDoctorsAsync()) Doctors.Add(d);
         SelectedDoctor ??= Doctors.FirstOrDefault();

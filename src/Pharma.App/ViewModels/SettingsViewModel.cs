@@ -22,6 +22,9 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
     [ObservableProperty] private string _drugLicenceNo = "";
     [ObservableProperty] private string _pharmacistName = "";
     [ObservableProperty] private string _billFooter = "";
+    [ObservableProperty] private QueueLayout _queueLayout = QueueLayout.Tiles;
+
+    public Array QueueLayouts => Enum.GetValues<QueueLayout>();
     [ObservableProperty] private string _databasePath = DbBootstrapper.DatabasePath;
     [ObservableProperty] private string _logPath = AppLog.CurrentFile;
 
@@ -44,6 +47,7 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
         DrugLicenceNo = profile.DrugLicenceNo;
         PharmacistName = profile.PharmacistName;
         BillFooter = profile.BillFooter;
+        QueueLayout = profile.QueueLayout;
 
         await LoadDoctorsAsync();
     }
@@ -74,10 +78,11 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
             Gstin = Gstin.Trim(),
             DrugLicenceNo = DrugLicenceNo.Trim(),
             PharmacistName = PharmacistName.Trim(),
-            BillFooter = BillFooter.Trim()
+            BillFooter = BillFooter.Trim(),
+            QueueLayout = QueueLayout
         });
 
-        Status = "Shop details saved. New bills will carry them.";
+        Status = $"Saved. The OPD queue will use {QueueLayout.ToString().ToLowerInvariant()}.";
     }
 
     /// <summary>Opens the log folder so a problem can be reported with the file attached.</summary>

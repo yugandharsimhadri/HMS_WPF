@@ -55,6 +55,11 @@
                     </StackPanel>
                 </Grid>
 
+                <TextBlock Text="OPD queue layout" Style="{StaticResource Label}"/>
+                <ComboBox ItemsSource="{Binding QueueLayouts}" SelectedItem="{Binding QueueLayout, Mode=TwoWay}"
+                          ToolTip="Tiles read at a glance; rows fit more people on screen"
+                          AutomationProperties.AutomationId="QueueLayout"/>
+
                 <TextBlock Text="Bill footer" Style="{StaticResource Label}"/>
                 <TextBox Text="{Binding BillFooter, UpdateSourceTrigger=PropertyChanged}"
                          AcceptsReturn="True" Height="50" TextWrapping="Wrap"/>
