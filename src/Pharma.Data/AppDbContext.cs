@@ -67,6 +67,7 @@ public class AppDbContext : DbContext
         {
             e.HasIndex(x => x.Name);
             e.Ignore(x => x.StockOnHand);
+            e.Ignore(x => x.PackDescription);
         });
 
         b.Entity<Batch>(e =>

@@ -124,10 +124,11 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Width="90">
-                                <TextBlock Text="Units per pack" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding UnitsPerPack, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="10 for a ten-tablet strip. 1 for a syrup bottle."
-                                         AutomationProperties.AutomationId="ProductUnitsPerPack"/>
+                                <TextBlock Text="Sold as" Style="{StaticResource Label}"/>
+                                <ComboBox ItemsSource="{Binding DispensingUnitOptions}"
+                                          SelectedItem="{Binding DispensingUnit, Mode=TwoWay}"
+                                          ToolTip="What one unit is that a customer can buy"
+                                          AutomationProperties.AutomationId="ProductDispensingUnit"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,8,0,10">
                                 <CheckBox Content="Sell loose units" IsChecked="{Binding AllowLooseSale, Mode=TwoWay}"
@@ -135,6 +136,11 @@
                                           AutomationProperties.AutomationId="ProductAllowLoose"/>
                             </StackPanel>
                         </Grid>
+
+                        <TextBlock Text="Units in one pack" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding UnitsPerPack, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="There is no standard: 1, 3, 5, 10, 15 all occur. 1 for a bottle."
+                                 AutomationProperties.AutomationId="ProductUnitsPerPack"/>
 
                         <CheckBox Content="Active" IsChecked="{Binding IsActive, Mode=TwoWay}" Margin="0,0,0,12"/>
 
@@ -177,8 +183,9 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Qty" Style="{StaticResource Label}"/>
+                                <TextBlock Text="Packs" Style="{StaticResource Label}"/>
                                 <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Strips, boxes or bottles received — not individual tablets"
                                          AutomationProperties.AutomationId="StockQuantity"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -214,6 +221,11 @@
                                 <TextBox Text="{Binding SupplierInvoiceNo, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Grid>
+
+                        <!-- Spells out packs in, units out, so "Qty" cannot be misread. -->
+                        <TextBlock Text="{Binding IntakePreview}" Style="{StaticResource Muted}"
+                                   TextWrapping="Wrap" Margin="0,0,0,8"
+                                   AutomationProperties.AutomationId="StockIntakePreview"/>
 
                         <Button Content="Add stock" Style="{StaticResource BtnPrimary}"
                                 Command="{Binding AddStockCommand}"

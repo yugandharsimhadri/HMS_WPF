@@ -44,6 +44,35 @@ public enum PaymentMode
     Card = 3
 }
 
+/// <summary>
+/// What one sellable unit of a medicine actually is.
+///
+/// This is the thing a customer asks for — "six tablets", "one bottle" — and it
+/// is deliberately separate from how many come in a pack. A strip holds 1, 3, 5,
+/// 10, 15 or any other number of tablets, and that count lives on the product and
+/// on each batch, not here.
+/// </summary>
+public enum DispensingUnit
+{
+    Tablet = 1,
+    Capsule,
+    Bottle,
+    Sachet,
+    Tube,
+    Vial,
+    Piece
+}
+
+public static class DispensingUnits
+{
+    /// <summary>"tablet" or "tablets", for labels and printed lines.</summary>
+    public static string Name(this DispensingUnit unit, int count = 2)
+    {
+        var single = unit.ToString().ToLowerInvariant();
+        return count == 1 ? single : single + "s";
+    }
+}
+
 /// <summary>Why a count on the shelf did not match the count in the system.</summary>
 public enum AdjustmentReason
 {

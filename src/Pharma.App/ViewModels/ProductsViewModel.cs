@@ -35,6 +35,39 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     [ObservableProperty] private bool _isActive = true;
     [ObservableProperty] private int _unitsPerPack = 1;
     [ObservableProperty] private bool _allowLooseSale = true;
+    [ObservableProperty] private DispensingUnit _dispensingUnit = DispensingUnit.Tablet;
+
+    public Array DispensingUnitOptions => Enum.GetValues<DispensingUnit>();
+
+    /// <summary>
+    /// Spells out what the intake numbers mean, because "Qty" alone is ambiguous:
+    /// packs going in, individual units coming out. Recalculated as it is typed.
+    /// </summary>
+    [ObservableProperty] private string _intakePreview = "";
+
+    partial void OnQuantityChanged(int value) => UpdateIntakePreview();
+    partial void OnFreeQuantityChanged(int value) => UpdateIntakePreview();
+    partial void OnUnitsPerPackChanged(int value) => UpdateIntakePreview();
+    partial void OnDispensingUnitChanged(DispensingUnit value) => UpdateIntakePreview();
+
+    private void UpdateIntakePreview()
+    {
+        var perPack = Math.Max(1, SelectedProduct?.UnitsPerPack ?? UnitsPerPack);
+        var packs = Quantity + FreeQuantity;
+
+        if (packs <= 0)
+        {
+            IntakePreview = "";
+            return;
+        }
+
+        var unit = (SelectedProduct?.DispensingUnit ?? DispensingUnit);
+        var units = packs * perPack;
+
+        IntakePreview = perPack > 1
+            ? $"{packs} pack(s) × {perPack} = {units} {unit.Name(units)} onto the shelf"
+            : $"{units} {unit.Name(units)} onto the shelf";
+    }
 
     // Stock intake form
     [ObservableProperty] private string _batchNo = "";
@@ -102,7 +135,9 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         IsActive = value.IsActive;
         UnitsPerPack = value.UnitsPerPack;
         AllowLooseSale = value.AllowLooseSale;
+        DispensingUnit = value.DispensingUnit;
         Mrp = 0;
+        UpdateIntakePreview();
 
         LoadBatchesAsync(value.Id).Forget("Loading batches");
     }
@@ -165,6 +200,7 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         product.IsActive = IsActive;
         product.UnitsPerPack = Math.Max(1, UnitsPerPack);
         product.AllowLooseSale = AllowLooseSale && product.UnitsPerPack > 1;
+        product.DispensingUnit = DispensingUnit;
 
         await pharmacy.SaveProductAsync(product);
         Status = $"{product.Name} saved.";

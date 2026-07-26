@@ -136,11 +136,20 @@ public class Product : BaseEntity
     /// <summary>Printed pack, e.g. "10 TAB" or "100 ML". Free text — shops describe packs their own way.</summary>
     public string? PackSize { get; set; }
 
+    /// <summary>What one sellable unit is — a tablet, a bottle, a sachet.</summary>
+    public DispensingUnit DispensingUnit { get; set; } = DispensingUnit.Tablet;
+
     /// <summary>
-    /// Sellable units in one pack: 10 for a ten-tablet strip, 1 for a syrup
-    /// bottle. Stock is counted in these units so part of a strip can be sold.
+    /// Sellable units in one pack. There is no standard: strips come in 1, 3, 5,
+    /// 10, 15 and more, and a syrup bottle is 1. Stock is counted in units so part
+    /// of a strip can be sold, and each batch keeps the count it arrived with.
     /// </summary>
     public int UnitsPerPack { get; set; } = 1;
+
+    /// <summary>"10 tablets per strip", or just "bottle" when a pack is one unit.</summary>
+    public string PackDescription => UnitsPerPack > 1
+        ? $"{UnitsPerPack} {DispensingUnit.Name(UnitsPerPack)} per pack"
+        : $"sold as single {DispensingUnit.Name(1)}";
 
     /// <summary>Off for anything that must leave the shop whole.</summary>
     public bool AllowLooseSale { get; set; } = true;
