@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>TwinkleHMS</AssemblyName>
+    <RootNamespace>Pharma.App</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pharma.Core\Pharma.Core.csproj" />
+    <ProjectReference Include="..\Pharma.Data\Pharma.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- AppLog and its Forget() extension are used across every view model. -->
+    <Using Include="Pharma.Data" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.*" />
+  </ItemGroup>
+
+</Project>

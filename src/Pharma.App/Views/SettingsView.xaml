@@ -1,0 +1,124 @@
+<UserControl x:Class="Pharma.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="18"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="Shop details" Style="{StaticResource H2}"/>
+                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                           Text="These appear on every printed bill and prescription. GSTIN and the drug licence number are required on a retail chemist's tax invoice."/>
+
+                <TextBlock Text="Clinic / shop name" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding ShopName, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.AutomationId="ShopName"/>
+
+                <TextBlock Text="Address" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding AddressLine, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Phone" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="GSTIN" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding Gstin, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.AutomationId="ShopGstin"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Drug licence no" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding DrugLicenceNo, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Pharmacist" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding PharmacistName, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Bill footer" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding BillFooter, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" Height="50" TextWrapping="Wrap"/>
+
+                <Button Content="Save shop details" Style="{StaticResource BtnPrimary}"
+                        HorizontalAlignment="Left" Command="{Binding SaveShopCommand}"
+                        AutomationProperties.AutomationId="ShopSave"/>
+
+                <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="SettingsStatus"/>
+
+                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,16,0,12"/>
+                <TextBlock Text="Database file" Style="{StaticResource Label}"/>
+                <TextBlock Text="{Binding DatabasePath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                           Margin="0,0,0,10"/>
+
+                <TextBlock Text="Activity log" Style="{StaticResource Label}"/>
+                <TextBlock Text="{Binding LogPath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                           Margin="0,0,0,8" AutomationProperties.AutomationId="LogPath"/>
+                <Button Content="Open log folder" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
+                        Command="{Binding OpenLogFolderCommand}"
+                        AutomationProperties.AutomationId="OpenLogFolder"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="Doctors" Style="{StaticResource H2}"/>
+                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"
+                           Text="At least one doctor is needed before a visit can be booked."/>
+
+                <ListBox ItemsSource="{Binding Doctors}" SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
+                         DisplayMemberPath="Name" Height="150" Margin="0,0,0,12"
+                         BorderBrush="{StaticResource Border}"/>
+
+                <TextBlock Text="Name" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding DoctorName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Speciality" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding Speciality, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Registration no" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding RegistrationNo, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Default consultation fee" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding ConsultationFee, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Save doctor" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
+                            Command="{Binding SaveDoctorCommand}"/>
+                    <Button Content="+ New doctor" Style="{StaticResource BtnGhost}"
+                            Command="{Binding NewDoctorCommand}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,133 @@
+<UserControl x:Class="Pharma.App.Views.PatientsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="18"/>
+            <ColumnDefinition Width="360"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Register + history -->
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="14"/>
+                <RowDefinition Height="240"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Style="{StaticResource Card}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Right" Content="+ New patient" Style="{StaticResource BtnPrimary}"
+                                Margin="8,0,0,0" Command="{Binding NewPatientCommand}"
+                                AutomationProperties.AutomationId="PatientsNew"/>
+                        <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,0" Command="{Binding FindCommand}"
+                                AutomationProperties.AutomationId="PatientsSearchButton"/>
+                        <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0" VerticalAlignment="Center"
+                                 AutomationProperties.AutomationId="PatientsSearchBox">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding FindCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </DockPanel>
+
+                    <DataGrid ItemsSource="{Binding Patients}" SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="PatientsGrid">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="PATIENT NO" Binding="{Binding PatientNo}" Width="110"/>
+                            <DataGridTextColumn Header="NAME" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="PHONE" Binding="{Binding Phone}" Width="130"/>
+                            <DataGridTextColumn Header="AGE" Binding="{Binding Age}" Width="60"/>
+                            <DataGridTextColumn Header="SEX" Binding="{Binding Gender}" Width="80"/>
+                            <DataGridTextColumn Header="ALLERGIES" Binding="{Binding Allergies}" Width="180"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Row="2" Style="{StaticResource Card}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Visit history" Style="{StaticResource H2}"/>
+                    <DataGrid ItemsSource="{Binding History}"
+                              AutomationProperties.AutomationId="PatientHistoryGrid">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="DATE" Binding="{Binding ScheduledOn, StringFormat='dd MMM yyyy HH:mm'}" Width="150"/>
+                            <DataGridTextColumn Header="VISIT NO" Binding="{Binding VisitNo}" Width="100"/>
+                            <DataGridTextColumn Header="DOCTOR" Binding="{Binding Doctor.Name}" Width="160"/>
+                            <DataGridTextColumn Header="COMPLAINT" Binding="{Binding Complaint}" Width="*"/>
+                            <DataGridTextColumn Header="DIAGNOSIS" Binding="{Binding Diagnosis}" Width="220"/>
+                            <DataGridTextColumn Header="RX" Binding="{Binding Prescription.Count}" Width="50"/>
+                            <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="110"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Editor -->
+        <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="Patient details" Style="{StaticResource H2}"/>
+
+                <TextBlock Text="Patient no" Style="{StaticResource Label}"/>
+                <TextBlock Text="{Binding PatientNo}" Style="{StaticResource Muted}" Margin="0,0,0,10"
+                           AutomationProperties.AutomationId="PatientNo"/>
+
+                <TextBlock Text="Name" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.AutomationId="PatientName"/>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="70"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="90"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Phone" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.AutomationId="PatientPhone"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Age" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.AutomationId="PatientAge"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Sex" Style="{StaticResource Label}"/>
+                        <ComboBox ItemsSource="{Binding Genders}" SelectedItem="{Binding Gender, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="PatientGender"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Address" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="True" Height="52" TextWrapping="Wrap"
+                         AutomationProperties.AutomationId="PatientAddress"/>
+
+                <TextBlock Text="Allergies" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding Allergies, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.AutomationId="PatientAllergies"/>
+
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Save patient" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
+                            Command="{Binding SavePatientCommand}"
+                            AutomationProperties.AutomationId="PatientSave"/>
+                    <Button Content="Remove" Style="{StaticResource BtnDanger}"
+                            Command="{Binding DeletePatientCommand}"
+                            AutomationProperties.AutomationId="PatientDelete"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"
+                           TextWrapping="Wrap" Margin="0,12,0,0"
+                           AutomationProperties.AutomationId="PatientsStatus"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>
