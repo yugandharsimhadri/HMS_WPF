@@ -1,0 +1,13 @@
+{
+  "name": "twinkle-docs-to-pdf",
+  "private": true,
+  "type": "module",
+  "description": "Renders docs/USER_GUIDE.md to a printable PDF, screenshots and all.",
+  "scripts": {
+    "guide": "node guide_to_pdf.mjs"
+  },
+  "dependencies": {
+    "marked": "^18.0.6",
+    "puppeteer-core": "^25.3.0"
+  }
+}

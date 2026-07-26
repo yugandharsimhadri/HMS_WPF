@@ -7,3 +7,6 @@ obj/
 *.db-wal
 publish/
 TestResults/
+node_modules/
+*.tmp.html
+.user-guide.tmp.html
