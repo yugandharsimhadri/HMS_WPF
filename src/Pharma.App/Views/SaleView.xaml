@@ -159,7 +159,8 @@
                              AutomationProperties.AutomationId="SaleDoctorName"/>
 
                     <TextBlock Text="Or pull today's OPD prescription" Style="{StaticResource Label}" Margin="0,4,0,3"/>
-                    <ComboBox ItemsSource="{Binding PrescribedVisits}" SelectedItem="{Binding SelectedVisit, Mode=TwoWay}">
+                    <ComboBox ItemsSource="{Binding PrescribedVisits}" SelectedItem="{Binding SelectedVisit, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="SalePrescriptionVisit">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock>
@@ -170,7 +171,8 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                     <Button Content="Load prescription" Style="{StaticResource BtnGhost}"
-                            Command="{Binding LoadPrescriptionCommand}" Margin="0,0,0,14"/>
+                            Command="{Binding LoadPrescriptionCommand}" Margin="0,0,0,14"
+                            AutomationProperties.AutomationId="SaleLoadPrescription"/>
 
                     <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,12"/>
 

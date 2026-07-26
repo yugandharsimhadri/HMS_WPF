@@ -39,6 +39,16 @@ public class BoolToVisibilityConverter : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>Shows a band only when there is something to say in it.</summary>
+public class TextToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => string.IsNullOrWhiteSpace(value?.ToString()) ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>Fee badge fill: paid reads calm, due has to catch the eye.</summary>
 public class FeeBrushConverter : IValueConverter
 {

@@ -125,18 +125,48 @@ public static class DbBootstrapper
             });
         }
 
-        if (!await db.Products.AnyAsync())
-        {
-            // A handful of everyday drugs so the counter is usable on first launch.
-            db.Products.AddRange(
-                new Product { Name = "Paracetamol 500mg", Manufacturer = "Generic", PackSize = "15 TAB", GstRate = 12m, RackLocation = "A1", ReorderLevel = 100 },
-                new Product { Name = "Amoxicillin 500mg", Manufacturer = "Generic", PackSize = "10 CAP", GstRate = 12m, Schedule = DrugSchedule.H, RackLocation = "A2", ReorderLevel = 50 },
-                new Product { Name = "Cetirizine 10mg", Manufacturer = "Generic", PackSize = "10 TAB", GstRate = 12m, RackLocation = "B1", ReorderLevel = 50 },
-                new Product { Name = "Pantoprazole 40mg", Manufacturer = "Generic", PackSize = "15 TAB", GstRate = 12m, RackLocation = "B2", ReorderLevel = 50 },
-                new Product { Name = "ORS Powder", Manufacturer = "Generic", PackSize = "21.8 G", GstRate = 5m, RackLocation = "C1", ReorderLevel = 30 },
-                new Product { Name = "Cough Syrup 100ml", Manufacturer = "Generic", PackSize = "100 ML", GstRate = 12m, RackLocation = "C2", ReorderLevel = 20 });
-        }
+        if (!await db.Products.AnyAsync()) db.Products.AddRange(StarterCatalogue());
 
         await db.SaveChangesAsync();
     }
+
+    /// <summary>
+    /// A handful of everyday drugs so the counter is usable on first launch.
+    ///
+    /// UnitsPerPack is stated on every one of them. Leaving it at its default of
+    /// 1 while the pack size says "15 TAB" makes the shop sell whole strips to
+    /// anyone who asks for tablets, at fifteen times the price, and nothing
+    /// anywhere reports an error.
+    /// </summary>
+    public static Product[] StarterCatalogue() =>
+    [
+        new Product { Name = "Paracetamol 500mg", GenericName = "Paracetamol", Manufacturer = "Generic",
+                      PackSize = "15 TAB", UnitsPerPack = 15, AllowLooseSale = true,
+                      GstRate = 12m, RackLocation = "A1", ReorderLevel = 100 },
+
+        new Product { Name = "Amoxicillin 500mg", GenericName = "Amoxicillin", Manufacturer = "Generic",
+                      PackSize = "10 CAP", UnitsPerPack = 10, AllowLooseSale = true,
+                      DispensingUnit = DispensingUnit.Capsule,
+                      GstRate = 12m, Schedule = DrugSchedule.H, RackLocation = "A2", ReorderLevel = 50 },
+
+        new Product { Name = "Cetirizine 10mg", GenericName = "Cetirizine", Manufacturer = "Generic",
+                      PackSize = "10 TAB", UnitsPerPack = 10, AllowLooseSale = true,
+                      GstRate = 12m, RackLocation = "B1", ReorderLevel = 50 },
+
+        new Product { Name = "Pantoprazole 40mg", GenericName = "Pantoprazole", Manufacturer = "Generic",
+                      PackSize = "15 TAB", UnitsPerPack = 15, AllowLooseSale = true,
+                      GstRate = 12m, RackLocation = "B2", ReorderLevel = 50 },
+
+        // A sachet and a bottle really are one unit each — half of either is
+        // not something a shop can hand over.
+        new Product { Name = "ORS Powder", GenericName = "Oral rehydration salts", Manufacturer = "Generic",
+                      PackSize = "21.8 G", UnitsPerPack = 1, AllowLooseSale = false,
+                      DispensingUnit = DispensingUnit.Sachet,
+                      GstRate = 5m, RackLocation = "C1", ReorderLevel = 30 },
+
+        new Product { Name = "Cough Syrup 100ml", GenericName = "Dextromethorphan", Manufacturer = "Generic",
+                      PackSize = "100 ML", UnitsPerPack = 1, AllowLooseSale = false,
+                      DispensingUnit = DispensingUnit.Bottle,
+                      GstRate = 12m, RackLocation = "C2", ReorderLevel = 20 }
+    ];
 }

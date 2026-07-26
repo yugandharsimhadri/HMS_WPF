@@ -49,6 +49,41 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
 
     public Array AdjustmentReasons => Enum.GetValues<AdjustmentReason>();
 
+    /// <summary>
+    /// Says so when a medicine's pack size and its units-per-pack disagree.
+    /// That combination sells whole strips to anyone asking for tablets and
+    /// reports no error, so it has to be visible where stock is handled.
+    /// </summary>
+    [ObservableProperty] private string _packWarning = "";
+
+    private void UpdatePackWarning()
+    {
+        PackWarning = "";
+        if (SelectedProduct is not { } product) return;
+
+        var stated = PackMath.UnitsFromPacking(product.PackSize);
+        var perPack = Math.Max(1, product.UnitsPerPack);
+
+        if (stated is { } n && n != perPack)
+        {
+            PackWarning =
+                $"⚠ The pack size says {n} per pack but this medicine is set to {perPack}. " +
+                $"The counter will sell whole packs to anyone asking for " +
+                $"{product.DispensingUnit.Name(2)}. Fix it on the Medicines screen — " +
+                $"set Units in one pack to {n} and save, and the stock already on the " +
+                $"shelf is re-counted with it.";
+            return;
+        }
+
+        // The medicine may be right while stock received earlier is not.
+        var stale = Batches.Where(b => b.UnitsPerPack != perPack).ToList();
+
+        if (stale.Count > 0)
+            PackWarning =
+                $"⚠ {stale.Count} batch(es) here were received at a different pack size. " +
+                $"Open this medicine on the Medicines screen and save it to re-count them.";
+    }
+
     public async Task LoadAsync()
     {
         await FindAsync();
@@ -81,6 +116,8 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
         UpdateIntakePreview();
 
         Batches.Clear();
+        UpdatePackWarning();
+
         if (value is null) return;
 
         LoadBatchesAsync(value.Id).Forget("Loading batches");
@@ -90,6 +127,8 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     {
         Batches.Clear();
         foreach (var b in await pharmacy.GetSellableBatchesAsync(productId)) Batches.Add(b);
+
+        UpdatePackWarning();
     }
 
     private async Task LoadAdjustmentsAsync()

@@ -265,6 +265,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         if (visit is null) return;
 
         var missing = new List<string>();
+        var partial = new List<string>();
 
         foreach (var item in visit.Prescription)
         {
@@ -281,38 +282,60 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                 continue;
             }
 
-            var batch = (await pharmacy.GetSellableBatchesAsync(product.Id)).FirstOrDefault();
-            if (batch is null)
+            var wanted = Math.Max(1, item.Quantity);
+            var (allocations, shortfall) = await pharmacy.AllocateAsync(product.Id, wanted);
+
+            if (allocations.Count == 0)
             {
                 missing.Add($"{item.MedicineName} (no stock)");
                 continue;
             }
 
-            var row = new SaleRow
-            {
-                ProductId = product.Id,
-                BatchId = batch.Id,
-                ProductName = product.Name,
-                BatchNo = batch.BatchNo,
-                ExpiryDate = batch.ExpiryDate,
-                HsnCode = product.HsnCode,
-                GstRate = _gstRegistered ? product.GstRate : 0m,
-                Schedule = product.Schedule,
-                Available = batch.QtyOnHand,
-                UnitsPerPack = batch.UnitsPerPack,
-                PackLabel = product.PackSize,
-                Quantity = Math.Max(1, Math.Min(item.Quantity, batch.QtyOnHand)),
-                Mrp = batch.Mrp
-            };
+            // Say so rather than quietly billing less than the doctor wrote.
+            if (shortfall > 0)
+                partial.Add($"{product.Name} ({wanted - shortfall} of {wanted})");
 
-            row.PropertyChanged += (_, _) => Recalculate();
-            Lines.Add(row);
+            // Loading twice is normal — the operator loads, finds something is
+            // out of stock, receives it, and loads again. Re-lay this medicine's
+            // lines instead of adding a second copy of it to the bill.
+            foreach (var existing in Lines.Where(l => l.ProductId == product.Id).ToList())
+                Lines.Remove(existing);
+
+            // A course can span batches; each batch is its own line because the
+            // batch number handed over has to appear on the invoice.
+            foreach (var allocation in allocations)
+            {
+                var row = new SaleRow
+                {
+                    ProductId = product.Id,
+                    BatchId = allocation.Batch.Id,
+                    ProductName = product.Name,
+                    BatchNo = allocation.Batch.BatchNo,
+                    ExpiryDate = allocation.Batch.ExpiryDate,
+                    HsnCode = product.HsnCode,
+                    GstRate = _gstRegistered ? product.GstRate : 0m,
+                    Schedule = product.Schedule,
+                    Available = allocation.Batch.QtyOnHand,
+                    UnitsPerPack = allocation.Batch.UnitsPerPack,
+                    PackLabel = product.PackSize,
+                    Quantity = allocation.Units,
+                    Mrp = allocation.Batch.Mrp
+                };
+
+                row.PropertyChanged += (_, _) => Recalculate();
+                Lines.Add(row);
+            }
         }
 
         Recalculate();
-        Status = missing.Count == 0
+
+        var notes = new List<string>();
+        if (missing.Count > 0) notes.Add($"Not added: {string.Join(", ", missing)}");
+        if (partial.Count > 0) notes.Add($"Short: {string.Join(", ", partial)}");
+
+        Status = notes.Count == 0
             ? $"Loaded {visit.Prescription.Count} item(s) from token {visit.TokenNo}."
-            : $"Loaded. Not added: {string.Join(", ", missing)}.";
+            : $"Loaded. {string.Join(". ", notes)}.";
     }
 
     [RelayCommand]
@@ -398,8 +421,11 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
     private void Recalculate()
     {
+        // UnitsPerPack has to be passed: without it every tablet prices at the
+        // full strip MRP, and the total on screen stops matching the bill that
+        // gets saved and printed.
         var amounts = GstCalculator.Bill(
-            Lines.Select(l => GstCalculator.Line(l.Mrp, l.Quantity, l.DiscountPercent, l.GstRate)));
+            Lines.Select(l => GstCalculator.Line(l.Mrp, l.UnitsPerPack, l.Quantity, l.DiscountPercent, l.GstRate)));
 
         Gross = amounts.Gross;
         Discount = amounts.Discount;

@@ -23,6 +23,17 @@ public class SaleLine
     public DrugSchedule Schedule { get; set; }
 }
 
+/// <summary>What re-counting a medicine's existing batches would do.</summary>
+public class RepackPreview
+{
+    public int UnitsPerPack { get; init; }
+    public int Batches { get; init; }
+    public int QuantityBefore { get; init; }
+    public int QuantityAfter { get; init; }
+
+    public bool AnythingToDo => Batches > 0 && QuantityAfter != QuantityBefore;
+}
+
 public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 {
     // ── Products ───────────────────────────────────────────────────────────
@@ -228,6 +239,91 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             $"{adjustment.QuantityBefore} → {adjustment.QuantityAfter} ({reason}).");
 
         return adjustment;
+    }
+
+    /// <summary>
+    /// How many batches of this medicine were received under a different
+    /// units-per-pack than it now says, and what re-counting them would do.
+    ///
+    /// This is the shape of the "9 tablets took 9 strips" fault: a batch keeps
+    /// the pack size it arrived with, so correcting the medicine alone leaves
+    /// the stock on the shelf still being sold by the strip.
+    /// </summary>
+    public async Task<RepackPreview> PreviewRepackAsync(Guid productId, int unitsPerPack)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+
+        var perPack = Math.Max(1, unitsPerPack);
+
+        var batches = await db.Batches
+            .Where(b => b.ProductId == productId && b.QtyOnHand > 0 && b.UnitsPerPack != perPack)
+            .ToListAsync();
+
+        return new RepackPreview
+        {
+            UnitsPerPack = perPack,
+            Batches = batches.Count,
+            QuantityBefore = batches.Sum(b => b.QtyOnHand),
+            QuantityAfter = batches.Sum(b => b.QtyOnHand / Math.Max(1, b.UnitsPerPack) * perPack)
+        };
+    }
+
+    /// <summary>
+    /// Re-counts every batch of a medicine that was received under the wrong
+    /// units-per-pack: 59 packs recorded as 59 units becomes 885 tablets.
+    ///
+    /// The packs on the shelf do not change — only what the software believes
+    /// one of them holds. Each batch still gets its own audit row, because the
+    /// numbers move and nobody should have to guess why later.
+    /// </summary>
+    public async Task<int> RepackAsync(Guid productId, int unitsPerPack, string? by = null)
+    {
+        var perPack = Math.Max(1, unitsPerPack);
+
+        await using var db = await factory.CreateDbContextAsync();
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        var product = await db.Products.FirstOrDefaultAsync(p => p.Id == productId)
+                      ?? throw new InvalidOperationException("That medicine no longer exists.");
+
+        var batches = await db.Batches
+            .Where(b => b.ProductId == productId && b.UnitsPerPack != perPack)
+            .ToListAsync();
+
+        foreach (var batch in batches)
+        {
+            var packs = batch.QtyOnHand / Math.Max(1, batch.UnitsPerPack);
+            var after = packs * perPack;
+
+            if (batch.QtyOnHand != after)
+            {
+                db.StockAdjustments.Add(new StockAdjustment
+                {
+                    BatchId = batch.Id,
+                    ProductId = product.Id,
+                    ProductName = product.Name,
+                    BatchNo = batch.BatchNo,
+                    QuantityBefore = batch.QtyOnHand,
+                    QuantityAfter = after,
+                    Reason = AdjustmentReason.EntryError,
+                    Notes = $"Pack size corrected: {packs} pack(s) recounted at " +
+                            $"{batch.UnitsPerPack} → {perPack} per pack.",
+                    AdjustedBy = by
+                });
+            }
+
+            batch.UnitsPerPack = perPack;
+            batch.QtyOnHand = after;
+        }
+
+        product.UnitsPerPack = perPack;
+
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        AppLog.Info($"Repacked {product.Name}: {batches.Count} batch(es) recounted at {perPack} per pack.");
+
+        return batches.Count;
     }
 
     /// <summary>The correction trail, newest first.</summary>

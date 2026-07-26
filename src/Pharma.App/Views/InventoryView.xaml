@@ -76,6 +76,15 @@
                     <StackPanel>
                         <TextBlock Text="Receive stock" Style="{StaticResource H2}"/>
 
+                        <!-- Only visible when the pack size and units-per-pack disagree. -->
+                        <Border Background="#FFF4E5" BorderBrush="#F5B742" BorderThickness="1"
+                                CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                                Visibility="{Binding PackWarning, Converter={StaticResource TextToVisible}}">
+                            <TextBlock Text="{Binding PackWarning}" TextWrapping="Wrap"
+                                       Foreground="#7A4B00" FontSize="12"
+                                       AutomationProperties.AutomationId="InventoryPackWarning"/>
+                        </Border>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>

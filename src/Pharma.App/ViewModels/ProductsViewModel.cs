@@ -46,18 +46,58 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     /// <summary>Reads back what a pack means, e.g. "15 tablets per pack".</summary>
     [ObservableProperty] private string _packHint = "";
 
-    partial void OnUnitsPerPackChanged(int value) => UpdatePackHint();
+    /// <summary>True once the user has typed in Units in one pack themselves.</summary>
+    private bool _unitsPerPackSetByHand;
+
+    partial void OnUnitsPerPackChanged(int value)
+    {
+        if (!_fillingIn) _unitsPerPackSetByHand = true;
+        UpdatePackHint();
+    }
+
     partial void OnDispensingUnitChanged(DispensingUnit value) => UpdatePackHint();
+
+    /// <summary>
+    /// "15 TAB" already says fifteen. Leaving Units in one pack at 1 alongside it
+    /// makes a strip and a tablet the same thing, so the counter sells whole
+    /// strips to anyone asking for tablets — at fifteen times the price, with
+    /// nothing anywhere reporting an error. Take the number from the pack size
+    /// unless the user has stated one themselves.
+    /// </summary>
+    partial void OnPackSizeChanged(string value)
+    {
+        if (!_unitsPerPackSetByHand && PackMath.UnitsFromPacking(value) is { } stated)
+        {
+            _fillingIn = true;
+            UnitsPerPack = stated;
+            _fillingIn = false;
+        }
+
+        UpdatePackHint();
+    }
 
     private void UpdatePackHint()
     {
         var perPack = Math.Max(1, UnitsPerPack);
+        var stated = PackMath.UnitsFromPacking(PackSize);
+
+        // The one combination that silently overcharges every customer.
+        if (stated is { } n && n != perPack)
+        {
+            PackHint = $"⚠ Pack size says {n} but one pack is set to {perPack}. " +
+                       $"At {perPack} the counter would sell whole packs to anyone asking " +
+                       $"for {DispensingUnit.Name(2)}. Set it to {n} unless this is right.";
+            return;
+        }
 
         PackHint = perPack > 1
             ? $"One pack holds {perPack} {DispensingUnit.Name(perPack)}. " +
               $"Stock and sales are counted in {DispensingUnit.Name(2)}."
             : $"Sold as a single {DispensingUnit.Name(1)} — a pack is one unit.";
     }
+
+    /// <summary>Set while the code fills a field, so it does not look like typing.</summary>
+    private bool _fillingIn;
 
     public async Task LoadAsync() => await FindAsync();
 
@@ -92,6 +132,10 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         AllowLooseSale = value.AllowLooseSale;
         DispensingUnit = value.DispensingUnit;
 
+        // An existing medicine has stock counted against its units-per-pack, so
+        // never quietly change it here — say it looks wrong and let them decide.
+        _unitsPerPackSetByHand = true;
+
         UpdatePackHint();
     }
 
@@ -105,7 +149,13 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         Schedule = DrugSchedule.None;
         ReorderLevel = 0;
         IsActive = true;
+        _fillingIn = true;
         UnitsPerPack = 1;
+        _fillingIn = false;
+
+        // A fresh medicine takes its units-per-pack from the pack size as it is typed.
+        _unitsPerPackSetByHand = false;
+
         AllowLooseSale = true;
         DispensingUnit = DispensingUnit.Tablet;
 
@@ -143,10 +193,43 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
             await pharmacy.SaveProductAsync(product);
             Status = $"{product.Name} saved.";
 
+            await OfferToRepackAsync(product);
+
             Search = product.Name;
             await FindAsync();
             SelectedProduct = Products.FirstOrDefault(p => p.Id == product.Id);
         }, "Saving the medicine", m => Status = m);
+    }
+
+    /// <summary>
+    /// A batch keeps the units-per-pack it was received under, so changing the
+    /// medicine on its own leaves stock already on the shelf being sold by the
+    /// pack. Offer to re-count it — the packs do not move, only what the
+    /// software believes one of them holds.
+    /// </summary>
+    private async Task OfferToRepackAsync(Product product)
+    {
+        var preview = await pharmacy.PreviewRepackAsync(product.Id, product.UnitsPerPack);
+        if (!preview.AnythingToDo) return;
+
+        var packs = preview.QuantityAfter / Math.Max(1, preview.UnitsPerPack);
+        var unit = product.DispensingUnit.Name(preview.QuantityAfter);
+
+        var answer = MessageBox.Show(
+            $"{preview.Batches} batch(es) of {product.Name} on the shelf were received " +
+            $"under a different pack size, so the counter still sells them by the pack.\n\n" +
+            $"Re-count them as {preview.UnitsPerPack} per pack?\n\n" +
+            $"    {preview.QuantityBefore} → {preview.QuantityAfter} {unit}\n" +
+            $"    ({packs} pack(s) — nothing on the shelf changes)\n\n" +
+            $"Every batch is recorded in the correction trail.",
+            "Medicines", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+        if (answer != MessageBoxResult.Yes) return;
+
+        var repacked = await pharmacy.RepackAsync(product.Id, product.UnitsPerPack, Environment.UserName);
+
+        Status = $"{product.Name} saved. {repacked} batch(es) re-counted at " +
+                 $"{preview.UnitsPerPack} per pack — now {preview.QuantityAfter} {unit} on hand.";
     }
 
     private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
