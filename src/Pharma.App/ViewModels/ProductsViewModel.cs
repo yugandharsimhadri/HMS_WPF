@@ -101,14 +101,16 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     [RelayCommand]
     private async Task ImportBillAsync()
     {
-        var window = new Views.ImportWindow { Owner = Application.Current.MainWindow };
-        window.ShowDialog();
-
-        if (window.Imported)
+        await Safely.RunAsync(async () =>
         {
+            var window = new Views.ImportWindow { Owner = Application.Current.MainWindow };
+            window.ShowDialog();
+
+            if (!window.Imported) return;
+
             await FindAsync();
             Status = "Stock imported. It was added to what was already on the shelf.";
-        }
+        }, "Importing a supplier bill", m => Status = m);
     }
 
     [RelayCommand]

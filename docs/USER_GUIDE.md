@@ -1,9 +1,11 @@
-# Twinkle Children's Hospital — user guide
+# Twinkle Children's Hospital
+
+## User guide
 
 For the front desk, the doctor, and the pharmacy counter.
 
-Every screenshot here is taken from the running application. To refresh them
-after a change, run the one test that produces them:
+Every screenshot is taken from the running application. To refresh them all after
+a change, run the one test that produces them:
 
 ```bash
 dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
@@ -13,164 +15,407 @@ dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
 
 ## Contents
 
-1. [Before the first patient](#1-before-the-first-patient)
-2. [The OPD desk](#2-the-opd-desk)
-3. [Seeing a patient](#3-seeing-a-patient)
-4. [Medicines and stock](#4-medicines-and-stock)
-5. [The pharmacy counter](#5-the-pharmacy-counter)
-6. [Printing and reprinting](#6-printing-and-reprinting)
-7. [Patient records](#7-patient-records)
-8. [End of day](#8-end-of-day)
-9. [Backups, logs, and problems](#9-backups-logs-and-problems)
+**Getting started**
+1. [The window](#1-the-window)
+2. [Settings — set this up first](#2-settings--set-this-up-first)
+
+**The OPD desk**
+3. [The OPD screen](#3-the-opd-screen)
+4. [Booking a visit](#4-booking-a-visit)
+5. [The consultation](#5-the-consultation)
+
+**The pharmacy**
+6. [Medicines and stock](#6-medicines-and-stock)
+7. [Importing a supplier bill](#7-importing-a-supplier-bill)
+8. [The pharmacy counter](#8-the-pharmacy-counter)
+
+**Everything else**
+9. [Patients](#9-patients)
+10. [Reports](#10-reports)
+11. [Printing](#11-printing)
+12. [When something goes wrong](#12-when-something-goes-wrong)
 
 ---
 
-## 1. Before the first patient
+# 1. The window
 
-Open **Settings** and fill in the clinic's details. These print on every bill,
-receipt and prescription, so get them right once.
+Six screens down the left. The one you are on is highlighted.
+
+| Button | What it is for |
+|---|---|
+| **OPD** | The day's queue. Book visits, take fees, open consultations |
+| **Patients** | Everyone ever registered, with their whole history |
+| **Pharmacy counter** | Selling medicines |
+| **Medicines** | The catalogue and stock |
+| **Reports** | End of day, GST, expiry, low stock |
+| **Settings** | Clinic details, doctors, screen layout |
+
+The heading of every screen shows the screen name and a one-line summary
+underneath — for example *"2 waiting · 1 completed · Sun, 26 Jul"*.
+
+At the bottom left it reminds you where the data lives and that a backup is taken
+each day the application is opened.
+
+---
+
+# 2. Settings — set this up first
+
+Everything here prints on your bills, receipts and prescriptions.
 
 ![Settings](images/settings.png)
 
-| Field | Why it matters |
+## Shop details (left card)
+
+| Control | What to enter |
 |---|---|
-| Clinic name, address, phone | Heading of every printed document |
-| **GSTIN** | Required on a tax invoice |
-| **Drug licence no** | Required on a retail chemist's bill |
-| Pharmacist | Printed at the foot of the bill |
-| OPD queue layout | Tiles or rows — see [section 2](#choosing-tiles-or-rows) |
+| **Clinic / shop name** | Printed largest, at the top of every document |
+| **Address** | One line, under the name |
+| **Phone** | Shown beside the address |
+| **GSTIN** | Your GST number. **Required on a tax invoice** |
+| **Drug licence no** | Your 20B/21B number. **Required on a chemist's bill** |
+| **Pharmacist** | Printed at the foot of the bill |
+| **OPD queue layout** | `Tiles` or `Rows` — see [section 3](#choosing-tiles-or-rows) |
+| **Bill footer** | Free text at the bottom of a bill, e.g. "Get well soon" |
+| **Save shop details** | Applies everything above. New documents use it immediately |
 
-Below that, add your **doctors**. At least one is needed before any visit can be
-booked. The consultation fee entered here becomes the default when booking.
+Below the button it shows the **database file** and the **activity log** path, with
+an **Open log folder** button. You need those only if reporting a problem.
 
-The app works with these left blank — the GSTIN line simply won't print — but
-fill them in before issuing a real bill.
+> The application works with these blank — the GSTIN line simply does not print.
+> Fill them in before you issue a real bill to a customer.
+
+## Doctors (right card)
+
+| Control | What it does |
+|---|---|
+| **List** | Every doctor. Click one to edit it |
+| **Name** | Appears as an OPD tab and on the prescription |
+| **Speciality** | Printed under the doctor's name on the prescription |
+| **Registration no** | Printed on the prescription. Required on a real one |
+| **Default consultation fee** | Fills in automatically when booking for this doctor |
+| **Save doctor** | Saves the one being edited |
+| **+ New doctor** | Clears the form to add another |
+
+**At least one doctor is needed before any visit can be booked.**
 
 ---
 
-## 2. The OPD desk
+# 3. The OPD screen
 
 ![OPD queue](images/opd-tiles.png)
 
-The screen shows one day at a time. **Waiting** on the left, **Completed** on
-the right, and a tab for each doctor across the top. Pick a doctor's tab to see
-only their patients, or **All doctors** for the whole clinic.
+## Top row
 
-Each waiting patient shows their token number, name, age and sex, the time they
-were booked, what they came in with, whether the fee has been taken, and how
-long they have been waiting.
+| Control | What it does |
+|---|---|
+| **All doctors** tab | Shows every patient in the clinic |
+| **Doctor tabs** | One per doctor. Shows only their patients |
+| **+ New visit** | Opens the booking panel on the right |
+| **Date** | Which day you are looking at. Defaults to today |
 
-### Booking a visit
+The doctor is a tab rather than a column on each patient, which is why the tiles
+stay small.
 
-Click **+ New visit**.
+## The two columns
 
-![Booking a visit](images/opd-booking.png)
+**Waiting** — everyone still to be seen. **Completed** — everyone finished.
 
-Three steps, in order:
+A patient moves from one to the other and can be moved back.
 
-1. **Find the patient.** Type a name or a phone number and press Enter. If the
-   family already exists, everyone on that number is listed — **select the child
-   who is actually here.** If nobody matches, the new-patient form opens with
-   what you typed already filled in.
-2. **Doctor and time.** The doctor defaults to whichever tab you were on, and
-   the fee to that doctor's usual charge.
-3. **Complaint**, if you want it on the queue tile and the prescription.
+## What a waiting tile shows
 
-Then **Book visit**. A token number is allocated automatically.
+| On the tile | Meaning |
+|---|---|
+| Green number | **Token number**. What you call out |
+| Name | The patient |
+| `4F · 08:55` | Age, sex, and the time they were booked |
+| Grey line | What they came in with |
+| `Fee paid` / `Fee due` | Green if the consultation fee is taken, amber if not |
+| `just arrived` / `waiting 12m` | How long they have been sitting there |
 
-> **One phone, several children.** A parent's number covers the whole family.
-> Typing it lists every child registered against it, in any format — `9008007001`,
-> `+91 90080 07001` and `90080 07001` all find the same family. If you click
-> **Book visit** without picking one, the app stops you rather than creating a
-> duplicate child.
+## Buttons on a waiting tile
 
-### Taking the consultation fee
+| Button | What it does |
+|---|---|
+| **Consult** | Opens the consultation window for this patient |
+| **Fee** | Takes the consultation fee, issues a numbered receipt, offers to print it |
+| **Done** | Moves the tile to Completed without a consultation |
+| **Cancel** | Cancels the visit. Asks first |
 
-Click **Fee** on the patient's tile. A numbered receipt (`RCP00001`) is issued
-and the print preview opens. The badge on the tile changes to **Fee paid**.
+## Buttons on a completed tile
 
-Change the payment method in the **Fee taken as** box in the booking panel
-before clicking Fee. Clicking Fee twice does nothing — it will not issue a
-second receipt.
+| Button | What it does |
+|---|---|
+| **Rx** | Prints the prescription. Says so if there isn't one |
+| **Receipt** | Prints the fee receipt again, marked DUPLICATE |
+| **Reopen** | Moves the patient back to Waiting |
 
-### Moving a patient to Completed
+## Choosing tiles or rows
 
-Three ways, all equivalent:
-
-- **Done** on the tile — for a patient who left without a full consultation
-- Finishing a consultation with **Save & complete**
-- **Reopen** on a completed tile moves them back to waiting
-
-### Choosing tiles or rows
-
-Set this in Settings. Tiles are easier to read across a room; rows fit more
-people on screen when the clinic is busy. Everything works the same either way.
+Set in Settings. Tiles are easier to read across a room; rows fit more people on
+screen when the clinic is busy. **Everything works the same in either.**
 
 ![OPD queue as rows](images/opd-rows.png)
 
 ---
 
-## 3. Seeing a patient
+# 4. Booking a visit
 
-Click **Consult** on the tile.
+Click **+ New visit**. The panel opens on the right, in three numbered steps.
+
+![Booking a visit](images/opd-booking.png)
+
+## Step 1 — find the patient
+
+| Control | What it does |
+|---|---|
+| **Search box** | Type a name or a phone number. Enter also works |
+| **Find** | Runs the search |
+| **Results list** | Everyone matching. **Click the right one** |
+| **+ New patient** | Opens the form below to register someone new |
+
+If nobody matches, the new-patient form opens by itself with what you typed
+already filled in.
+
+| New patient field | Notes |
+|---|---|
+| **Name** | The only one that is required |
+| **Phone** | The parent's number. Shared across siblings is normal |
+| **Age** | In years |
+| **Sex** | Male, Female or Other |
+| **Back to search** | Returns to the list without adding anyone |
+
+## Step 2 — doctor and time
+
+| Control | Notes |
+|---|---|
+| **Doctor** | Defaults to whichever tab you were on |
+| **Time** | 24-hour, e.g. `09:45`. Defaults to now |
+| **Fee** | Defaults to that doctor's usual charge |
+
+## Step 3 — complaint
+
+Optional. Whatever you type shows on the queue tile and on the prescription.
+
+Then **Book visit**. A token number is allocated automatically and the panel
+closes. **Fee taken as** below the button sets the payment method used when you
+later click **Fee** on the tile.
+
+> ### One phone, several children
+>
+> A parent's number covers the whole family. Typing it lists **every child**
+> registered against it, and the message says so: *"3 people are registered on
+> this number. Select which one is here."*
+>
+> The number is matched on its digits, so `9008007001`, `+91 90080 07001` and
+> `90080 07001` all find the same family.
+>
+> If you click **Book visit** without choosing one, the application **stops you**
+> rather than quietly registering a fourth child who already exists.
+
+---
+
+# 5. The consultation
+
+Click **Consult** on a tile.
 
 ![Consultation](images/consultation.png)
 
-Vitals on the left, prescription on the right. Nothing is compulsory — record
-what you actually took.
+The heading shows the token, the patient, their age and sex, and the doctor.
 
-For each prescription line, pick the medicine from the catalogue where you can,
-rather than typing it free-hand. That lets the pharmacy pull the prescription
-straight onto a bill.
+## Left — clinical notes
 
-At the bottom:
+| Control | Notes |
+|---|---|
+| **Weight kg**, **BP**, **Temp °F** | Vitals. All optional |
+| **Complaint** | Carried over from booking; edit freely |
+| **Diagnosis** | Printed in bold on the prescription |
+| **Advice / notes** | Printed under the medicines |
+| **Fee** | Can be changed here |
+| **Review on** | Follow-up date. Printed as "Review on 01 Aug 2026" |
 
-- **Save** — keeps the notes, patient stays in the waiting column
-- **Print prescription** — saves, then opens the preview
-- **Save & complete** — saves and moves the tile to Completed
+## Right — the prescription
+
+One row per medicine.
+
+| Column | Notes |
+|---|---|
+| **Medicine** | Type it, or **pick it from the catalogue** |
+| **Dose** | e.g. `5 ml`, `1 tab` |
+| **Frequency** | e.g. `1-0-1`, `SOS` |
+| **Days** | How many days |
+| **Qty** | How many to dispense |
+| **Instructions** | e.g. "after food". Printed under the line |
+| **✕** | Removes the row |
+| **+ Add line** | Adds a row |
+
+> **Pick from the catalogue where you can.** A medicine chosen from the list can
+> be pulled straight onto a pharmacy bill later. Free text cannot.
+
+## Bottom buttons
+
+| Button | What it does |
+|---|---|
+| **Save** | Keeps everything. Patient stays in Waiting |
+| **Print prescription** | Saves, then opens the print preview |
+| **Save & complete** | Saves and **moves the tile to Completed** |
 
 ---
 
-## 4. Medicines and stock
+# 6. Medicines and stock
 
 ![Medicines](images/medicines.png)
 
-The catalogue is on the left, two forms on the right.
+## The catalogue (left)
 
-**Medicine details** — name, manufacturer, pack size, HSN code, GST rate,
-schedule (H, H1, X), rack location and reorder level. Only the name is required.
+Search box, **Search**, **Import bill**, **+ New medicine**. The grid shows
+medicine, pack, maker, rack, GST %, schedule, units per pack, and stock on hand.
+Click a row to load it into the forms on the right.
 
-**Add stock** — this is the *only* way stock enters the system, and it always
-creates a batch:
+## Medicine details (top right)
 
 | Field | Notes |
 |---|---|
-| Batch no | Printed on the pack. Required — it goes on the bill by law |
-| Expiry | The pack is good until the end of that month |
-| Qty / Free | Free is the scheme quantity, the "+1" in 10+1. It adds to stock |
-| Rate | What the hospital pays |
-| **MRP** | What the customer pays. The counter prices from this |
+| **Name** | The only required field |
+| **Manufacturer** | Company name |
+| **Pack size** | As printed, e.g. `10 TAB`, `60ML` |
+| **HSN** | Tax code. `3004` covers most formulations |
+| **GST %** | Usually 5 or 12 |
+| **Schedule** | `None`, `H`, `H1`, `X`. H1 sales are recorded in a register |
+| **Rack** | Where it sits on the shelf. Searchable |
+| **Reorder level** | Below this it appears in the Low stock report |
+| **Units per pack** | **10 for a ten-tablet strip. 1 for a syrup bottle** |
+| **Sell loose units** | Allows part of a strip to be sold |
+| **Active** | Uncheck to hide it from the counter |
+| **Save medicine** | Saves it |
 
-> **Price and expiry belong to the batch, not the medicine.** Two deliveries of
-> the same drug can have different MRPs and different expiry dates, and the bill
-> has to show what was actually handed over. That is why there is no single
-> "price" field on a medicine.
+> ### Units per pack is what makes loose sale work
+>
+> Set it to `10` for a strip of ten tablets and stock is counted in **tablets**,
+> so a customer can buy five. Leave it at `1` for a syrup bottle — half a bottle
+> is not a thing you can sell.
+
+## Add stock (bottom right)
+
+**This is the only way stock enters, and it always creates a batch.**
+
+| Field | Notes |
+|---|---|
+| **Batch no** | Printed on the pack. **Required — it goes on the bill by law** |
+| **Expiry** | The pack is good until the **end** of that month |
+| **Qty** | How many **packs** arrived |
+| **Free** | Scheme quantity, the "+1" in 10+1. Adds to stock, costs nothing |
+| **Rate** | What the hospital paid per pack |
+| **MRP** | The price printed on the pack. **The counter prices from this** |
+| **Supplier**, **Supplier bill no** | For your records |
+| **Add stock** | Adds it |
+
+Below that, **Batches in stock** lists every batch of the selected medicine with
+its expiry, MRP and quantity left.
+
+> **Adding stock always adds.** Receiving the same batch number again increases
+> what is on the shelf. It never replaces it.
 
 ---
 
-## 5. The pharmacy counter
+# 7. Importing a supplier bill
+
+Instead of keying in a delivery line by line, load the file your supplier sends.
+**Medicines → Import bill.**
+
+![Import a supplier bill](images/import.png)
+
+## Step 1 — choose the profile and the file
+
+| Control | What it does |
+|---|---|
+| **Supplier profile** | Which supplier's format this is. Each knows that supplier's date and expiry style |
+| **File** | The path. Use Browse |
+| **Supplier name** | **Type this** — the file does not contain it |
+| **Browse…** | Pick the file. Reads it immediately |
+| **Read file** | Re-reads it after changing the profile |
+
+## Step 2 — check what it will do
+
+The summary line reads, for example:
+*"Bill SW02236 dated 04 Jul 2026 · 9 line(s) · 9 new medicine(s) · 1042 unit(s) · net ₹15334.00"*
+
+| Column | Meaning |
+|---|---|
+| **STATUS** | `Matched` — found in your catalogue · `Check` — a likely match, confirm it · `New medicine` — will be created |
+| **MEDICINE**, **PACK**, **BATCH**, **EXPIRY** | As the supplier sent them |
+| **PER PACK** | **Editable.** Units in one pack |
+| **QTY**, **FREE** | Packs billed, and free packs |
+| **UNITS** | What will land on the shelf: (qty + free) × per pack |
+| **RATE**, **MRP**, **GST** | Cost, printed price, tax rate |
+
+**What the file says** below lists everything worth knowing — the bill date it
+read, MRP changes, anything it could not understand.
+
+> ### Check the PER PACK column
+>
+> The file rarely states how many are in a pack. `30s` is read as 30 gummies.
+> `60ML` is one bottle and stays `1` — a syrup is not sixty sellable units.
+>
+> For strips, **type the real number** before importing. Correct it once and the
+> medicine remembers it.
+
+## Step 3 — import
+
+**Import** writes everything in one go. **Close** abandons it — nothing is
+written until you click Import.
+
+Afterwards it reports: *"Imported as GRN00003: 9 line(s), 9 new medicine(s), 1042
+unit(s) added to stock."*
+
+### What the import guarantees
+
+- **Stock is added**, never replaced. 12 counted by hand plus 5 on the bill is 17
+- **The same bill cannot be imported twice.** It is refused by bill number
+- **Nothing is written if anything fails.** All of it, or none
+- **The supplier's product codes are remembered**, so their next bill matches by itself
+
+---
+
+# 8. The pharmacy counter
 
 ![Pharmacy counter](images/counter.png)
 
-Per line, three steps: **find the medicine, set the quantity, add**.
+Three steps per line: **find the medicine, set the quantity, add.**
 
-Type part of the name and press Enter. Pick from the list — it shows the pack,
-maker, rack and how many are in stock. The **nearest-expiry batch with stock is
-selected for you**, which is the order stock should leave the shelf in.
+## Add medicine to the bill
 
-Set the quantity, optionally a line discount, then **Add to bill**.
+| Control | What it does |
+|---|---|
+| **Medicine** | Type part of the name. Enter searches |
+| **Find** | Runs the search |
+| **Results list** | Shows pack, maker, rack and stock. Click one |
+| **Batch** | **The nearest-expiry batch with stock is chosen for you** |
+| **Qty (units)** | **Tablets, not strips.** `5` sells five out of a strip |
+| **Disc %** | Discount on this line |
+| **Add to bill** | Adds the line |
 
-The totals on the right update as you go:
+## Bill items
+
+| Column | Notes |
+|---|---|
+| **MEDICINE**, **BATCH**, **EXPIRY** | What is being handed over |
+| **QTY** | Base units. Editable |
+| **PACKS** | Reads back as `2 × 10 TAB + 3` |
+| **MRP**, **DISC %** | Editable |
+| **GST %**, **AMOUNT** | Calculated |
+| **✕** | Removes the line |
+
+## Customer (right)
+
+| Control | Notes |
+|---|---|
+| **Name** | Defaults to `Cash`. **A walk-in needs no patient record** |
+| **Prescribed by** | Doctor's name. Required on the bill for a Schedule H1 drug |
+| **Or pull today's OPD prescription** | Pick a patient seen today |
+| **Load prescription** | Puts every prescribed medicine that is in stock on the bill |
+
+## Totals
 
 ```
 Gross            what the MRP comes to
@@ -181,111 +426,148 @@ Round off        to the nearest rupee
 NET PAYABLE      what the customer hands over
 ```
 
-> **MRP already includes GST.** Tax is never added on top. Ten strips at ₹112
-> MRP come to exactly ₹1,120 — of which ₹1,000 is the taxable value and ₹120 is
-> GST. If you have ever seen software bill this as ₹1,254, that is the mistake
-> this avoids.
+| Control | What it does |
+|---|---|
+| **Payment** | Cash, UPI, Card or Credit |
+| **Save & print bill** | Saves and opens the preview |
+| **Save without printing** | Saves only |
+| **Clear bill** | Empties the counter without saving |
 
-To dispense a prescription, choose the patient under **Or pull today's OPD
-prescription** and click **Load prescription** — every prescribed medicine that
-is in stock lands on the bill. Anything missing is named so you can tell the
-parent.
+> ### MRP already includes GST
+>
+> Tax is never added on top. Ten strips at ₹112 MRP come to **exactly ₹1,120** —
+> of which ₹1,000 is the taxable value and ₹120 is GST.
 
-Finish with **Save & print bill**, or **Save without printing**. The counter
-clears itself for the next customer.
-
-The app refuses to sell more than you have, and refuses expired batches.
-
----
-
-## 6. Printing and reprinting
-
-Every document previews before anything reaches paper.
-
-![Print preview](images/print-preview.png)
-
-Use **Print** to send it, or **Close** to go back. If no printer is set up the
-app says so plainly rather than failing — you can still preview.
-
-Three documents:
-
-| Document | Number | Where from |
-|---|---|---|
-| Tax invoice (medicines) | `INV00001` | Counter, Reports day book, patient record |
-| Consultation receipt | `RCP00001` | OPD tile, patient record |
-| Prescription | `V00001` | Consultation window, OPD tile, patient record |
-
-**Anything can be reprinted at any time**, however long ago it was. A reprint is
-stamped **DUPLICATE** so it cannot be mistaken for the original.
+> ### A whole strip always costs what is printed on it
+>
+> Five tablets from a ₹112 strip of ten cost ₹56. But a **full** strip costs
+> ₹112, not ten times the rounded per-tablet price. This matters where the price
+> does not divide evenly: ₹87.50 across fifteen tablets is ₹5.83 each, and the
+> full strip still costs ₹87.50.
 
 ---
 
-## 7. Patient records
+# 9. Patients
 
 ![Patients](images/patients.png)
 
-Search by name, patient number, or phone. Selecting a patient shows their
-details on the right and their whole history below, in two tabs:
+Search by **name, patient number or phone**. A phone number lists the whole
+family.
 
-- **Visits & prescriptions** — every visit, with diagnosis, receipt number and
-  buttons to print the prescription or the fee receipt
-- **Medicine bills** — every bill, with a button to print it again
+## The register (top left)
 
-This is where you go when someone comes back weeks later having lost a receipt.
-A patient who has visits on record cannot be deleted.
+Patient no, name, phone, age, sex, allergies. Click a row to select it.
+
+## Patient details (right)
+
+| Field | Notes |
+|---|---|
+| **Patient no** | Allocated on save, e.g. `P00012` |
+| **Name**, **Phone**, **Age**, **Sex** | |
+| **Address**, **Allergies** | Optional |
+| **Save patient** | Saves changes |
+| **Remove** | Refused if they have visits on record |
+| **+ New patient** | Registers someone without booking a visit |
+
+## History (bottom left)
+
+**Visits & prescriptions** — every visit ever, with diagnosis, fee and receipt
+number. Select one, then:
+
+- **Print prescription** — prints it however long ago it was
+- **Print fee receipt** — prints the receipt again, marked DUPLICATE
+
+**Medicine bills** — every bill for this patient, with **Print bill**.
+
+> This is where you go when someone returns weeks later having lost a receipt.
 
 ---
 
-## 8. End of day
+# 10. Reports
 
 ![Reports](images/reports.png)
 
-Across the top: pharmacy sales, split by cash and UPI, consultation fees
-collected, and the number of OPD visits.
-
-Six tabs below:
+Across the top for the chosen date: pharmacy sales, cash, UPI, consultation fees
+collected, and OPD visits.
 
 | Tab | What it is for |
 |---|---|
-| **Day book** | Every bill for the day. Also searches **all dates** by bill number or customer name |
+| **Day book** | Every bill for the day. **Find any bill** searches every date by bill number or customer name. **Reprint selected bill** prints it again |
 | **GST summary** | Taxable value, CGST and SGST grouped by rate — what a return needs |
-| **OPD register** | Every visit, diagnosis, fee and whether it was paid |
-| **Expiring soon** | Batches within 90 days of expiry — return these to the distributor |
+| **OPD register** | Every visit, diagnosis, fee, and whether it was paid |
+| **Expiring soon** | Batches within 90 days of expiry. Return these to the distributor |
 | **Low stock** | Anything at or below its reorder level |
-| **Schedule H1 register** | Statutory record of H1 sales. Keep for three years |
+| **Schedule H1 register** | Statutory record of H1 sales. **Keep for three years** |
 
 ---
 
-## 9. Backups, logs, and problems
+# 11. Printing
 
-**Your data** lives in one file: `C:\ProgramData\TwinkleHMS\twinkle.db`. Copy
-that file and you have copied the clinic.
+Everything previews before any paper moves.
 
-**Backups** happen automatically — one copy per day into
-`C:\ProgramData\TwinkleHMS\backups`, keeping the last 14. That protects against
-mistakes, not against the PC dying. **Copy the folder to a pen drive weekly.**
+![Print preview](images/print-preview.png)
 
-**If something goes wrong,** the app tells you what happened and keeps running
-rather than closing on you. Every error is written to
-`C:\ProgramData\TwinkleHMS\logs`. Settings has an **Open log folder** button —
-send that day's file when reporting a problem.
+**Print** sends it. **Close** goes back. If no printer is set up the application
+says so plainly instead of failing, and you can still preview.
 
-### Things the app deliberately refuses
+| Document | Number | Print it from |
+|---|---|---|
+| Tax invoice (medicines) | `INV00001` | Counter · Reports day book · patient record |
+| Consultation receipt | `RCP00001` | OPD tile · patient record |
+| Prescription | `V00001` | Consultation · OPD tile · patient record |
 
-| It says | Because |
+**Anything can be reprinted at any time.** A reprint is stamped **DUPLICATE** so
+it cannot be mistaken for the original.
+
+---
+
+# 12. When something goes wrong
+
+## The application does not close on an error
+
+If something unexpected happens it tells you in plain words, writes the details
+to the log, and **keeps running**. A half-typed bill is not lost. You will see a
+message like:
+
+> *Taking the fee could not be completed. The change could not be saved — it may
+> already exist, or a required field is missing. Nothing was changed.*
+
+## Things it refuses on purpose
+
+| It says | Why |
 |---|---|
-| "Only 5 left of …" | You cannot sell stock you do not have |
+| "Only 3 × 10 TAB + 4 left of …" | You cannot sell stock you do not have |
 | "Batch … expired on …" | Expired medicine cannot be dispensed |
-| "3 people match that. Select which one" | Siblings share a phone; picking the wrong child is worse than a second click |
+| "3 people match that. Select which one" | Siblings share a phone; the wrong child is worse than a second click |
 | "This patient has visits on record" | Deleting them would orphan their bills |
-| "No MRP" on import | The counter prices from MRP and cannot sell without one |
+| "Bill … was already received on …" | Importing twice would double your stock |
+| "No MRP" during import | The counter prices from MRP and cannot sell without one |
+| "Batch number is required" | It has to appear on the bill by law |
 
-### Not in this version
+## Your data
 
-Sales returns and credit notes, purchase returns, inter-state IGST,
-e-invoicing, multi-terminal use, and the Schedule X narcotic register.
+Everything is in one file: `C:\ProgramData\TwinkleHMS\twinkle.db`. Copy that file
+and you have copied the clinic.
+
+**Backups** are automatic — one per day into `C:\ProgramData\TwinkleHMS\backups`,
+keeping the last 14. That protects against mistakes, **not against the PC dying**.
+Copy the folder to a pen drive weekly.
+
+**The log** is at `C:\ProgramData\TwinkleHMS\logs`, one file per day, 30 days
+kept. Settings has an **Open log folder** button. Send that day's file when
+reporting a problem.
+
+## Not in this version
+
+Sales returns and credit notes · purchase returns · a credit ledger showing who
+owes what · a stock adjustment screen for breakage · inter-state IGST ·
+e-invoicing · multi-terminal use · the Schedule X narcotic register.
+
+**Credit** appears as a payment method but nothing yet tracks who owes what — a
+bill marked Credit is recorded and the stock leaves, but the money is not
+followed up. Use Cash or UPI until that is built.
 
 The GST arithmetic and the invoice layout are correct for a retail counter, but
-this is not a certified e-invoicing integration. Have a CA review the GST
-summary before it feeds a return, and confirm register formats with your local
-drug inspector.
+this is not a certified e-invoicing integration. Have a CA review the GST summary
+before it feeds a return, and confirm register formats with your local drug
+inspector.

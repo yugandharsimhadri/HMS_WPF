@@ -76,6 +76,36 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("medicines");
 
+        // ── Importing a supplier bill ──────────────────────────────────────
+        app.Navigate("NavProducts", "Medicines");
+        app.Click("ProductsImport");
+
+        var import = Retry.WhileNull(
+            () => app.MainWindow.ModalWindows.FirstOrDefault(
+                w => w.Title.Contains("Import", StringComparison.OrdinalIgnoreCase)),
+            TimeSpan.FromSeconds(15)).Result;
+
+        // Profile B is the dash-date, month-name-expiry supplier.
+        import!.FindFirstDescendant(cf => cf.ByAutomationId("ImportProfile"))!
+               .AsComboBox().Select(1);
+
+        import.FindFirstDescendant(cf => cf.ByAutomationId("ImportFilePath"))!
+              .AsTextBox().Text = FixtureFile("Profile_B.csv");
+
+        import.FindFirstDescendant(cf => cf.ByAutomationId("ImportSupplier"))!
+              .AsTextBox().Text = "SW Distributors";
+
+        import.FindFirstDescendant(cf => cf.ByAutomationId("ImportPreview"))!.AsButton().Invoke();
+
+        AppFixture.WaitUntil(
+            () => (import.FindFirstDescendant(cf => cf.ByAutomationId("ImportSummary"))
+                         ?.AsLabel().Text ?? "").Contains("line"),
+            "the bill to be read");
+
+        Settle();
+        CaptureWindow(import, "import");
+        import.FindFirstDescendant(cf => cf.ByAutomationId("ImportClose"))!.AsButton().Invoke();
+
         // ── Pharmacy counter ───────────────────────────────────────────────
         app.Navigate("NavSale", "Pharmacy counter");
         app.Type("SaleSearch", "Calpol");
@@ -179,6 +209,11 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
                 w => !w.Title.StartsWith("Print preview", StringComparison.OrdinalIgnoreCase)),
             "the preview to close");
     }
+
+    /// <summary>The supplier files kept as test fixtures double as guide samples.</summary>
+    private static string FixtureFile(string name)
+        => Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..",
+                        "Pharma.Tests", "bin", "Debug", "net10.0", "Fixtures", name);
 
     /// <summary>Screenshots taken mid-transition come out ghosted.</summary>
     private static void Settle() => Thread.Sleep(1200);

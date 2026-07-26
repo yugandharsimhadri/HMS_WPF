@@ -247,8 +247,12 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     private async Task ArrivedAsync(Visit? visit)
     {
         if (visit is null) return;
-        await opd.SetStatusAsync(visit.Id, VisitStatus.Waiting);
-        await RefreshAsync();
+
+        await Safely.RunAsync(async () =>
+        {
+            await opd.SetStatusAsync(visit.Id, VisitStatus.Waiting);
+            await RefreshAsync();
+        }, "Marking arrived", m => Status = m);
     }
 
     /// <summary>Takes the fee, issues a numbered receipt, and offers to print it.</summary>
@@ -263,14 +267,17 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
             return;
         }
 
-        var paid = await opd.CollectFeeAsync(visit.Id, FeePaymentMode);
-        if (paid is null) return;
+        await Safely.RunAsync(async () =>
+        {
+            var paid = await opd.CollectFeeAsync(visit.Id, FeePaymentMode);
+            if (paid is null) return;
 
-        Status = $"Receipt {paid.FeeReceiptNo} — ₹{paid.Fee:0.00} received from {paid.Patient.Name}.";
-        await RefreshAsync();
+            Status = $"Receipt {paid.FeeReceiptNo} — ₹{paid.Fee:0.00} received from {paid.Patient.Name}.";
+            await RefreshAsync();
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => FeeReceiptDocument.Build(paid, shop), $"Receipt {paid.FeeReceiptNo}");
+            var shop = await settings.GetAsync();
+            PrintService.Preview(() => FeeReceiptDocument.Build(paid, shop), $"Receipt {paid.FeeReceiptNo}");
+        }, "Taking the fee", m => Status = m);
     }
 
     /// <summary>Moves the tile out of waiting and into completed.</summary>
@@ -279,10 +286,12 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     {
         if (visit is null) return;
 
-        await opd.SetStatusAsync(visit.Id, VisitStatus.Completed);
-        await RefreshAsync();
-
-        Status = $"Token {visit.TokenNo} moved to completed.";
+        await Safely.RunAsync(async () =>
+        {
+            await opd.SetStatusAsync(visit.Id, VisitStatus.Completed);
+            await RefreshAsync();
+            Status = $"Token {visit.TokenNo} moved to completed.";
+        }, "Moving to completed", m => Status = m);
     }
 
     [RelayCommand]
@@ -290,10 +299,12 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     {
         if (visit is null) return;
 
-        await opd.SetStatusAsync(visit.Id, VisitStatus.Waiting);
-        await RefreshAsync();
-
-        Status = $"Token {visit.TokenNo} moved back to waiting.";
+        await Safely.RunAsync(async () =>
+        {
+            await opd.SetStatusAsync(visit.Id, VisitStatus.Waiting);
+            await RefreshAsync();
+            Status = $"Token {visit.TokenNo} moved back to waiting.";
+        }, "Moving back to waiting", m => Status = m);
     }
 
     [RelayCommand]
@@ -316,18 +327,21 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     {
         if (visit is null) return;
 
-        await opd.SetStatusAsync(visit.Id, VisitStatus.InConsultation);
-
-        var window = new Views.ConsultationWindow(visit.Id)
+        await Safely.RunAsync(async () =>
         {
-            Owner = Application.Current.MainWindow
-        };
+            await opd.SetStatusAsync(visit.Id, VisitStatus.InConsultation);
 
-        window.ShowDialog();
+            var window = new Views.ConsultationWindow(visit.Id)
+            {
+                Owner = Application.Current.MainWindow
+            };
 
-        // Completing the consultation sets the status, so the tile lands in the
-        // other column as soon as this refresh runs.
-        await RefreshAsync();
+            window.ShowDialog();
+
+            // Completing the consultation sets the status, so the tile lands in
+            // the other column as soon as this refresh runs.
+            await RefreshAsync();
+        }, "Opening the consultation", m => Status = m);
     }
 
     [RelayCommand]
