@@ -169,14 +169,20 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     [RelayCommand]
     private async Task AddLineAsync()
     {
+        using var log = AppLog.Enter(
+            "Counter.AddLine",
+            $"product='{SelectedProduct?.Name}' id={SelectedProduct?.Id} qty={Quantity} disc={DiscountPercent}%");
+
         if (SelectedProduct is null)
         {
+            log.Skip("no medicine chosen");
             Warn("Choose a medicine from the list first.");
             return;
         }
 
         if (Quantity <= 0)
         {
+            log.Skip($"quantity {Quantity} is not sellable");
             Warn("Quantity must be at least 1.");
             return;
         }
@@ -189,6 +195,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         if (!product.AllowLooseSale && product.UnitsPerPack > 1 && Quantity % product.UnitsPerPack != 0)
         {
             var packs = (Quantity / product.UnitsPerPack) + 1;
+
+            log.Skip($"loose sale refused: {Quantity} is not a multiple of {product.UnitsPerPack}");
 
             Warn($"{product.Name} is not sold loose — it goes out in whole packs of " +
                  $"{product.UnitsPerPack}. Enter {packs * product.UnitsPerPack} for {packs} pack(s).");
@@ -204,6 +212,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         {
             var have = allocations.Sum(a => a.Units) - alreadyOnBill;
             var unit = product.DispensingUnit.Name(Math.Max(have, 2));
+
+            log.Skip($"short by {shortfall}; only {have} sellable");
 
             Warn(have <= 0
                 ? $"{product.Name} has none left that can be sold."
@@ -249,6 +259,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             : allocations.Count > 1
                 ? $"{product.Name} added from {allocations.Count} batches."
                 : $"{product.Name} added.";
+
+        log.Ok($"{Lines.Count} line(s) on the bill, net {Net:0.00}");
 
         // The search and its results stay put, so the next medicine is one click
         // away and the operator can see what else is on the shelf.
@@ -303,14 +315,22 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     [RelayCommand]
     private async Task LoadPrescriptionAsync()
     {
+        using var log = AppLog.Enter("Counter.LoadPrescription", $"visit={SelectedVisit?.Id}");
+
         if (SelectedVisit is null)
         {
+            log.Skip("no visit chosen");
             Warn("Choose a patient from today's OPD list first.");
             return;
         }
 
         var visit = await opd.GetVisitAsync(SelectedVisit.Id);
-        if (visit is null) return;
+
+        if (visit is null)
+        {
+            log.Skip("visit no longer exists");
+            return;
+        }
 
         var missing = new List<string>();
         var partial = new List<string>();
@@ -384,6 +404,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Status = notes.Count == 0
             ? $"Loaded {visit.Prescription.Count} item(s) from token {visit.TokenNo}."
             : $"Loaded. {string.Join(". ", notes)}.";
+
+        log.Ok($"{Lines.Count} line(s) added; missing={missing.Count} short={partial.Count}");
     }
 
     [RelayCommand]
@@ -394,8 +416,13 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
     private async Task CompleteSaleAsync(bool print)
     {
+        using var log = AppLog.Enter(
+            "Counter.SaveBill",
+            $"print={print} lines={Lines.Count} customer='{CustomerName}' pay={PaymentMode}");
+
         if (Lines.Count == 0)
         {
+            log.Skip("nothing on the bill");
             Warn("Add at least one medicine to the bill.");
             return;
         }
@@ -407,6 +434,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         {
             var h1 = string.Join(", ", Lines.Where(l => l.Schedule == DrugSchedule.H1)
                                             .Select(l => l.ProductName).Distinct());
+
+            log.Skip($"H1 refused: no prescriber for {h1}");
 
             Warn($"{h1} is Schedule H1. Enter the prescribing doctor's name before saving — " +
                  $"it goes in the H1 register, which has to be kept for three years.");
@@ -457,9 +486,15 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             }
 
             NewBill();
+            log.Ok($"{saved.BillNo} net={saved.NetAmount:0.00} printed={print}");
         }
         catch (Exception ex)
         {
+            // The counter shows the plain message; the log keeps the whole thing,
+            // because this is the one place money stops being recorded.
+            log.Skip($"refused: {ex.GetType().Name}: {ex.Message}");
+            AppLog.Error("Saving the bill failed.", ex);
+
             Warn(ex.Message);
         }
     }

@@ -122,8 +122,15 @@ public partial class ConsultationViewModel : ObservableObject
 
     public async Task LoadAsync()
     {
+        using var log = AppLog.Enter("Consultation.Load", $"visit={_visitId}");
+
         Visit = await _opd.GetVisitAsync(_visitId);
-        if (Visit is null) return;
+
+        if (Visit is null)
+        {
+            log.Skip("visit not found");
+            return;
+        }
 
         Header = $"Token {Visit.TokenNo} · {Visit.Patient.Name} · {Visit.Patient.Age}{Visit.Patient.Gender.ToString()[0]} · {Visit.Doctor.Name}";
         Complaint = Visit.Complaint ?? "";
@@ -159,6 +166,8 @@ public partial class ConsultationViewModel : ObservableObject
 
         RecalculateCourse();
         _savedSnapshot = Snapshot();
+
+        log.Ok($"{Visit.VisitNo} '{Visit.Patient.Name}' rx={Lines.Count} catalogue={Products.Count}");
     }
 
     // Recompute the course whenever anything it depends on changes.
@@ -371,7 +380,15 @@ public partial class ConsultationViewModel : ObservableObject
 
     private async Task PersistAsync(bool complete, string? message)
     {
-        if (Visit is null) return;
+        using var log = AppLog.Enter(
+            "Consultation.Save",
+            $"visit={_visitId} complete={complete} lines={Lines.Count}");
+
+        if (Visit is null)
+        {
+            log.Skip("no visit loaded");
+            return;
+        }
 
         Visit.Complaint = Trim(Complaint);
         Visit.Diagnosis = Trim(Diagnosis);
@@ -401,9 +418,14 @@ public partial class ConsultationViewModel : ObservableObject
             await _opd.SaveConsultationAsync(Visit, items, complete);
             _savedSnapshot = Snapshot();
             if (message is not null) Status = message;
+
+            log.Ok($"{Visit.VisitNo} {items.Count} prescribed line(s)");
         }
         catch (Exception ex)
         {
+            log.Skip($"failed: {ex.GetType().Name}: {ex.Message}");
+            AppLog.Error("Saving the consultation failed.", ex);
+
             MessageBox.Show(ex.Message, "Consultation", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }

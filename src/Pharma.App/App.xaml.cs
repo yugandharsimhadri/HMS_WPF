@@ -25,6 +25,7 @@ public partial class App : Application
         AppLog.Info($"Settings: {AppConfig.FilePath}");
         AppLog.Info($"Database: {DbBootstrapper.DatabasePath}");
         AppLog.Info($"Logs:     {AppLog.LogDirectory}");
+        AppLog.Info($"Method tracing: {(AppConfig.Current.TraceMethods ? "on" : "off")}");
 
         // Both of these are the sort of thing that is invisible until someone
         // goes looking for a log that is not where they expected.

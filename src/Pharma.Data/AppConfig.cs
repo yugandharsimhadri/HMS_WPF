@@ -16,6 +16,14 @@ public class AppSettings
 
     /// <summary>Days of log files to keep.</summary>
     public int LogDaysToKeep { get; set; } = 30;
+
+    /// <summary>
+    /// Writes a line on entry to and exit from every service and command, with
+    /// the identifiers needed to trace a problem back to the record it touched.
+    /// On by default: a clinic PC has no debugger attached and the log is the
+    /// only account of what happened. Set false to quieten it.
+    /// </summary>
+    public bool TraceMethods { get; set; } = true;
 }
 
 /// <summary>

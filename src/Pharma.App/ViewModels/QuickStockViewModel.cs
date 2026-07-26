@@ -83,6 +83,10 @@ public partial class QuickStockViewModel : ObservableObject
     [RelayCommand]
     private async Task AddAsync()
     {
+        AppLog.Trace(
+            $"QuickStock.Add product='{_product.Name}' id={_product.Id} packs={Packs} " +
+            $"mrp={Mrp} rate={PurchaseRate} batch='{BatchNo}' exp={ExpiryDate:yyyy-MM-dd}");
+
         await Safely.RunAsync(async () =>
         {
             var batch = await _pharmacy.QuickAddStockAsync(

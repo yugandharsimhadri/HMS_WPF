@@ -16,14 +16,20 @@ public static class Safely
 {
     public static async Task RunAsync(Func<Task> action, string what, Action<string>? report = null)
     {
+        // Every guarded action is bracketed, so the log shows what the operator
+        // set off and whether it finished — without each caller repeating it.
+        using var log = AppLog.Enter(what);
+
         try
         {
             await action();
+            log.Ok();
         }
         catch (Exception ex)
         {
             var message = $"{what} could not be completed. {Explain(ex)}";
 
+            log.Skip($"failed: {ex.GetType().Name}: {ex.Message}");
             AppLog.Error($"{what} failed.", ex);
             report?.Invoke(message);
 

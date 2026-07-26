@@ -62,6 +62,10 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task GoAsync(string key)
     {
+        // Every screen change is a marker in the log, so a problem can be placed
+        // against what the user was looking at when it happened.
+        using var log = AppLog.Enter("Shell.Go", $"to={key}");
+
         IPage page = key switch
         {
             "patients" => _patients,
@@ -89,6 +93,8 @@ public partial class MainViewModel : ObservableObject
 
         await page.LoadAsync();
         Subtitle = page.Subtitle;
+
+        log.Ok($"{page.Title} — {page.Subtitle}");
     }
 
     /// <summary>

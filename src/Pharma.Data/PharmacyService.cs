@@ -40,6 +40,8 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
     public async Task<List<Product>> SearchProductsAsync(string? term, int take = 50)
     {
+        using var log = AppLog.Enter(nameof(SearchProductsAsync), $"term='{term}' take={take}");
+
         await using var db = await factory.CreateDbContextAsync();
         var q = db.Products.Include(p => p.Batches).Where(p => !p.IsDeleted);
 
@@ -53,11 +55,19 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
                           || (p.RackLocation != null && p.RackLocation.Contains(term)));
         }
 
-        return await q.OrderBy(p => p.Name).Take(take).ToListAsync();
+        var found = await q.OrderBy(p => p.Name).Take(take).ToListAsync();
+
+        log.Ok($"{found.Count} match(es)");
+        return found;
     }
 
     public async Task SaveProductAsync(Product product)
     {
+        using var log = AppLog.Enter(
+            nameof(SaveProductAsync),
+            $"id={product.Id} name='{product.Name}' pack='{product.PackSize}' " +
+            $"perPack={product.UnitsPerPack} loose={product.AllowLooseSale}");
+
         await using var db = await factory.CreateDbContextAsync();
 
         if (product.Id != Guid.Empty && await db.Products.AnyAsync(p => p.Id == product.Id))
@@ -87,6 +97,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         }
 
         await db.SaveChangesAsync();
+        log.Ok($"saved id={product.Id}");
     }
 
     // ── Stock ──────────────────────────────────────────────────────────────
@@ -94,11 +105,17 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     /// <summary>Batches with stock left, nearest expiry first — the order stock is dispensed in.</summary>
     public async Task<List<Batch>> GetSellableBatchesAsync(Guid productId)
     {
+        using var log = AppLog.Enter(nameof(GetSellableBatchesAsync), $"product={productId}");
+
         await using var db = await factory.CreateDbContextAsync();
-        return await db.Batches
+
+        var batches = await db.Batches
             .Where(b => !b.IsDeleted && b.ProductId == productId && b.QtyOnHand > 0)
             .OrderBy(b => b.ExpiryDate)
             .ToListAsync();
+
+        log.Ok($"{batches.Count} batch(es), {batches.Sum(b => b.QtyOnHand)} unit(s) on hand");
+        return batches;
     }
 
     /// <summary>How many units of a requested quantity come from which batch.</summary>
@@ -114,8 +131,15 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     /// </summary>
     public async Task<(List<Allocation> Allocations, int Shortfall)> AllocateAsync(Guid productId, int units)
     {
+        using var log = AppLog.Enter(nameof(AllocateAsync), $"product={productId} wanted={units}");
+
         var allocations = new List<Allocation>();
-        if (units <= 0) return (allocations, 0);
+
+        if (units <= 0)
+        {
+            log.Skip("nothing requested");
+            return (allocations, 0);
+        }
 
         var remaining = units;
 
@@ -131,21 +155,37 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             remaining -= take;
         }
 
+        log.Ok($"{allocations.Count} batch(es) " +
+               $"[{string.Join(", ", allocations.Select(a => $"{a.Batch.BatchNo}×{a.Units}"))}] " +
+               $"shortfall={remaining}");
+
         return (allocations, remaining);
     }
 
     public async Task<List<Batch>> GetAllBatchesAsync()
     {
+        using var log = AppLog.Enter(nameof(GetAllBatchesAsync));
+
         await using var db = await factory.CreateDbContextAsync();
-        return await db.Batches.Include(b => b.Product)
+
+        var batches = await db.Batches.Include(b => b.Product)
             .Where(b => !b.IsDeleted && b.QtyOnHand > 0)
             .OrderBy(b => b.ExpiryDate)
             .ToListAsync();
+
+        log.Ok($"{batches.Count} batch(es)");
+        return batches;
     }
 
     /// <summary>Receives a supplier consignment. This is the only way stock enters the system.</summary>
     public async Task<StockEntry> ReceiveStockAsync(StockEntry entry, IEnumerable<StockEntryItem> items)
     {
+        var received = items.ToList();
+
+        using var log = AppLog.Enter(
+            nameof(ReceiveStockAsync),
+            $"supplier='{entry.SupplierName}' invoice='{entry.SupplierInvoiceNo}' lines={received.Count}");
+
         await using var db = await factory.CreateDbContextAsync();
         await using var tx = await db.Database.BeginTransactionAsync();
 
@@ -153,9 +193,13 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         entry.TotalAmount = 0;
         db.StockEntries.Add(entry);
 
-        foreach (var item in items)
+        foreach (var item in received)
         {
-            if (item.Quantity <= 0 && item.FreeQuantity <= 0) continue;
+            if (item.Quantity <= 0 && item.FreeQuantity <= 0)
+            {
+                AppLog.Warn($"  {entry.EntryNo}: skipped {item.BatchNo} — no quantity on the line.");
+                continue;
+            }
 
             item.StockEntryId = entry.Id;
             db.StockEntryItems.Add(item);
@@ -182,9 +226,15 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
                     SupplierName = entry.SupplierName,
                     ReceivedOn = entry.EntryDate
                 });
+
+                AppLog.Trace(
+                    $"  new batch {item.BatchNo} product={item.ProductId} " +
+                    $"packs={item.Quantity}+{item.FreeQuantity} perPack={item.UnitsPerPack} " +
+                    $"= {item.UnitsReceived} unit(s), mrp={item.Mrp:0.00} exp={item.ExpiryDate:MM/yyyy}");
             }
             else
             {
+                var before = batch.QtyOnHand;
                 batch.QtyOnHand += item.UnitsReceived;
 
                 // Price and expiry take the newest consignment's values; the pack
@@ -193,6 +243,10 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
                 batch.Mrp = item.Mrp;
                 batch.PurchaseRate = item.PurchaseRate;
                 batch.ExpiryDate = item.ExpiryDate;
+
+                AppLog.Trace(
+                    $"  batch {item.BatchNo} product={item.ProductId} " +
+                    $"{before} + {item.UnitsReceived} = {batch.QtyOnHand} unit(s), mrp={item.Mrp:0.00}");
             }
         }
 
@@ -200,6 +254,8 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         await tx.CommitAsync();
 
         AppLog.Info($"Stock entry {entry.EntryNo} received from {entry.SupplierName ?? "(no supplier)"}.");
+
+        log.Ok($"{entry.EntryNo} total={entry.TotalAmount:0.00}");
         return entry;
     }
 
@@ -211,6 +267,10 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     public async Task<StockAdjustment> AdjustStockAsync(
         Guid batchId, int newQuantity, AdjustmentReason reason, string? notes = null, string? by = null)
     {
+        using var log = AppLog.Enter(
+            nameof(AdjustStockAsync),
+            $"batch={batchId} to={newQuantity} reason={reason} by={by}");
+
         if (newQuantity < 0)
             throw new InvalidOperationException("A batch cannot hold less than nothing.");
 
@@ -246,6 +306,9 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             $"Stock corrected: {adjustment.ProductName} batch {adjustment.BatchNo} " +
             $"{adjustment.QuantityBefore} → {adjustment.QuantityAfter} ({reason}).");
 
+        log.Ok($"'{adjustment.ProductName}' {adjustment.BatchNo} " +
+               $"{adjustment.QuantityBefore}→{adjustment.QuantityAfter}");
+
         return adjustment;
     }
 
@@ -265,6 +328,10 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         string? batchNo = null, DateTime? expiry = null,
         decimal purchaseRate = 0m, string? by = null)
     {
+        using var log = AppLog.Enter(
+            nameof(QuickAddStockAsync),
+            $"product={productId} packs={packs} mrp={mrp:0.00} batch='{batchNo}' by={by}");
+
         if (packs <= 0) throw new InvalidOperationException("Enter how many packs are on the shelf.");
         if (mrp <= 0) throw new InvalidOperationException("Enter the MRP printed on the pack — nothing can be sold without it.");
 
@@ -322,6 +389,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             $"Counter stock: {batch.QtyOnHand} unit(s) of {product.Name} " +
             $"as batch {batch.BatchNo} (provisional, by {by ?? "unknown"}).");
 
+        log.Ok($"{entry.EntryNo} batch={batch.BatchNo} onHand={batch.QtyOnHand} perPack={perPack}");
         return batch;
     }
 
@@ -331,12 +399,18 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     /// </summary>
     public async Task<List<Batch>> GetProvisionalBatchesAsync()
     {
+        using var log = AppLog.Enter(nameof(GetProvisionalBatchesAsync));
+
         await using var db = await factory.CreateDbContextAsync();
-        return await db.Batches
+
+        var batches = await db.Batches
             .Include(b => b.Product)
             .Where(b => !b.IsDeleted && b.IsProvisional)
             .OrderByDescending(b => b.ReceivedOn)
             .ToListAsync();
+
+        log.Ok($"{batches.Count} awaiting reconciliation");
+        return batches;
     }
 
     /// <summary>
@@ -349,6 +423,8 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     /// </summary>
     public async Task<RepackPreview> PreviewRepackAsync(Guid productId, int unitsPerPack)
     {
+        using var log = AppLog.Enter(nameof(PreviewRepackAsync), $"product={productId} perPack={unitsPerPack}");
+
         await using var db = await factory.CreateDbContextAsync();
 
         var perPack = Math.Max(1, unitsPerPack);
@@ -357,13 +433,16 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             .Where(b => b.ProductId == productId && b.QtyOnHand > 0 && b.UnitsPerPack != perPack)
             .ToListAsync();
 
-        return new RepackPreview
+        var preview = new RepackPreview
         {
             UnitsPerPack = perPack,
             Batches = batches.Count,
             QuantityBefore = batches.Sum(b => b.QtyOnHand),
             QuantityAfter = batches.Sum(b => b.QtyOnHand / Math.Max(1, b.UnitsPerPack) * perPack)
         };
+
+        log.Ok($"{preview.Batches} batch(es) {preview.QuantityBefore}→{preview.QuantityAfter}");
+        return preview;
     }
 
     /// <summary>
@@ -376,6 +455,8 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     /// </summary>
     public async Task<int> RepackAsync(Guid productId, int unitsPerPack, string? by = null)
     {
+        using var log = AppLog.Enter(nameof(RepackAsync), $"product={productId} perPack={unitsPerPack} by={by}");
+
         var perPack = Math.Max(1, unitsPerPack);
 
         await using var db = await factory.CreateDbContextAsync();
@@ -421,17 +502,24 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
         AppLog.Info($"Repacked {product.Name}: {batches.Count} batch(es) recounted at {perPack} per pack.");
 
+        log.Ok($"'{product.Name}' {batches.Count} batch(es) at {perPack} per pack");
         return batches.Count;
     }
 
     /// <summary>The correction trail, newest first.</summary>
     public async Task<List<StockAdjustment>> GetAdjustmentsAsync(int take = 200)
     {
+        using var log = AppLog.Enter(nameof(GetAdjustmentsAsync), $"take={take}");
+
         await using var db = await factory.CreateDbContextAsync();
-        return await db.StockAdjustments
+
+        var adjustments = await db.StockAdjustments
             .OrderByDescending(a => a.AdjustedOn)
             .Take(take)
             .ToListAsync();
+
+        log.Ok($"{adjustments.Count} correction(s)");
+        return adjustments;
     }
 
     // ── Sales ──────────────────────────────────────────────────────────────
@@ -442,6 +530,11 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     /// </summary>
     public async Task<Sale> SaveSaleAsync(Sale sale, IReadOnlyList<SaleLine> lines)
     {
+        using var log = AppLog.Enter(
+            nameof(SaveSaleAsync),
+            $"customer='{sale.CustomerName}' doctor='{sale.DoctorName}' visit={sale.VisitId} " +
+            $"lines={lines.Count} pay={sale.PaymentMode} taxInvoice={sale.IsTaxInvoice}");
+
         if (lines.Count == 0) throw new InvalidOperationException("Add at least one medicine to the bill.");
 
         await using var db = await factory.CreateDbContextAsync();
@@ -451,6 +544,13 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
         foreach (var line in lines)
         {
+            // Every input to the arithmetic, so a disputed bill can be recomputed
+            // from the log alone.
+            AppLog.Trace(
+                $"  line '{line.ProductName}' batch={line.BatchNo} qty={line.Quantity} " +
+                $"perPack={line.UnitsPerPack} mrp={line.Mrp:0.00} disc={line.DiscountPercent}% " +
+                $"gst={line.GstRate}% schedule={line.Schedule}");
+
             var batch = await db.Batches.FirstOrDefaultAsync(b => b.Id == line.BatchId)
                         ?? throw new InvalidOperationException($"Batch not found for {line.ProductName}.");
 
@@ -466,7 +566,12 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
                                              line.DiscountPercent, line.GstRate);
             computed.Add(amounts);
 
+            var before = batch.QtyOnHand;
             batch.QtyOnHand -= line.Quantity;
+
+            AppLog.Trace(
+                $"    → net={amounts.Net:0.00} taxable={amounts.Taxable:0.00} gst={amounts.Gst:0.00}; " +
+                $"batch {batch.BatchNo} {before} → {batch.QtyOnHand}");
 
             db.SaleItems.Add(new SaleItem
             {
@@ -525,23 +630,38 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         await tx.CommitAsync();
 
         AppLog.Info($"Bill {sale.BillNo} saved: {lines.Count} line(s), net {sale.NetAmount:0.00}, {sale.PaymentMode}.");
+
+        log.Ok($"{sale.BillNo} id={sale.Id} gross={sale.GrossAmount:0.00} " +
+               $"disc={sale.DiscountAmount:0.00} gst={sale.CgstAmount + sale.SgstAmount:0.00} " +
+               $"round={sale.RoundOff:0.00} net={sale.NetAmount:0.00}");
+
         return sale;
     }
 
     public async Task<Sale?> GetSaleAsync(Guid id)
     {
+        using var log = AppLog.Enter(nameof(GetSaleAsync), $"id={id}");
+
         await using var db = await factory.CreateDbContextAsync();
-        return await db.Sales.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
+        var sale = await db.Sales.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
+
+        log.Ok(sale is null ? "not found" : $"{sale.BillNo} net={sale.NetAmount:0.00}");
+        return sale;
     }
 
     /// <summary>Every medicine bill for a patient, newest first, regardless of date.</summary>
     public async Task<List<Sale>> GetSalesByPatientAsync(Guid patientId)
     {
+        using var log = AppLog.Enter(nameof(GetSalesByPatientAsync), $"patient={patientId}");
+
         await using var db = await factory.CreateDbContextAsync();
-        return await db.Sales.Include(s => s.Items)
+        var sales = await db.Sales.Include(s => s.Items)
             .Where(s => s.PatientId == patientId)
             .OrderByDescending(s => s.BillDate)
             .ToListAsync();
+
+        log.Ok($"{sales.Count} bill(s)");
+        return sales;
     }
 
     /// <summary>
@@ -551,6 +671,8 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     /// </summary>
     public async Task<List<Sale>> SearchSalesAsync(string? term, int take = 100)
     {
+        using var log = AppLog.Enter(nameof(SearchSalesAsync), $"term='{term}' take={take}");
+
         await using var db = await factory.CreateDbContextAsync();
         var q = db.Sales.Include(s => s.Items).AsQueryable();
 
@@ -560,43 +682,61 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             q = q.Where(s => s.BillNo.Contains(term) || s.CustomerName.Contains(term));
         }
 
-        return await q.OrderByDescending(s => s.BillDate).Take(take).ToListAsync();
+        var sales = await q.OrderByDescending(s => s.BillDate).Take(take).ToListAsync();
+
+        log.Ok($"{sales.Count} bill(s)");
+        return sales;
     }
 
     public async Task<List<Sale>> GetSalesAsync(DateTime date)
     {
+        using var log = AppLog.Enter(nameof(GetSalesAsync), $"date={date:yyyy-MM-dd}");
+
         await using var db = await factory.CreateDbContextAsync();
         var from = date.Date;
         var to = from.AddDays(1);
 
-        return await db.Sales.Include(s => s.Items)
+        var sales = await db.Sales.Include(s => s.Items)
             .Where(s => s.BillDate >= from && s.BillDate < to)
             .OrderByDescending(s => s.BillDate)
             .ToListAsync();
+
+        log.Ok($"{sales.Count} bill(s), net {sales.Sum(s => s.NetAmount):0.00}");
+        return sales;
     }
 
     // ── Alerts ─────────────────────────────────────────────────────────────
 
     public async Task<List<Batch>> GetExpiringAsync(int withinDays = 90)
     {
+        using var log = AppLog.Enter(nameof(GetExpiringAsync), $"withinDays={withinDays}");
+
         await using var db = await factory.CreateDbContextAsync();
         var cutoff = DateTime.Today.AddDays(withinDays);
 
-        return await db.Batches.Include(b => b.Product)
+        var batches = await db.Batches.Include(b => b.Product)
             .Where(b => !b.IsDeleted && b.QtyOnHand > 0 && b.ExpiryDate <= cutoff)
             .OrderBy(b => b.ExpiryDate)
             .ToListAsync();
+
+        log.Ok($"{batches.Count} batch(es) expiring by {cutoff:yyyy-MM-dd}");
+        return batches;
     }
 
     public async Task<List<Product>> GetLowStockAsync()
     {
+        using var log = AppLog.Enter(nameof(GetLowStockAsync));
+
         await using var db = await factory.CreateDbContextAsync();
         var products = await db.Products.Include(p => p.Batches)
             .Where(p => !p.IsDeleted && p.IsActive && p.ReorderLevel > 0)
             .ToListAsync();
 
-        return products.Where(p => p.StockOnHand <= p.ReorderLevel)
-                       .OrderBy(p => p.Name)
-                       .ToList();
+        var low = products.Where(p => p.StockOnHand <= p.ReorderLevel)
+                          .OrderBy(p => p.Name)
+                          .ToList();
+
+        log.Ok($"{low.Count} at or below reorder level");
+        return low;
     }
 }

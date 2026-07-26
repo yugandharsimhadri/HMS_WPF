@@ -168,6 +168,10 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     [RelayCommand]
     private async Task ReceiveStockAsync()
     {
+        AppLog.Trace(
+            $"Inventory.ReceiveStock product='{SelectedProduct?.Name}' id={SelectedProduct?.Id} " +
+            $"batch='{BatchNo}' packs={Packs}+{FreePacks} rate={PurchaseRate} mrp={Mrp} exp={ExpiryDate:yyyy-MM-dd}");
+
         if (SelectedProduct is null)
         {
             Warn("Choose the medicine you are receiving.");
@@ -258,6 +262,10 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     [RelayCommand]
     private async Task CorrectStockAsync()
     {
+        AppLog.Trace(
+            $"Inventory.CorrectStock batch={SelectedBatch?.Id} to={CorrectedQuantity} " +
+            $"reason={AdjustmentReason} notes='{AdjustmentNotes}'");
+
         if (SelectedBatch is null)
         {
             Warn("Choose the batch whose count is wrong.");

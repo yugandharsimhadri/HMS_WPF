@@ -171,6 +171,11 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     [RelayCommand]
     private async Task BookAsync()
     {
+        using var log = AppLog.Enter(
+            "Opd.Book",
+            $"patient={SelectedPatient?.Id} new={AddingPatient} doctor={SelectedDoctor?.Id} " +
+            $"date={Date:yyyy-MM-dd} time={Time} fee={Fee}");
+
         try
         {
             var patient = SelectedPatient;
