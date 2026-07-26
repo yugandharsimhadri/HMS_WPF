@@ -221,6 +221,10 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
             ExpiryDate = ExpiryDate,
             Quantity = Quantity,
             FreeQuantity = FreeQuantity,
+            // Without this the batch was stocked in packs while the counter priced
+            // and sold in units, so ten strips became ten tablets and every sale
+            // charged a whole strip. The import path always set it; this one did not.
+            UnitsPerPack = SelectedProduct.UnitsPerPack,
             PurchaseRate = PurchaseRate,
             Mrp = Mrp
         };
@@ -228,7 +232,8 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         try
         {
             await pharmacy.ReceiveStockAsync(entry, [item]);
-            Status = $"{Quantity + FreeQuantity} unit(s) of {SelectedProduct.Name} added to batch {item.BatchNo}.";
+            Status = $"{item.UnitsReceived} unit(s) of {SelectedProduct.Name} added to batch {item.BatchNo} " +
+                     $"({Quantity + FreeQuantity} × {SelectedProduct.UnitsPerPack}).";
 
             BatchNo = "";
             Quantity = FreeQuantity = 0;

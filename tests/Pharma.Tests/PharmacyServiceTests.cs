@@ -163,6 +163,70 @@ public class PharmacyServiceTests : IDisposable
         Assert.Equal("INV00002", second.BillNo);
     }
 
+    // ── Packs in, units out ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Receiving_strips_puts_tablets_on_the_shelf()
+    {
+        // A strip of ten at MRP 112, ten strips received.
+        var product = new Product { Name = "Strip Drug 500mg", GstRate = 12m, UnitsPerPack = 10, PackSize = "10 TAB" };
+        await _pharmacy.SaveProductAsync(product);
+
+        await _pharmacy.ReceiveStockAsync(
+            new StockEntry(),
+            [new StockEntryItem
+            {
+                ProductId = product.Id, BatchNo = "S1",
+                ExpiryDate = DateTime.Today.AddYears(2),
+                Quantity = 10, UnitsPerPack = 10,
+                PurchaseRate = 80m, Mrp = 112m
+            }]);
+
+        var batch = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+
+        // Ten strips is a hundred tablets, and the batch remembers the pack it came in.
+        Assert.Equal(100, batch.QtyOnHand);
+        Assert.Equal(10, batch.UnitsPerPack);
+        Assert.Equal(112m, batch.Mrp);          // still the pack MRP
+        Assert.Equal(11.20m, batch.UnitPrice);  // per tablet
+    }
+
+    [Fact]
+    public async Task Selling_tablets_from_a_strip_charges_per_tablet()
+    {
+        var product = new Product { Name = "Strip Drug 500mg", GstRate = 12m, UnitsPerPack = 10, PackSize = "10 TAB" };
+        await _pharmacy.SaveProductAsync(product);
+
+        await _pharmacy.ReceiveStockAsync(
+            new StockEntry(),
+            [new StockEntryItem
+            {
+                ProductId = product.Id, BatchNo = "S1",
+                ExpiryDate = DateTime.Today.AddYears(2),
+                Quantity = 10, UnitsPerPack = 10, PurchaseRate = 80m, Mrp = 112m
+            }]);
+
+        var batch = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+
+        var sale = await _pharmacy.SaveSaleAsync(new Sale(), [new SaleLine
+        {
+            ProductId = product.Id, BatchId = batch.Id,
+            ProductName = product.Name, BatchNo = batch.BatchNo,
+            ExpiryDate = batch.ExpiryDate, HsnCode = product.HsnCode,
+            Quantity = 6, UnitsPerPack = batch.UnitsPerPack,
+            PackLabel = product.PackSize, Mrp = batch.Mrp, GstRate = product.GstRate
+        }]);
+
+        // Six tablets at 11.20 is 67.20, not six strips at 112. The bill itself
+        // rounds to the nearest rupee, so the line is 67.20 and the total is 67.
+        Assert.Equal(67.20m, sale.GrossAmount);
+        Assert.Equal(-0.20m, sale.RoundOff);
+        Assert.Equal(67m, sale.NetAmount);
+
+        var after = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+        Assert.Equal(94, after.QtyOnHand);
+    }
+
     // ── Correcting stock ───────────────────────────────────────────────────
 
     [Fact]
