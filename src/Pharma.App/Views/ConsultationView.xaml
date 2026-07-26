@@ -213,6 +213,11 @@
                                         MinWidth="90" Margin="8,0,0,0"
                                         Command="{Binding AddLineCommand}"
                                         AutomationProperties.AutomationId="RxAdd"/>
+                                <Button DockPanel.Dock="Right" Content="Clear" Style="{StaticResource BtnGhost}"
+                                        MinWidth="80" Margin="8,0,0,0"
+                                        Command="{Binding ClearLineCommand}"
+                                        ToolTip="Empties this entry row. Lines already added stay."
+                                        AutomationProperties.AutomationId="RxClear"/>
                                 <TextBox Text="{Binding NewInstructions, UpdateSourceTrigger=PropertyChanged}"
                                          Margin="0" ToolTip="Instructions, e.g. after food"
                                          AutomationProperties.AutomationId="RxInstructions"/>

@@ -152,7 +152,19 @@ public class Product : BaseEntity
     /// 10, 15 and more, and a syrup bottle is 1. Stock is counted in units so part
     /// of a strip can be sold, and each batch keeps the count it arrived with.
     /// </summary>
-    public int UnitsPerPack { get; set; } = 1;
+    /// <remarks>
+    /// Clamped, because zero is never a legitimate pack. Rows written before the
+    /// guards existed hold 0, which showed as "PER PACK 0" and made every
+    /// quantity derived from it meaningless. Reading it as 1 keeps the arithmetic
+    /// honest until the repair sweep corrects the stored value.
+    /// </remarks>
+    public int UnitsPerPack
+    {
+        get => Math.Max(1, _unitsPerPack);
+        set => _unitsPerPack = Math.Max(1, value);
+    }
+
+    private int _unitsPerPack = 1;
 
     /// <summary>"10 tablets per strip", or just "bottle" when a pack is one unit.</summary>
     public string PackDescription => UnitsPerPack > 1
@@ -217,7 +229,14 @@ public class Batch : BaseEntity
     /// changes pack size between consignments, and old stock has to keep pricing
     /// against the pack it actually came in.
     /// </summary>
-    public int UnitsPerPack { get; set; } = 1;
+    /// <remarks>Clamped for the same reason as on the product: zero is never a pack.</remarks>
+    public int UnitsPerPack
+    {
+        get => Math.Max(1, _unitsPerPack);
+        set => _unitsPerPack = Math.Max(1, value);
+    }
+
+    private int _unitsPerPack = 1;
 
     public string? SupplierName { get; set; }
     public DateTime ReceivedOn { get; set; } = DateTime.Today;

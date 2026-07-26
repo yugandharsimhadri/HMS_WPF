@@ -76,6 +76,20 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
         ConsultationFee = value.ConsultationFee;
     }
 
+    /// <summary>
+    /// Empties the shop form. What is already saved stays saved — this is for
+    /// starting the entry again, not for wiping the clinic's details.
+    /// </summary>
+    [RelayCommand]
+    private void ClearShop()
+    {
+        ShopName = AddressLine = Phone = Gstin = "";
+        DrugLicenceNo = PharmacistName = BillFooter = "";
+        GstRegistered = false;
+
+        Status = "Form cleared. Nothing was changed until you save.";
+    }
+
     [RelayCommand]
     private async Task SaveShopAsync()
     {

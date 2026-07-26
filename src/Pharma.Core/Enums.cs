@@ -68,7 +68,13 @@ public static class DispensingUnits
     /// <summary>"tablet" or "tablets", for labels and printed lines.</summary>
     public static string Name(this DispensingUnit unit, int count = 2)
     {
-        var single = unit.ToString().ToLowerInvariant();
+        // Rows written before this column existed hold 0, which is not a member
+        // and printed as "0s" — "59 0s in stock". Read as a plain unit instead,
+        // so bad data reads oddly rather than looking broken.
+        var single = Enum.IsDefined(unit)
+            ? unit.ToString().ToLowerInvariant()
+            : "unit";
+
         return count == 1 ? single : single + "s";
     }
 }

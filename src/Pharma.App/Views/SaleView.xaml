@@ -95,8 +95,7 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="Quantity" Style="{StaticResource Label}"
-                                       ToolTip="Individual tablets or bottles — 5 sells five out of a strip"/>
+                            <TextBlock Text="How many" Style="{StaticResource Label}"/>
                             <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
                                      FontSize="15" Margin="0"
                                      AutomationProperties.AutomationId="SaleQuantity">
@@ -106,10 +105,14 @@
                             </TextBox>
                         </StackPanel>
 
+                        <!-- The unit sits beside the number so it can never be a guess.
+                             It remembers what was last used for this medicine. -->
                         <StackPanel Grid.Column="4">
-                            <TextBlock Text="Disc %" Style="{StaticResource Label}"/>
-                            <TextBox Text="{Binding DiscountPercent, UpdateSourceTrigger=PropertyChanged}"
-                                     Margin="0"/>
+                            <TextBlock Text="of" Style="{StaticResource Label}"/>
+                            <ComboBox ItemsSource="{Binding QuantityUnits}"
+                                      SelectedItem="{Binding QuantityUnit, Mode=TwoWay}"
+                                      Margin="0" Height="38" VerticalContentAlignment="Center"
+                                      AutomationProperties.AutomationId="SaleQuantityUnit"/>
                         </StackPanel>
 
                         <Button Grid.Column="6" Content="Add to bill" Style="{StaticResource BtnPrimary}"
@@ -131,10 +134,12 @@
                             <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*" MinWidth="170" IsReadOnly="True"/>
                             <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="110" IsReadOnly="True"/>
                             <DataGridTextColumn Header="EXPIRY" Binding="{Binding Expiry}" Width="70" IsReadOnly="True"/>
+                            <!-- Quantity is the only thing that can be changed here.
+                                 MRP is what is printed on the pack and belongs to the
+                                 batch; editing it moved money with nothing recording it. -->
                             <DataGridTextColumn Header="QTY" Binding="{Binding Quantity, UpdateSourceTrigger=LostFocus}" Width="60"/>
                             <DataGridTextColumn Header="PACKS" Binding="{Binding Packs}" Width="110" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="80"/>
-                            <DataGridTextColumn Header="DISC %" Binding="{Binding DiscountPercent}" Width="70"/>
+                            <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="80" IsReadOnly="True"/>
                             <DataGridTextColumn Header="GST %" Binding="{Binding GstRate, StringFormat=N1}" Width="60" IsReadOnly="True"/>
                             <DataGridTextColumn Header="AMOUNT" Binding="{Binding Amount, StringFormat=N2}" Width="90" IsReadOnly="True"/>
                             <DataGridTemplateColumn Width="34">

@@ -137,6 +137,30 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
         foreach (var a in await pharmacy.GetAdjustmentsAsync(100)) Adjustments.Add(a);
     }
 
+    /// <summary>Empties the receiving form without touching what is on the shelf.</summary>
+    [RelayCommand]
+    private void ClearReceive()
+    {
+        BatchNo = SupplierName = SupplierInvoiceNo = "";
+        Packs = FreePacks = 0;
+        PurchaseRate = Mrp = 0;
+        ExpiryDate = DateTime.Today.AddYears(2);
+
+        UpdateIntakePreview();
+        Status = "";
+    }
+
+    /// <summary>Empties the correction form. Nothing is corrected until Correct count.</summary>
+    [RelayCommand]
+    private void ClearCorrection()
+    {
+        SelectedBatch = null;
+        CorrectedQuantity = 0;
+        AdjustmentReason = AdjustmentReason.Recount;
+        AdjustmentNotes = "";
+        Status = "";
+    }
+
     // ── Receiving ──────────────────────────────────────────────────────────
 
     partial void OnPacksChanged(int value) => UpdateIntakePreview();

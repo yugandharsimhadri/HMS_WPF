@@ -316,6 +316,28 @@ public partial class ConsultationViewModel : ObservableObject
         RecalculateCourse();
     }
 
+    /// <summary>
+    /// Empties the entry row, including the dose and days that Add deliberately
+    /// keeps. Lines already added to the prescription are untouched.
+    /// </summary>
+    [RelayCommand]
+    private void ClearLine()
+    {
+        NewMedicine = null;
+        MedicineSearch = "";
+        NewDosage = "";
+        NewInstructions = "";
+        MorningDose = AfternoonDose = NightDose = "0";
+        NewDays = 0;
+        NewQuantity = 0;
+
+        Matches.Clear();
+        UpdateMedicineHint();
+        RecalculateCourse();
+
+        Status = "";
+    }
+
     [RelayCommand]
     private void RemoveLine(PrescriptionRow? row)
     {

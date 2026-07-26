@@ -62,9 +62,25 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private Product? _selectedProduct;
 
-    // Step 2 — quantity
+    // Step 2 — how many, and of what. The unit sits beside the number because
+    // "9" on its own is what turned nine tablets into nine strips.
     [ObservableProperty] private int _quantity = 1;
-    [ObservableProperty] private decimal _discountPercent;
+
+    /// <summary>What the number in the quantity box counts.</summary>
+    public ObservableCollection<string> QuantityUnits { get; } = [];
+
+    [ObservableProperty] private string _quantityUnit = "";
+
+    /// <summary>
+    /// What was last chosen for each medicine, so the second sale of the day does
+    /// not have to be told again. Kept for the session; the first time a medicine
+    /// is picked the unit comes from what it is — tablets for a strip, bottles
+    /// for a syrup.
+    /// </summary>
+    private readonly Dictionary<Guid, string> _rememberedUnit = [];
+
+    /// <summary>No discounts are given at the counter, so every line is at MRP.</summary>
+    private const decimal NoDiscount = 0m;
 
     /// <summary>What is in stock and what a unit costs, for the chosen medicine.</summary>
     [ObservableProperty] private string _selectedSummary = "";
@@ -109,7 +125,61 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     /// <summary>Filters as the operator types — two letters is enough.</summary>
     partial void OnSearchChanged(string value) => FindAsync().Forget("Searching medicines");
 
-    partial void OnSelectedProductChanged(Product? value) => UpdateSelectedSummary();
+    partial void OnSelectedProductChanged(Product? value)
+    {
+        UpdateSelectedSummary();
+        UpdateQuantityUnits(value);
+    }
+
+    partial void OnQuantityUnitChanged(string value)
+    {
+        if (SelectedProduct is { } product && !string.IsNullOrEmpty(value))
+            _rememberedUnit[product.Id] = value;
+    }
+
+    /// <summary>
+    /// Offers the units this medicine can actually be sold in. A syrup is bottles
+    /// and nothing else; a strip of ten is tablets, or strips of 10.
+    /// </summary>
+    private void UpdateQuantityUnits(Product? product)
+    {
+        QuantityUnits.Clear();
+
+        if (product is null)
+        {
+            QuantityUnit = "";
+            return;
+        }
+
+        var perPack = Math.Max(1, product.UnitsPerPack);
+        var single = product.DispensingUnit.Name(2);
+
+        QuantityUnits.Add(single);
+
+        // Only worth offering packs when a pack holds more than one.
+        if (perPack > 1) QuantityUnits.Add($"{PackWord(product)} of {perPack}");
+
+        QuantityUnit = _rememberedUnit.TryGetValue(product.Id, out var remembered)
+                       && QuantityUnits.Contains(remembered)
+            ? remembered
+            : QuantityUnits[0];
+    }
+
+    private static string PackWord(Product product) => product.DispensingUnit switch
+    {
+        DispensingUnit.Tablet or DispensingUnit.Capsule => "strips",
+        DispensingUnit.Sachet => "boxes",
+        _ => "packs"
+    };
+
+    /// <summary>The quantity box in base units, whatever unit was chosen beside it.</summary>
+    private int QuantityInUnits(Product product)
+    {
+        var perPack = Math.Max(1, product.UnitsPerPack);
+        var choseWholePacks = perPack > 1 && QuantityUnit == $"{PackWord(product)} of {perPack}";
+
+        return choseWholePacks ? Quantity * perPack : Quantity;
+    }
 
     private void UpdateSelectedSummary()
     {
@@ -157,6 +227,99 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         if (Matches.Count == 1) SelectedProduct = Matches[0];
     }
 
+    /// <summary>Set while lines are being rebuilt, so edits do not chase their own tail.</summary>
+    private bool _relaying;
+
+    private void Watch(SaleRow row) => row.PropertyChanged += OnLineChanged;
+
+    /// <summary>
+    /// Quantity is the one thing that can be changed on a bill line, and changing
+    /// it has to re-take the stock: raising it past what its batch holds needs
+    /// another batch, and lowering it should give the rest back. Without this the
+    /// line stays pinned to one batch and only fails when the bill is saved.
+    /// </summary>
+    private void OnLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        Recalculate();
+
+        if (_relaying || e.PropertyName != nameof(SaleRow.Quantity)) return;
+        if (sender is not SaleRow row) return;
+
+        ReallocateAsync(row.ProductId).Forget("Re-taking stock for an edited line");
+    }
+
+    private async Task ReallocateAsync(Guid productId)
+    {
+        var wanted = Lines.Where(l => l.ProductId == productId).Sum(l => l.Quantity);
+        if (wanted <= 0) return;
+
+        var product = Matches.FirstOrDefault(p => p.Id == productId)
+                      ?? (await pharmacy.SearchProductsAsync(null, 1000)).FirstOrDefault(p => p.Id == productId);
+
+        if (product is null) return;
+
+        using var log = AppLog.Enter("Counter.ReallocateLine", $"product={productId} wanted={wanted}");
+
+        var (allocations, shortfall) = await pharmacy.AllocateAsync(productId, wanted);
+
+        if (shortfall > 0)
+        {
+            var have = allocations.Sum(a => a.Units);
+            log.Skip($"short by {shortfall}; only {have} sellable");
+
+            Warn($"Only {have} {product.DispensingUnit.Name(Math.Max(have, 2))} of " +
+                 $"{product.Name} can be sold. The line has been set back to {have}.");
+        }
+
+        Relay(product, allocations);
+        log.Ok($"{allocations.Count} line(s)");
+    }
+
+    /// <summary>Replaces every line for one medicine from a fresh allocation.</summary>
+    private void Relay(Product product, IReadOnlyList<PharmacyService.Allocation> allocations)
+    {
+        _relaying = true;
+
+        try
+        {
+            foreach (var existing in Lines.Where(l => l.ProductId == product.Id).ToList())
+            {
+                existing.PropertyChanged -= OnLineChanged;
+                Lines.Remove(existing);
+            }
+
+            foreach (var allocation in allocations)
+            {
+                var row = new SaleRow
+                {
+                    ProductId = product.Id,
+                    BatchId = allocation.Batch.Id,
+                    ProductName = product.Name,
+                    BatchNo = allocation.Batch.BatchNo,
+                    ExpiryDate = allocation.Batch.ExpiryDate,
+                    HsnCode = product.HsnCode,
+                    GstRate = _gstRegistered ? product.GstRate : 0m,
+                    Schedule = product.Schedule,
+                    Available = allocation.Batch.QtyOnHand,
+                    UnitsPerPack = allocation.Batch.UnitsPerPack,
+                    PackLabel = product.PackSize,
+                    Quantity = allocation.Units,
+                    Mrp = allocation.Batch.Mrp,
+                    DiscountPercent = NoDiscount
+                };
+
+                Watch(row);
+                Lines.Add(row);
+            }
+        }
+        finally
+        {
+            _relaying = false;
+        }
+
+        Recalculate();
+    }
+
     // Batch selection is gone from the counter: nearest expiry is chosen for the
     // operator, and a quantity larger than one batch simply spans several. The
     // batch still reaches the bill, because it has to be printed.
@@ -171,7 +334,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     {
         using var log = AppLog.Enter(
             "Counter.AddLine",
-            $"product='{SelectedProduct?.Name}' id={SelectedProduct?.Id} qty={Quantity} disc={DiscountPercent}%");
+            $"product='{SelectedProduct?.Name}' id={SelectedProduct?.Id} qty={Quantity} unit='{QuantityUnit}'");
 
         if (SelectedProduct is null)
         {
@@ -189,14 +352,17 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
         var product = SelectedProduct;
 
+        // Whatever the operator typed, the bill is built in base units.
+        var adding = QuantityInUnits(product);
+
         // Some things cannot be broken open — a sealed bottle, a sachet strip
         // the manufacturer seals as one. The checkbox on the medicine says so
         // and this is where it has to mean something.
-        if (!product.AllowLooseSale && product.UnitsPerPack > 1 && Quantity % product.UnitsPerPack != 0)
+        if (!product.AllowLooseSale && product.UnitsPerPack > 1 && adding % product.UnitsPerPack != 0)
         {
-            var packs = (Quantity / product.UnitsPerPack) + 1;
+            var packs = (adding / product.UnitsPerPack) + 1;
 
-            log.Skip($"loose sale refused: {Quantity} is not a multiple of {product.UnitsPerPack}");
+            log.Skip($"loose sale refused: {adding} is not a multiple of {product.UnitsPerPack}");
 
             Warn($"{product.Name} is not sold loose — it goes out in whole packs of " +
                  $"{product.UnitsPerPack}. Enter {packs * product.UnitsPerPack} for {packs} pack(s).");
@@ -206,7 +372,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         // Whatever is already on this bill is committed as far as stock goes.
         var alreadyOnBill = Lines.Where(l => l.ProductId == product.Id).Sum(l => l.Quantity);
 
-        var (allocations, shortfall) = await pharmacy.AllocateAsync(product.Id, alreadyOnBill + Quantity);
+        var (allocations, shortfall) = await pharmacy.AllocateAsync(product.Id, alreadyOnBill + adding);
 
         if (shortfall > 0)
         {
@@ -245,10 +411,10 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                 PackLabel = product.PackSize,
                 Quantity = allocation.Units,
                 Mrp = allocation.Batch.Mrp,
-                DiscountPercent = DiscountPercent
+                DiscountPercent = NoDiscount
             };
 
-            row.PropertyChanged += (_, _) => Recalculate();
+            Watch(row);
             Lines.Add(row);
         }
 
@@ -265,7 +431,6 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         // The search and its results stay put, so the next medicine is one click
         // away and the operator can see what else is on the shelf.
         Quantity = 1;
-        DiscountPercent = 0;
     }
 
     [RelayCommand]
@@ -505,7 +670,6 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Lines.Clear();
         Search = "";
         Quantity = 1;
-        DiscountPercent = 0;
         CustomerName = "Cash";
         DoctorName = "";
         SelectedProduct = null;
