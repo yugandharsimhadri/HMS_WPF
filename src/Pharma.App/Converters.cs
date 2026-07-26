@@ -39,6 +39,30 @@ public class BoolToVisibilityConverter : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>Fee badge fill: paid reads calm, due has to catch the eye.</summary>
+public class FeeBrushConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is true
+            ? new SolidColorBrush(Color.FromRgb(0xE4, 0xF3, 0xEA))
+            : new SolidColorBrush(Color.FromRgb(0xFB, 0xEF, 0xDC));
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Text on the fee badge, dark enough to read on its own fill.</summary>
+public class FeeInkConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is true
+            ? new SolidColorBrush(Color.FromRgb(0x0B, 0x5A, 0x54))
+            : new SolidColorBrush(Color.FromRgb(0x8A, 0x53, 0x0B));
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>Blank instead of "0" in empty numeric boxes, so forms do not look pre-filled.</summary>
 public class BlankIfZeroConverter : IValueConverter
 {

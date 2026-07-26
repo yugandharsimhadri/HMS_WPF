@@ -16,6 +16,10 @@ public partial class PrintPreviewWindow : Window
         _factory = factory;
         JobName = jobName;
 
+        // Naming the window makes it obvious which document is on screen when
+        // several have been opened during a busy counter session.
+        Title = $"Print preview — {jobName}";
+
         // The preview gets its own copy; Print builds another for the printer.
         var document = factory();
         document.PageWidth = 794;      // A4 at 96 dpi

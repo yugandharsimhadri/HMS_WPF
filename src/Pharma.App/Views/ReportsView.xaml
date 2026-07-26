@@ -37,10 +37,29 @@
 
                 <TabItem Header="Day book">
                   <DockPanel Margin="0,10,0,0">
-                    <Button DockPanel.Dock="Bottom" Content="Reprint selected bill" HorizontalAlignment="Left"
-                            Style="{StaticResource BtnGhost}" Margin="0,10,0,0"
-                            Command="{Binding ReprintBillCommand}"
-                            AutomationProperties.AutomationId="ReprintBill"/>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBlock DockPanel.Dock="Left" Text="Find any bill" VerticalAlignment="Center"
+                                   Style="{StaticResource Label}" Margin="0,0,10,0"/>
+                        <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,0" Command="{Binding FindBillCommand}"
+                                AutomationProperties.AutomationId="FindBillButton"/>
+                        <TextBox Text="{Binding BillSearch, UpdateSourceTrigger=PropertyChanged}" Margin="0"
+                                 ToolTip="Bill number or customer name — searches every date"
+                                 AutomationProperties.AutomationId="BillSearchBox">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding FindBillCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </DockPanel>
+
+                    <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                        <Button DockPanel.Dock="Left" Content="Reprint selected bill"
+                                Style="{StaticResource BtnGhost}" Margin="0,0,12,0"
+                                Command="{Binding ReprintBillCommand}"
+                                AutomationProperties.AutomationId="ReprintBill"/>
+                        <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" VerticalAlignment="Center"
+                                   AutomationProperties.AutomationId="ReportsStatus"/>
+                    </DockPanel>
                     <DataGrid ItemsSource="{Binding Sales}" SelectedItem="{Binding SelectedSale, Mode=TwoWay}"
                               AutomationProperties.AutomationId="DayBookGrid">
                         <DataGrid.Columns>

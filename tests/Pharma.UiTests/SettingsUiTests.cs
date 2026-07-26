@@ -1,7 +1,7 @@
 namespace Pharma.UiTests;
 
-[Collection("ui")]
-public class SettingsUiTests(AppFixture app)
+
+public class SettingsUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
     [Fact]
     public void Shop_details_persist_across_screens()

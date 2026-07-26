@@ -9,22 +9,31 @@ using Pharma.Data;
 namespace Pharma.App.ViewModels;
 
 /// <summary>
-/// OPD desk: today's queue on the left, a three-step booking panel on the right.
-/// Find patient → choose doctor → Book.
+/// The OPD desk. One tab per doctor, waiting and completed side by side as tiles,
+/// and a tile that moves from waiting to completed when the consultation is done.
+///
+/// The doctor is a tab rather than a column because repeating it on every row was
+/// the bulk of the duplication on the old screen.
 /// </summary>
 public partial class OpdViewModel(OpdService opd, SettingsService settings) : ObservableObject, IPage
 {
     public string Title => "OPD";
-    public string Subtitle => $"{Visits.Count(v => v.Status != VisitStatus.Cancelled)} visits on {Date:ddd, dd MMM}";
+    public string Subtitle => $"{Waiting.Count} waiting · {Completed.Count} completed · {Date:ddd, dd MMM}";
 
-    public ObservableCollection<Visit> Visits { get; } = [];
+    public ObservableCollection<Visit> Waiting { get; } = [];
+    public ObservableCollection<Visit> Completed { get; } = [];
     public ObservableCollection<Patient> Matches { get; } = [];
     public ObservableCollection<Doctor> Doctors { get; } = [];
 
-    [ObservableProperty] private DateTime _date = DateTime.Today;
-    [ObservableProperty] private Visit? _selectedVisit;
+    /// <summary>Null means every doctor — the "All" tab.</summary>
+    [ObservableProperty] private Doctor? _doctorTab;
 
-    // Step 1 — find or add the patient
+    [ObservableProperty] private DateTime _date = DateTime.Today;
+    [ObservableProperty] private string _status = "";
+    [ObservableProperty] private PaymentMode _feePaymentMode = PaymentMode.Cash;
+
+    // Booking is a panel now, not a permanent third of the screen.
+    [ObservableProperty] private bool _isBooking;
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private Patient? _selectedPatient;
     [ObservableProperty] private bool _addingPatient;
@@ -32,15 +41,12 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     [ObservableProperty] private string _newPhone = "";
     [ObservableProperty] private string _newAge = "";
     [ObservableProperty] private Gender _newGender = Gender.Male;
-
-    // Step 2 — doctor and slot
     [ObservableProperty] private Doctor? _selectedDoctor;
     [ObservableProperty] private string _time = DateTime.Now.ToString("HH:mm");
     [ObservableProperty] private string _complaint = "";
     [ObservableProperty] private decimal _fee;
 
-    [ObservableProperty] private string _status = "";
-    [ObservableProperty] private PaymentMode _feePaymentMode = PaymentMode.Cash;
+    private readonly List<Visit> _all = [];
 
     public Array Genders => Enum.GetValues<Gender>();
     public Array PaymentModes => Enum.GetValues<PaymentMode>();
@@ -52,10 +58,11 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         SelectedDoctor ??= Doctors.FirstOrDefault();
 
         await RefreshAsync();
-        await FindAsync();
     }
 
     partial void OnDateChanged(DateTime value) => RefreshAsync().Forget("Refreshing the OPD queue");
+
+    partial void OnDoctorTabChanged(Doctor? value) => Regroup();
 
     partial void OnSelectedDoctorChanged(Doctor? value)
     {
@@ -65,9 +72,50 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     [RelayCommand]
     private async Task RefreshAsync()
     {
-        Visits.Clear();
-        foreach (var v in await opd.GetVisitsAsync(Date)) Visits.Add(v);
+        _all.Clear();
+        _all.AddRange(await opd.GetVisitsAsync(Date));
+        Regroup();
+    }
+
+    /// <summary>Splits the day's visits into the two columns for the chosen doctor.</summary>
+    private void Regroup()
+    {
+        Waiting.Clear();
+        Completed.Clear();
+
+        foreach (var visit in _all.Where(v => DoctorTab is null || v.DoctorId == DoctorTab.Id))
+        {
+            if (visit.IsWaiting) Waiting.Add(visit);
+            else if (visit.Status == VisitStatus.Completed) Completed.Add(visit);
+        }
+
         OnPropertyChanged(nameof(Subtitle));
+    }
+
+    [RelayCommand]
+    private void ShowAllDoctors() => DoctorTab = null;
+
+    [RelayCommand]
+    private void SelectDoctorTab(Doctor? doctor) => DoctorTab = doctor;
+
+    // ── Booking ────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void NewVisit()
+    {
+        IsBooking = true;
+        Status = "";
+        Fee = SelectedDoctor?.ConsultationFee ?? 0;
+
+        // Booking from a doctor's tab should default to that doctor.
+        if (DoctorTab is not null) SelectedDoctor = DoctorTab;
+    }
+
+    [RelayCommand]
+    private void CloseBooking()
+    {
+        IsBooking = false;
+        ResetBookingPanel();
     }
 
     [RelayCommand]
@@ -79,10 +127,25 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         if (Matches.Count == 0 && !string.IsNullOrWhiteSpace(Search))
         {
             AddingPatient = true;
-            // Typing a phone number into search is the common case, so pre-fill it.
-            if (Search.All(char.IsDigit) && Search.Length >= 6) NewPhone = Search;
-            else NewName = Search;
+
+            if (OpdService.LooksLikePhone(Search)) NewPhone = Search.Trim();
+            else NewName = Search.Trim();
+
+            Status = $"No one matches '{Search}'. Add them as a new patient.";
+            return;
         }
+
+        AddingPatient = false;
+
+        // One number, several children — say so, because the operator has to pick.
+        Status = Matches.Count switch
+        {
+            0 => "",
+            1 => $"{Matches[0].Name} found. Select and book.",
+            _ when OpdService.LooksLikePhone(Search) =>
+                $"{Matches.Count} people are registered on this number. Select which one is here.",
+            _ => $"{Matches.Count} matches. Select which one is here."
+        };
     }
 
     [RelayCommand]
@@ -105,6 +168,17 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         try
         {
             var patient = SelectedPatient;
+
+            // Siblings share a phone number, so a search can return several people.
+            // Creating a new record because none was picked would quietly duplicate
+            // a child who is already registered.
+            if (patient is null && !AddingPatient && Matches.Count > 0)
+            {
+                Warn(Matches.Count == 1
+                    ? $"Select {Matches[0].Name} from the list, or choose + New patient."
+                    : $"{Matches.Count} people match that. Select which one, or choose + New patient.");
+                return;
+            }
 
             if (AddingPatient || patient is null)
             {
@@ -138,10 +212,13 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
                 string.IsNullOrWhiteSpace(Complaint) ? null : Complaint.Trim(),
                 Fee);
 
-            Status = $"Token {visit.TokenNo} booked for {patient.Name}.";
             ResetBookingPanel();
+            IsBooking = false;
             await RefreshAsync();
-            await FindAsync();
+
+            // Set last: refreshing writes its own status, and the confirmation is
+            // what the operator needs left on screen.
+            Status = $"Token {visit.TokenNo} booked for {patient.Name}.";
         }
         catch (Exception ex)
         {
@@ -154,106 +231,135 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         AddingPatient = false;
         Search = NewName = NewPhone = NewAge = Complaint = "";
         SelectedPatient = null;
+        Matches.Clear();
         Fee = SelectedDoctor?.ConsultationFee ?? 0;
         Time = DateTime.Now.ToString("HH:mm");
     }
 
+    // ── Tile actions ───────────────────────────────────────────────────────
+
     [RelayCommand]
-    private async Task ArrivedAsync()
+    private async Task ArrivedAsync(Visit? visit)
     {
-        if (SelectedVisit is null) return;
-        await opd.SetStatusAsync(SelectedVisit.Id, VisitStatus.Waiting);
+        if (visit is null) return;
+        await opd.SetStatusAsync(visit.Id, VisitStatus.Waiting);
         await RefreshAsync();
     }
 
     /// <summary>Takes the fee, issues a numbered receipt, and offers to print it.</summary>
     [RelayCommand]
-    private async Task CollectFeeAsync()
+    private async Task CollectFeeAsync(Visit? visit)
     {
-        if (SelectedVisit is null) return;
+        if (visit is null) return;
 
-        if (SelectedVisit.FeePaid)
+        if (visit.FeePaid)
         {
-            Status = $"Token {SelectedVisit.TokenNo} has already paid — use Reprint receipt.";
+            Status = $"Token {visit.TokenNo} has already paid — use the receipt button to reprint.";
             return;
         }
 
-        var visit = await opd.CollectFeeAsync(SelectedVisit.Id, FeePaymentMode);
-        if (visit is null) return;
+        var paid = await opd.CollectFeeAsync(visit.Id, FeePaymentMode);
+        if (paid is null) return;
 
-        Status = $"Receipt {visit.FeeReceiptNo} — ₹{visit.Fee:0.00} received from {visit.Patient.Name}.";
+        Status = $"Receipt {paid.FeeReceiptNo} — ₹{paid.Fee:0.00} received from {paid.Patient.Name}.";
         await RefreshAsync();
 
         var shop = await settings.GetAsync();
-        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop), $"Receipt {visit.FeeReceiptNo}");
+        PrintService.Preview(() => FeeReceiptDocument.Build(paid, shop), $"Receipt {paid.FeeReceiptNo}");
     }
 
+    /// <summary>Moves the tile out of waiting and into completed.</summary>
     [RelayCommand]
-    private async Task ReprintReceiptAsync()
+    private async Task CompleteAsync(Visit? visit)
     {
-        if (SelectedVisit is null) return;
-
-        if (!SelectedVisit.FeePaid)
-        {
-            Status = $"Token {SelectedVisit.TokenNo} has not paid yet — there is no receipt to reprint.";
-            return;
-        }
-
-        var visit = await opd.GetVisitAsync(SelectedVisit.Id);
         if (visit is null) return;
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop, isReprint: true),
-                             $"Receipt {visit.FeeReceiptNo} (duplicate)");
+        await opd.SetStatusAsync(visit.Id, VisitStatus.Completed);
+        await RefreshAsync();
+
+        Status = $"Token {visit.TokenNo} moved to completed.";
     }
 
     [RelayCommand]
-    private async Task PrintPrescriptionAsync()
+    private async Task ReopenAsync(Visit? visit)
     {
-        if (SelectedVisit is null) return;
-
-        var visit = await opd.GetVisitAsync(SelectedVisit.Id);
         if (visit is null) return;
 
-        if (visit.Prescription.Count == 0)
-        {
-            Status = $"Token {visit.TokenNo} has no prescription yet.";
-            return;
-        }
+        await opd.SetStatusAsync(visit.Id, VisitStatus.Waiting);
+        await RefreshAsync();
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => PrescriptionPrinter.Build(visit, shop), $"Prescription {visit.VisitNo}");
+        Status = $"Token {visit.TokenNo} moved back to waiting.";
     }
 
     [RelayCommand]
-    private async Task CancelVisitAsync()
+    private async Task CancelVisitAsync(Visit? visit)
     {
-        if (SelectedVisit is null) return;
+        if (visit is null) return;
 
         var confirm = MessageBox.Show(
-            $"Cancel token {SelectedVisit.TokenNo} for {SelectedVisit.Patient.Name}?",
+            $"Cancel token {visit.TokenNo} for {visit.Patient.Name}?",
             "Cancel visit", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
         if (confirm != MessageBoxResult.Yes) return;
 
-        await opd.SetStatusAsync(SelectedVisit.Id, VisitStatus.Cancelled);
+        await opd.SetStatusAsync(visit.Id, VisitStatus.Cancelled);
         await RefreshAsync();
     }
 
     [RelayCommand]
-    private async Task ConsultAsync()
+    private async Task ConsultAsync(Visit? visit)
     {
-        if (SelectedVisit is null) return;
+        if (visit is null) return;
 
-        await opd.SetStatusAsync(SelectedVisit.Id, VisitStatus.InConsultation);
+        await opd.SetStatusAsync(visit.Id, VisitStatus.InConsultation);
 
-        var window = new Views.ConsultationWindow(SelectedVisit.Id)
+        var window = new Views.ConsultationWindow(visit.Id)
         {
             Owner = Application.Current.MainWindow
         };
+
         window.ShowDialog();
 
+        // Completing the consultation sets the status, so the tile lands in the
+        // other column as soon as this refresh runs.
         await RefreshAsync();
+    }
+
+    [RelayCommand]
+    private async Task PrintReceiptAsync(Visit? visit)
+    {
+        if (visit is null) return;
+
+        if (!visit.FeePaid)
+        {
+            Status = $"Token {visit.TokenNo} has not paid yet — there is no receipt to print.";
+            return;
+        }
+
+        var full = await opd.GetVisitAsync(visit.Id);
+        if (full is null) return;
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(full, shop, isReprint: true),
+                             $"Receipt {full.FeeReceiptNo} (duplicate)");
+    }
+
+    [RelayCommand]
+    private async Task PrintPrescriptionAsync(Visit? visit)
+    {
+        if (visit is null) return;
+
+        var full = await opd.GetVisitAsync(visit.Id);
+        if (full is null) return;
+
+        if (full.Prescription.Count == 0)
+        {
+            Status = $"Token {full.TokenNo} has no prescription yet.";
+            return;
+        }
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => PrescriptionPrinter.Build(full, shop), $"Prescription {full.VisitNo}");
     }
 
     private void Warn(string message)

@@ -4,8 +4,8 @@ namespace Pharma.UiTests;
 /// The money path, driven through the UI: create a medicine, receive stock,
 /// sell it, and check the printed-total arithmetic on screen.
 /// </summary>
-[Collection("ui")]
-public class PharmacyUiTests(AppFixture app)
+
+public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
     private string CreateMedicineWithStock(string suffix, decimal gstRate, int quantity, decimal mrp)
     {

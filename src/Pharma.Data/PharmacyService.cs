@@ -243,6 +243,35 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         return await db.Sales.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
     }
 
+    /// <summary>Every medicine bill for a patient, newest first, regardless of date.</summary>
+    public async Task<List<Sale>> GetSalesByPatientAsync(Guid patientId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.Sales.Include(s => s.Items)
+            .Where(s => s.PatientId == patientId)
+            .OrderByDescending(s => s.BillDate)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Finds a bill by number or customer across all dates. A walk-in sale has no
+    /// patient record, so the bill number and the name on it are the only handles
+    /// anyone has when they come back asking for a copy.
+    /// </summary>
+    public async Task<List<Sale>> SearchSalesAsync(string? term, int take = 100)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var q = db.Sales.Include(s => s.Items).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            term = term.Trim();
+            q = q.Where(s => s.BillNo.Contains(term) || s.CustomerName.Contains(term));
+        }
+
+        return await q.OrderByDescending(s => s.BillDate).Take(take).ToListAsync();
+    }
+
     public async Task<List<Sale>> GetSalesAsync(DateTime date)
     {
         await using var db = await factory.CreateDbContextAsync();

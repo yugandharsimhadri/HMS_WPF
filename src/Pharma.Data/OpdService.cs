@@ -9,8 +9,19 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
 {
     // ── Patients ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Finds patients by name, patient number or phone. A phone number is matched
+    /// on its digits alone, so "98765 00011", "+91 9876500011" and "9876500011"
+    /// all return the same family — and all of them, not just the first.
+    /// </summary>
     public async Task<List<Patient>> SearchPatientsAsync(string? term, int take = 50)
     {
+        if (LooksLikePhone(term))
+        {
+            var family = await GetPatientsByPhoneAsync(term);
+            if (family.Count > 0) return family.Take(take).ToList();
+        }
+
         await using var db = await factory.CreateDbContextAsync();
         var q = db.Patients.Where(p => !p.IsDeleted);
 
@@ -22,6 +33,39 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
 
         return await q.OrderByDescending(p => p.CreatedAt).Take(take).ToListAsync();
     }
+
+    /// <summary>Digits and phone punctuation only, and enough of them to be a number.</summary>
+    public static bool LooksLikePhone(string? term)
+        => !string.IsNullOrWhiteSpace(term)
+           && term.All(c => char.IsDigit(c) || c is ' ' or '-' or '+' or '(' or ')')
+           && term.Count(char.IsDigit) >= 6;
+
+    /// <summary>
+    /// Everyone registered on one phone number. A family shares a number, so a
+    /// paediatric clinic routinely has three or four children behind one contact.
+    /// </summary>
+    public async Task<List<Patient>> GetPatientsByPhoneAsync(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return [];
+
+        var digits = Digits(phone);
+        if (digits.Length < 6) return [];
+
+        await using var db = await factory.CreateDbContextAsync();
+
+        // Numbers get stored with spaces, dashes or a +91, so compare on digits.
+        var candidates = await db.Patients
+            .Where(p => !p.IsDeleted && p.Phone != "")
+            .ToListAsync();
+
+        return candidates
+            .Where(p => Digits(p.Phone).EndsWith(digits, StringComparison.Ordinal)
+                     || digits.EndsWith(Digits(p.Phone), StringComparison.Ordinal))
+            .OrderBy(p => p.Name)
+            .ToList();
+    }
+
+    private static string Digits(string value) => new(value.Where(char.IsDigit).ToArray());
 
     public async Task<Patient> SavePatientAsync(Patient patient)
     {
@@ -51,6 +95,27 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
             .Where(v => !v.IsDeleted && v.PatientId == patientId)
             .OrderByDescending(v => v.ScheduledOn)
             .ToListAsync();
+    }
+
+    /// <summary>
+    /// Finds a visit by its number or receipt number, whatever date it was on.
+    /// This is how a receipt is reprinted for someone who lost theirs months ago.
+    /// </summary>
+    public async Task<List<Visit>> SearchVisitsAsync(string? term, int take = 100)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var q = db.Visits.Include(v => v.Patient).Include(v => v.Doctor).Where(v => !v.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            term = term.Trim();
+            q = q.Where(v => v.VisitNo.Contains(term)
+                          || (v.FeeReceiptNo != null && v.FeeReceiptNo.Contains(term))
+                          || v.Patient.Name.Contains(term)
+                          || v.Patient.Phone.Contains(term));
+        }
+
+        return await q.OrderByDescending(v => v.ScheduledOn).Take(take).ToListAsync();
     }
 
     /// <summary>Soft-deletes a patient. Refused while visits still reference them.</summary>

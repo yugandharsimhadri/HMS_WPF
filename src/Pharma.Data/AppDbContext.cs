@@ -53,6 +53,11 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.DoctorId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Prescription).WithOne(p => p.Visit)
                 .HasForeignKey(p => p.VisitId).OnDelete(DeleteBehavior.Cascade);
+
+            e.Ignore(x => x.IsWaiting);
+            e.Ignore(x => x.PatientLine);
+            e.Ignore(x => x.FeeBadge);
+            e.Ignore(x => x.WaitedFor);
         });
 
         b.Entity<Product>(e =>

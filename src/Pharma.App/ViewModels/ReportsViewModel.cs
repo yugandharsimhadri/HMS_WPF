@@ -29,12 +29,14 @@ public partial class ReportsViewModel(
 
     [ObservableProperty] private DateTime _date = DateTime.Today;
     [ObservableProperty] private Sale? _selectedSale;
+    [ObservableProperty] private string _billSearch = "";
     [ObservableProperty] private Visit? _selectedVisit;
     [ObservableProperty] private decimal _totalCollected;
     [ObservableProperty] private decimal _cashTotal;
     [ObservableProperty] private decimal _upiTotal;
     [ObservableProperty] private decimal _consultationTotal;
     [ObservableProperty] private int _visitCount;
+    [ObservableProperty] private string _status = "";
 
     public async Task LoadAsync()
     {
@@ -91,6 +93,27 @@ public partial class ReportsViewModel(
 
     [RelayCommand]
     private Task RefreshAsync() => LoadAsync();
+
+    /// <summary>
+    /// Looks a bill up across every date. A walk-in customer coming back for a
+    /// copy rarely remembers which day they bought on, only the name or the number.
+    /// </summary>
+    [RelayCommand]
+    private async Task FindBillAsync()
+    {
+        if (string.IsNullOrWhiteSpace(BillSearch))
+        {
+            await LoadAsync();
+            return;
+        }
+
+        Sales.Clear();
+        foreach (var s in await pharmacy.SearchSalesAsync(BillSearch)) Sales.Add(s);
+
+        Status = Sales.Count == 0
+            ? $"No bill matches '{BillSearch}'."
+            : $"{Sales.Count} bill(s) matching '{BillSearch}', across all dates.";
+    }
 
     /// <summary>Reprints a bill from the day book, marked as a duplicate.</summary>
     [RelayCommand]

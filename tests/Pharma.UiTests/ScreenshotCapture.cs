@@ -2,8 +2,8 @@ using FlaUI.Core.Capturing;
 
 namespace Pharma.UiTests;
 
-[Collection("ui")]
-public class ScreenshotCapture(AppFixture app)
+
+public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
 {
     private static readonly string OutputDir =
         Path.Combine(Path.GetTempPath(), "twinkle-shots");
@@ -13,8 +13,16 @@ public class ScreenshotCapture(AppFixture app)
     {
         Directory.CreateDirectory(OutputDir);
 
+        // Capture the queue with people in it — an empty screen shows nothing useful.
+        OpdUiTests.BookWalkIn(app, "Baby Anika", "9008007001", "4");
+        OpdUiTests.BookWalkIn(app, "Rohan Verma", "9008007001", "7");
+        OpdUiTests.BookWalkIn(app, "Sana Iqbal", "9004003002", "2");
+
+        app.ClickTile("OpdWaitingList", "TileDone", "Sana Iqbal");
+        AppFixture.WaitUntil(() => app.HasTile("OpdCompletedList", "Sana Iqbal"), "a completed tile");
+
         app.Navigate("NavOpd", "OPD");
-        Thread.Sleep(400);
+        Thread.Sleep(600);
         Capture("opd");
 
         app.Navigate("NavProducts", "Medicines");

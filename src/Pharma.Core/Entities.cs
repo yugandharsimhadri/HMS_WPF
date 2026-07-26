@@ -74,6 +74,34 @@ public class Visit : BaseEntity
     public DateTime? FollowUpOn { get; set; }
 
     public ICollection<PrescriptionItem> Prescription { get; set; } = [];
+
+    // ── Display helpers for the queue tiles ────────────────────────────────
+
+    /// <summary>Still to be seen — everything that has not finished or been cancelled.</summary>
+    public bool IsWaiting => Status is VisitStatus.Booked or VisitStatus.Waiting or VisitStatus.InConsultation;
+
+    public string PatientLine => Patient is null
+        ? ""
+        : $"{Patient.Age}{Patient.Gender.ToString()[0]} · {ScheduledOn:HH:mm}";
+
+    public string FeeBadge => FeePaid ? "Fee paid" : "Fee due";
+
+    /// <summary>How long they have been sitting there, in words the desk uses.</summary>
+    public string WaitedFor
+    {
+        get
+        {
+            if (!IsWaiting) return "";
+
+            var minutes = (int)(DateTime.Now - ScheduledOn).TotalMinutes;
+            return minutes switch
+            {
+                < 1 => "just arrived",
+                < 60 => $"waiting {minutes}m",
+                _ => $"waiting {minutes / 60}h {minutes % 60}m"
+            };
+        }
+    }
 }
 
 public class PrescriptionItem : BaseEntity

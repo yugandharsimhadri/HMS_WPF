@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pharma.App.Printing;
 using Pharma.Core;
 using Pharma.Data;
 
@@ -11,16 +12,20 @@ namespace Pharma.App.ViewModels;
 /// Patient register: search, edit, and the visit history behind each patient.
 /// Booking still happens on the OPD screen — this is the record, not the queue.
 /// </summary>
-public partial class PatientsViewModel(OpdService opd) : ObservableObject, IPage
+public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy, SettingsService settings)
+    : ObservableObject, IPage
 {
     public string Title => "Patients";
     public string Subtitle => $"{Patients.Count} patient(s) listed";
 
     public ObservableCollection<Patient> Patients { get; } = [];
     public ObservableCollection<Visit> History { get; } = [];
+    public ObservableCollection<Sale> Bills { get; } = [];
 
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private Patient? _selectedPatient;
+    [ObservableProperty] private Visit? _selectedVisit;
+    [ObservableProperty] private Sale? _selectedBill;
 
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _phone = "";
@@ -52,6 +57,7 @@ public partial class PatientsViewModel(OpdService opd) : ObservableObject, IPage
         if (value is null)
         {
             History.Clear();
+            Bills.Clear();
             return;
         }
 
@@ -70,6 +76,74 @@ public partial class PatientsViewModel(OpdService opd) : ObservableObject, IPage
     {
         History.Clear();
         foreach (var v in await opd.GetPatientHistoryAsync(patientId)) History.Add(v);
+
+        Bills.Clear();
+        foreach (var s in await pharmacy.GetSalesByPatientAsync(patientId)) Bills.Add(s);
+    }
+
+    // ── Reprinting, however long ago it was ────────────────────────────────
+
+    /// <summary>Prints the prescription for any past visit, not just today's.</summary>
+    [RelayCommand]
+    private async Task PrintPrescriptionAsync()
+    {
+        if (SelectedVisit is null)
+        {
+            Status = "Pick a visit from the history first.";
+            return;
+        }
+
+        var visit = await opd.GetVisitAsync(SelectedVisit.Id);
+        if (visit is null) return;
+
+        if (visit.Prescription.Count == 0)
+        {
+            Status = $"Visit {visit.VisitNo} has no prescription recorded.";
+            return;
+        }
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => PrescriptionPrinter.Build(visit, shop), $"Prescription {visit.VisitNo}");
+    }
+
+    [RelayCommand]
+    private async Task PrintReceiptAsync()
+    {
+        if (SelectedVisit is null)
+        {
+            Status = "Pick a visit from the history first.";
+            return;
+        }
+
+        if (!SelectedVisit.FeePaid)
+        {
+            Status = $"No consultation fee was recorded against visit {SelectedVisit.VisitNo}.";
+            return;
+        }
+
+        var visit = await opd.GetVisitAsync(SelectedVisit.Id);
+        if (visit is null) return;
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop, isReprint: true),
+                             $"Receipt {visit.FeeReceiptNo} (duplicate)");
+    }
+
+    [RelayCommand]
+    private async Task PrintBillAsync()
+    {
+        if (SelectedBill is null)
+        {
+            Status = "Pick a medicine bill first.";
+            return;
+        }
+
+        var sale = await pharmacy.GetSaleAsync(SelectedBill.Id);
+        if (sale is null) return;
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => BillPrinter.Build(sale, shop, isReprint: true),
+                             $"Bill {sale.BillNo} (duplicate)");
     }
 
     [RelayCommand]
