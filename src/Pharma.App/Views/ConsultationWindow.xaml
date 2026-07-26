@@ -103,29 +103,36 @@
                             BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                         <StackPanel>
                             <TextBlock Text="Medicine" Style="{StaticResource Label}"/>
+
+                            <!-- The suggestions hang directly off the bottom of the
+                                 box, like a dropdown, so the eye stays in one place. -->
                             <TextBox Text="{Binding MedicineSearch, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0"
                                      ToolTip="Type to search our pharmacy. Anything not stocked can still be prescribed."
                                      AutomationProperties.AutomationId="RxMedicine"/>
 
-                            <!-- Matches appear as you type and disappear once one is
-                                 chosen, so a medicine we do not stock can just be
-                                 typed and left. -->
-                            <ItemsControl ItemsSource="{Binding Matches}" Margin="0,0,0,6"
+                            <ItemsControl ItemsSource="{Binding Matches}"
                                           AutomationProperties.AutomationId="RxMatches">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button HorizontalContentAlignment="Stretch" Padding="9,6" Margin="0,0,0,2"
-                                                Style="{StaticResource BtnGhost}"
+                                        <Button HorizontalContentAlignment="Stretch" Padding="10,7"
+                                                FontWeight="Normal" Style="{StaticResource BtnGhost}"
                                                 Command="{Binding DataContext.PickMedicineCommand,
                                                           RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}"
                                                 AutomationProperties.AutomationId="RxMatch"
                                                 AutomationProperties.Name="{Binding Name}">
-                                            <DockPanel>
-                                                <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="0.7"
-                                                           VerticalAlignment="Center"
+                                            <DockPanel LastChildFill="True">
+                                                <TextBlock DockPanel.Dock="Right" FontSize="11"
+                                                           Margin="12,0,0,0" VerticalAlignment="Center"
+                                                           Foreground="{StaticResource InkMuted}"
                                                            Text="{Binding StockOnHand, StringFormat='{}{0} in stock'}"/>
+                                                <TextBlock DockPanel.Dock="Right" FontSize="11"
+                                                           Margin="12,0,0,0" VerticalAlignment="Center"
+                                                           Foreground="{StaticResource InkMuted}"
+                                                           Text="{Binding PackSize}"/>
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                           TextAlignment="Left"
                                                            TextTrimming="CharacterEllipsis"/>
                                             </DockPanel>
                                         </Button>
@@ -134,7 +141,7 @@
                             </ItemsControl>
 
                             <TextBlock Text="{Binding MedicineHint}" Style="{StaticResource Muted}"
-                                       TextWrapping="Wrap" Margin="0,0,0,8"
+                                       TextWrapping="Wrap" Margin="0,6,0,10"
                                        AutomationProperties.AutomationId="RxMedicineHint"/>
 
                             <Grid>

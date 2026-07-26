@@ -96,6 +96,14 @@ public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         Assert.Contains("prescription only", TextOf(window, "RxMedicineHint"));
 
+        // Nothing is pre-filled, so the course has to be stated.
+        Type(window, "RxFrequency", "1-0-1");
+        Type(window, "RxDays", "3");
+
+        AppFixture.WaitUntil(
+            () => window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text == "6",
+            "the course to be worked out");
+
         window.FindFirstDescendant(cf => cf.ByAutomationId("RxAdd"))!.AsButton().Invoke();
 
         AppFixture.WaitUntil(
@@ -106,6 +114,22 @@ public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
                           .AsGrid().Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
 
         Assert.Equal("Imported Ointment 20g", cells[0]);
+
+        window.Close();
+    }
+
+    [Fact]
+    public void Nothing_is_filled_in_before_the_doctor_types_it()
+    {
+        var window = OpenConsultationFor($"Rx Blank {DateTime.Now:HHmmssfff}");
+
+        // A pre-filled dose is a clinical decision the software should not make.
+        Assert.Equal("", window.FindFirstDescendant(cf => cf.ByAutomationId("RxMedicine"))!.AsTextBox().Text);
+        Assert.Equal("", window.FindFirstDescendant(cf => cf.ByAutomationId("RxDose"))!.AsTextBox().Text);
+        Assert.Equal("", window.FindFirstDescendant(cf => cf.ByAutomationId("RxFrequency"))!.AsTextBox().Text);
+        Assert.Equal("0", window.FindFirstDescendant(cf => cf.ByAutomationId("RxDays"))!.AsTextBox().Text);
+        Assert.Equal("0", window.FindFirstDescendant(cf => cf.ByAutomationId("RxQuantity"))!.AsTextBox().Text);
+        Assert.Equal("", TextOf(window, "RxCourseHint"));
 
         window.Close();
     }

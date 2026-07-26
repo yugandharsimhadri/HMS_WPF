@@ -245,6 +245,7 @@ list below.
 | **Dose** | e.g. `5 ml`, `1 tab` |
 | **Frequency** | `1-0-1`, `1-1-1`, `1/2-0-1/2`, or `OD` `BD` `TDS` `QID` `SOS` |
 | **Days** | Length of the course |
+| | *Nothing is filled in for you — a dose is the doctor's decision, not the software's* |
 | **Qty (units)** | **Individual tablets.** Worked out for you — change it if you want |
 | Grey line under the fields | What the course comes to, in tablets and in strips |
 | **Instructions** | e.g. "after food". Printed under the line |

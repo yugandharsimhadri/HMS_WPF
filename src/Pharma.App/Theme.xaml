@@ -435,6 +435,10 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <!-- Centred by default, but a caller can left-align — a search suggestion
+             has to line up under the box it came from, not float in the middle. -->
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -448,7 +452,8 @@
                         <Border.Effect>
                             <DropShadowEffect Color="#26323C" BlurRadius="4" ShadowDepth="1" Opacity="0.16"/>
                         </Border.Effect>
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">

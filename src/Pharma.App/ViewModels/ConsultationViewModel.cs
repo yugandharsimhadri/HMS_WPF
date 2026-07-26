@@ -77,9 +77,11 @@ public partial class ConsultationViewModel : ObservableObject
     [ObservableProperty] private Product? _newMedicine;
 
     [ObservableProperty] private string _medicineHint = "";
-    [ObservableProperty] private string _newDosage = "1 tab";
-    [ObservableProperty] private string _newFrequency = "1-0-1";
-    [ObservableProperty] private int _newDays = 3;
+    // Deliberately empty. A pre-filled dose is a clinical decision made by the
+    // software, and one that is easy to leave in place by accident.
+    [ObservableProperty] private string _newDosage = "";
+    [ObservableProperty] private string _newFrequency = "";
+    [ObservableProperty] private int _newDays;
     [ObservableProperty] private int _newQuantity;
     [ObservableProperty] private string _newInstructions = "";
     [ObservableProperty] private string _courseHint = "";
