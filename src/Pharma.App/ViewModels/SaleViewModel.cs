@@ -252,6 +252,42 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Recalculate();
     }
 
+    /// <summary>
+    /// Puts stock on the shelf for the selected medicine without leaving the
+    /// bill. The shop knows the medicine is there; the system does not, and
+    /// sending the operator away to do a full goods-inward with a patient
+    /// waiting is how a counter stops being used.
+    /// </summary>
+    [RelayCommand]
+    private async Task QuickStockAsync()
+    {
+        if (SelectedProduct is null)
+        {
+            Warn("Choose the medicine you are adding stock for.");
+            return;
+        }
+
+        await Safely.RunAsync(async () =>
+        {
+            var window = new Views.QuickStockWindow(SelectedProduct)
+            {
+                Owner = Application.Current.MainWindow
+            };
+
+            window.ShowDialog();
+            if (!window.Added) return;
+
+            var id = SelectedProduct.Id;
+
+            await FindAsync();
+            SelectedProduct = Matches.FirstOrDefault(p => p.Id == id);
+            UpdateSelectedSummary();
+
+            Status = $"{SelectedProduct?.Name} is now on the shelf. " +
+                     $"It is listed under Reports → Stock to reconcile until the supplier bill arrives.";
+        }, "Adding stock at the counter", m => Status = m);
+    }
+
     [RelayCommand]
     private async Task LoadPrescriptionAsync()
     {

@@ -196,7 +196,19 @@ search the bill number or customer name across all dates, then **Reprint**.
 4. **GST summary** — only if registered.
 5. **Expiring soon** — return these to the distributor.
 6. **Low stock** — what to order.
-7. **Schedule H1 register** — keep for three years.
+7. **Stock to reconcile** — anything added at the counter without a supplier
+   bill. Match each to the bill when it arrives.
+8. **Schedule H1 register** — keep for three years.
+
+## M. Sell something the system says you do not have
+
+1. At the **Pharmacy counter**, find the medicine and click it.
+2. Click **Stock came in — add it**.
+3. Enter **packs on the shelf** and the **MRP**. Everything else is optional.
+4. Click **Add to shelf** and carry on with the bill.
+
+It appears under **Reports → Stock to reconcile** until you match it to the
+supplier bill.
 
 ---
 
@@ -680,6 +692,41 @@ Three steps per line: **find the medicine, set the quantity, add.**
 | **Qty (units)** | **Tablets, not strips.** `5` sells five out of a strip |
 | **Disc %** | Discount on this line |
 | **Add to bill** | Adds the line |
+| **Stock came in — add it** | Puts stock on the shelf from here. See below |
+
+## The medicine is in the shop but the screen says none
+
+It happens: a delivery arrived and nobody entered it, or it was bought in as a
+one-off. **Do not send the patient away and do not leave the bill.**
+
+Click **Stock came in — add it**.
+
+![Adding stock from the counter](images/quick-stock.png)
+
+| Field | Notes |
+|---|---|
+| **Packs on the shelf** | How many strips, boxes or bottles you are putting in |
+| **MRP per pack** | **Required** — nothing can be priced without it. Filled in from the last time this medicine came in |
+| **Rate paid** | Leave it if you do not know. It can be filled in when the bill arrives |
+| **Batch no** | Enter it if it is on the pack. **Leave it blank and one is allocated for you**, starting `CTR-` |
+| **Expiry** | Defaults to two years out. Change it if you know better |
+| **Add to shelf** | Puts it in. You come straight back to the bill |
+
+The grey line reads back what you have entered — *"5 pack(s) × 10 = 50 tablets
+onto the shelf"* — before anything is committed.
+
+> ### What this costs you, and why it is worth it
+>
+> Stock added this way has **no supplier bill behind it**, so total purchases
+> will not tie out against total sales until that bill turns up. That is a
+> deliberate trade: a counter that stops to do paperwork with a patient waiting
+> is a counter nobody uses.
+>
+> Nothing is hidden to buy that. Every entry is a proper goods-inward document
+> with the quantity, the MRP, the date and who keyed it, and every one of them
+> is listed under **Reports → Stock to reconcile** until it is matched to the
+> real bill. You can square the books whenever you like — a week later, a month
+> later — because nothing was done quietly.
 
 ## Bill items
 
@@ -789,7 +836,22 @@ collected, and OPD visits.
 | **OPD register** | Every visit, diagnosis, fee, and whether it was paid |
 | **Expiring soon** | Batches within 90 days of expiry. Return these to the distributor |
 | **Low stock** | Anything at or below its reorder level |
+| **Stock to reconcile** | Everything put on the shelf at the counter with no supplier bill behind it. See below |
 | **Schedule H1 register** | Statutory record of H1 sales. **Keep for three years** |
+
+## Stock to reconcile
+
+When the counter adds stock to serve a patient, there is no supplier bill behind
+it yet. Until there is, purchases will not tie out against sales — so every one
+of those entries is listed here with the date, medicine, batch, quantity on
+hand, MRP and the rate paid.
+
+Work through it whenever it suits you. For each row, find the supplier bill it
+belongs to and check the quantity and the rate against it. A batch number
+starting **`CTR-`** was allocated by the system rather than read off the pack, so
+those are the ones worth checking against the real batch number.
+
+The list is not a warning and does not have to be empty. It is a worklist.
 
 ---
 

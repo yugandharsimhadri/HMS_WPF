@@ -222,6 +222,14 @@ public class Batch : BaseEntity
     public string? SupplierName { get; set; }
     public DateTime ReceivedOn { get; set; } = DateTime.Today;
 
+    /// <summary>
+    /// Entered at the counter because the medicine was on the shelf but not in
+    /// the system, rather than received against a supplier bill. Purchases will
+    /// not tie out against sales until it is reconciled, so it is flagged rather
+    /// than hidden — see the Stock to reconcile report.
+    /// </summary>
+    public bool IsProvisional { get; set; }
+
     public bool IsExpired => ExpiryDate.Date < DateTime.Today;
 
     public decimal UnitPrice => PackMath.UnitPrice(Mrp, UnitsPerPack);
@@ -248,6 +256,16 @@ public class StockEntry : BaseEntity
     public decimal DiscountPercent { get; set; }
 
     public bool WasImported => ImportedFile is not null;
+
+    /// <summary>
+    /// Keyed at the counter to get a sale through, without a supplier bill
+    /// behind it. Kept as a first-class entry so the stock has a document, and
+    /// flagged so it can be reconciled against the real bill when it turns up.
+    /// </summary>
+    public bool IsProvisional { get; set; }
+
+    /// <summary>Who keyed it. Blank for anything received the normal way.</summary>
+    public string? EnteredBy { get; set; }
 
     public ICollection<StockEntryItem> Items { get; set; } = [];
 }

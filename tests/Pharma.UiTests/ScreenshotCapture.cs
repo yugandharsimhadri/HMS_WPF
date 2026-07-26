@@ -121,6 +121,24 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("counter");
 
+        // ── Adding stock from the counter ──────────────────────────────────
+        app.Click("SaleQuickStock");
+
+        var quickStock = Retry.WhileNull(
+            () => app.MainWindow.ModalWindows.FirstOrDefault(
+                w => w.Title.Contains("Add stock", StringComparison.OrdinalIgnoreCase)),
+            TimeSpan.FromSeconds(15)).Result;
+
+        quickStock!.FindFirstDescendant(cf => cf.ByAutomationId("QuickStockPacks"))!.AsTextBox().Text = "5";
+        Settle();
+        CaptureWindow(quickStock, "quick-stock");
+        quickStock.FindFirstDescendant(cf => cf.ByAutomationId("QuickStockCancel"))!.AsButton().Invoke();
+
+        AppFixture.WaitUntil(
+            () => app.MainWindow.ModalWindows.All(
+                w => !w.Title.Contains("Add stock", StringComparison.OrdinalIgnoreCase)),
+            "the dialog to close");
+
         app.Click("SaleSave");
         AppFixture.WaitUntil(() => app.TextOf("SaleStatus").Contains("INV"), "the bill to save");
 
@@ -187,6 +205,10 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductsNew");
         app.Type("ProductName", name);
         app.Type("ProductGstRate", gst.ToString("0.##"));
+
+        // Both guide samples are liquids, so the screenshots read sensibly.
+        app.ComboBox("ProductDispensingUnit").Select("Bottle");
+
         app.Click("ProductSave");
         AppFixture.WaitUntil(() => app.TextOf("ProductsStatus").Contains("saved"), $"{name} to save");
 

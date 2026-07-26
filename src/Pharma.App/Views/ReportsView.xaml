@@ -130,6 +130,26 @@
                     </DataGrid>
                 </TabItem>
 
+                <TabItem Header="Stock to reconcile">
+                    <DockPanel Margin="0,10,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                   TextWrapping="Wrap"
+                                   Text="Put on the shelf at the counter to serve a patient, with no supplier bill behind it yet. Purchases will not tie out against sales until each of these is matched to the bill when it arrives. A batch number starting CTR- was allocated by the system, not printed on the pack."/>
+                        <DataGrid ItemsSource="{Binding ToReconcile}"
+                                  AutomationProperties.AutomationId="ReconcileGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ADDED" Binding="{Binding ReceivedOn, StringFormat=dd MMM yyyy}" Width="110"/>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
+                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="150"/>
+                                <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=MMM yyyy}" Width="100"/>
+                                <DataGridTextColumn Header="ON HAND" Binding="{Binding QtyOnHand}" Width="90"/>
+                                <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
+                                <DataGridTextColumn Header="RATE PAID" Binding="{Binding PurchaseRate, StringFormat=N2}" Width="100"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
+
                 <TabItem Header="Schedule H1 register">
                     <DockPanel Margin="0,10,0,0">
                         <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"

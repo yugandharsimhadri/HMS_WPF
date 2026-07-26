@@ -242,6 +242,96 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     }
 
     /// <summary>
+    /// Puts stock on the shelf from the counter, for a medicine that is
+    /// physically there but not in the system.
+    ///
+    /// Only the pack count and the MRP are needed — the MRP because nothing can
+    /// be priced without it. A missing batch number gets a traceable one of our
+    /// own, and a missing expiry is taken as two years out. Both the entry and
+    /// the batch are flagged provisional: purchases will not tie out against
+    /// sales until the real supplier bill is reconciled against them, and that
+    /// is a deliberate trade for being able to serve the patient in front of you.
+    /// </summary>
+    public async Task<Batch> QuickAddStockAsync(
+        Guid productId, int packs, decimal mrp,
+        string? batchNo = null, DateTime? expiry = null,
+        decimal purchaseRate = 0m, string? by = null)
+    {
+        if (packs <= 0) throw new InvalidOperationException("Enter how many packs are on the shelf.");
+        if (mrp <= 0) throw new InvalidOperationException("Enter the MRP printed on the pack — nothing can be sold without it.");
+
+        await using var db = await factory.CreateDbContextAsync();
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        var product = await db.Products.FirstOrDefaultAsync(p => p.Id == productId)
+                      ?? throw new InvalidOperationException("That medicine no longer exists.");
+
+        var perPack = Math.Max(1, product.UnitsPerPack);
+
+        var entry = new StockEntry
+        {
+            EntryNo = await NumberService.NextAsync(db, NumberService.StockEntry),
+            EntryDate = DateTime.Today,
+            SupplierName = null,
+            IsProvisional = true,
+            EnteredBy = by,
+            Notes = "Entered at the counter — no supplier bill yet."
+        };
+
+        var batch = new Batch
+        {
+            ProductId = product.Id,
+            BatchNo = string.IsNullOrWhiteSpace(batchNo)
+                ? $"CTR-{DateTime.Now:yyMMdd-HHmmss}"
+                : batchNo.Trim(),
+            ExpiryDate = expiry?.Date ?? DateTime.Today.AddYears(2),
+            Mrp = mrp,
+            PurchaseRate = purchaseRate,
+            QtyOnHand = packs * perPack,
+            UnitsPerPack = perPack,
+            ReceivedOn = DateTime.Today,
+            IsProvisional = true
+        };
+
+        entry.Items.Add(new StockEntryItem
+        {
+            ProductId = product.Id,
+            BatchNo = batch.BatchNo,
+            ExpiryDate = batch.ExpiryDate,
+            Quantity = packs,
+            UnitsPerPack = perPack,
+            PurchaseRate = purchaseRate,
+            Mrp = mrp
+        });
+
+        db.StockEntries.Add(entry);
+        db.Batches.Add(batch);
+
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        AppLog.Info(
+            $"Counter stock: {batch.QtyOnHand} unit(s) of {product.Name} " +
+            $"as batch {batch.BatchNo} (provisional, by {by ?? "unknown"}).");
+
+        return batch;
+    }
+
+    /// <summary>
+    /// Everything put on the shelf at the counter and not yet matched to a
+    /// supplier bill. This is the list to work through when reconciling.
+    /// </summary>
+    public async Task<List<Batch>> GetProvisionalBatchesAsync()
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.Batches
+            .Include(b => b.Product)
+            .Where(b => !b.IsDeleted && b.IsProvisional)
+            .OrderByDescending(b => b.ReceivedOn)
+            .ToListAsync();
+    }
+
+    /// <summary>
     /// How many batches of this medicine were received under a different
     /// units-per-pack than it now says, and what re-counting them would do.
     ///

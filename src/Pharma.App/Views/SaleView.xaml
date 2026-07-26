@@ -80,9 +80,19 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Grid.Column="0" Text="{Binding SelectedSummary}" VerticalAlignment="Center"
-                                   Style="{StaticResource Muted}" TextTrimming="CharacterEllipsis"
-                                   AutomationProperties.AutomationId="SaleSelectedSummary"/>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding SelectedSummary}"
+                                       Style="{StaticResource Muted}" TextTrimming="CharacterEllipsis"
+                                       AutomationProperties.AutomationId="SaleSelectedSummary"/>
+
+                            <!-- On the shelf but not in the system: put it in from here
+                                 rather than sending the operator away mid-queue. -->
+                            <Button Content="Stock came in — add it" Style="{StaticResource BtnGhost}"
+                                    HorizontalAlignment="Left" Margin="0,6,0,0" Padding="10,4"
+                                    Command="{Binding QuickStockCommand}"
+                                    ToolTip="Puts stock on the shelf now, to be reconciled when the supplier bill arrives"
+                                    AutomationProperties.AutomationId="SaleQuickStock"/>
+                        </StackPanel>
 
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Quantity" Style="{StaticResource Label}"

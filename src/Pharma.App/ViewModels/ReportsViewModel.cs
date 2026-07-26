@@ -24,6 +24,13 @@ public partial class ReportsViewModel(
     public ObservableCollection<Visit> Visits { get; } = [];
     public ObservableCollection<Batch> Expiring { get; } = [];
     public ObservableCollection<Product> LowStock { get; } = [];
+
+    /// <summary>
+    /// Stock put on the shelf at the counter with no supplier bill behind it.
+    /// Purchases will not tie out against sales until each of these is matched
+    /// to the real bill, so the list is the reconciliation worklist.
+    /// </summary>
+    public ObservableCollection<Batch> ToReconcile { get; } = [];
     public ObservableCollection<GstSlab> GstSummary { get; } = [];
     public ObservableCollection<H1RegisterEntry> H1Register { get; } = [];
 
@@ -72,6 +79,9 @@ public partial class ReportsViewModel(
 
         LowStock.Clear();
         foreach (var p in await pharmacy.GetLowStockAsync()) LowStock.Add(p);
+
+        ToReconcile.Clear();
+        foreach (var b in await pharmacy.GetProvisionalBatchesAsync()) ToReconcile.Add(b);
 
         await using var db = await factory.CreateDbContextAsync();
         var from = Date.Date;
