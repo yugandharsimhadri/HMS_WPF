@@ -35,9 +35,17 @@
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="GSTIN" Style="{StaticResource Label}"/>
                         <TextBox Text="{Binding Gstin, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding GstRegistered}"
                                  AutomationProperties.AutomationId="ShopGstin"/>
                     </StackPanel>
                 </Grid>
+
+                <CheckBox Content="Registered for GST" IsChecked="{Binding GstRegistered, Mode=TwoWay}"
+                          Margin="0,2,0,4"
+                          AutomationProperties.AutomationId="ShopGstRegistered"/>
+                <TextBlock Text="{Binding GstHint}" Style="{StaticResource Muted}"
+                           TextWrapping="Wrap" Margin="0,0,0,10"
+                           AutomationProperties.AutomationId="ShopGstHint"/>
 
                 <Grid>
                     <Grid.ColumnDefinitions>

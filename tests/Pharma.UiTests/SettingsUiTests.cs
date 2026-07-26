@@ -10,6 +10,9 @@ public class SettingsUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         var shopName = $"UI Test Pharmacy {DateTime.Now:HHmmss}";
         app.Type("ShopName", shopName);
+
+        // A GSTIN can only be entered once the clinic says it is registered.
+        app.CheckBox("ShopGstRegistered").IsChecked = true;
         app.Type("ShopGstin", "29ABCDE1234F1Z5");
         app.Click("ShopSave");
 

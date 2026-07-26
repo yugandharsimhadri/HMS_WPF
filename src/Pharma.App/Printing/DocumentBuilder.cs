@@ -16,7 +16,8 @@ internal static class DocumentBuilder
     /// place so a bill, a receipt and a prescription can never disagree about the
     /// shop's name, GSTIN or licence number.
     /// </summary>
-    public static void AddClinicHeader(FlowDocument doc, Pharma.Data.ShopProfile shop, string? documentTitle)
+    public static void AddClinicHeader(
+        FlowDocument doc, Pharma.Data.ShopProfile shop, string? documentTitle, bool showGstin = true)
     {
         doc.Blocks.Add(Text(shop.Name, 18, FontWeights.Bold, align: TextAlignment.Center));
 
@@ -27,7 +28,11 @@ internal static class DocumentBuilder
             doc.Blocks.Add(Text(string.Join("  ·  ", contact), 10, brush: Muted, align: TextAlignment.Center));
 
         var licences = new List<string>();
-        if (!string.IsNullOrWhiteSpace(shop.Gstin)) licences.Add($"GSTIN: {shop.Gstin}");
+
+        // A GSTIN belongs only on a document that is actually a tax invoice.
+        if (showGstin && !string.IsNullOrWhiteSpace(shop.Gstin)) licences.Add($"GSTIN: {shop.Gstin}");
+
+        // The drug licence is required whether or not the shop charges GST.
         if (!string.IsNullOrWhiteSpace(shop.DrugLicenceNo)) licences.Add($"D.L. No: {shop.DrugLicenceNo}");
         if (licences.Count > 0)
             doc.Blocks.Add(Text(string.Join("  ·  ", licences), 10, brush: Muted, align: TextAlignment.Center));

@@ -172,6 +172,9 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
     {
         app.Navigate("NavSettings", "Settings");
         app.Type("ShopName", "Twinkle Children's Hospital");
+
+        // The sample clinic is GST registered, so the guide shows a tax invoice.
+        app.CheckBox("ShopGstRegistered").IsChecked = true;
         app.Type("ShopGstin", "36ABCDE1234F1Z5");
         app.Click("ShopSave");
         AppFixture.WaitUntil(() => app.TextOf("SettingsStatus").Contains("Saved"), "the shop details");

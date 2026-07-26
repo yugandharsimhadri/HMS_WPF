@@ -124,6 +124,7 @@ public class PrintDocumentTests
         CustomerName = "Baby Anika",
         DoctorName = "Dr. A. Kumar",
         PaymentMode = PaymentMode.Cash,
+        IsTaxInvoice = true,
         GrossAmount = 1120m,
         TaxableAmount = 1000m,
         CgstAmount = 60m,
@@ -167,6 +168,65 @@ public class PrintDocumentTests
         Assert.Contains("SGST", text);
         Assert.Contains("Rupees One Thousand One Hundred Twenty only", text);
         Assert.Contains("S. Rao", text);
+    }
+
+    // ── GST registered, or not ─────────────────────────────────────────────
+
+    [StaFact]
+    public void An_unregistered_clinic_issues_a_plain_invoice()
+    {
+        var sale = Sale();
+        sale.IsTaxInvoice = false;
+
+        // No tax was charged, so none is shown.
+        sale.CgstAmount = sale.SgstAmount = 0m;
+        sale.TaxableAmount = sale.NetAmount;
+        foreach (var item in sale.Items) { item.GstRate = 0m; item.GstAmount = 0m; }
+
+        var text = TextOf(BillPrinter.Build(sale, Shop()));
+
+        Assert.Contains("INVOICE", text);
+        Assert.DoesNotContain("TAX INVOICE", text);
+
+        // Claiming a GSTIN without being registered would be a false statement.
+        Assert.DoesNotContain("GSTIN", text);
+        Assert.DoesNotContain("GST SUMMARY", text);
+        Assert.DoesNotContain("CGST", text);
+
+        // The drug licence is still required, and the medicine details still show.
+        Assert.Contains("D.L. No: AP/21B/2024/1234", text);
+        Assert.Contains("D260374", text);
+        Assert.Contains("INV00021", text);
+    }
+
+    [StaFact]
+    public void A_registered_clinic_issues_a_tax_invoice()
+    {
+        var sale = Sale();
+        sale.IsTaxInvoice = true;
+
+        var text = TextOf(BillPrinter.Build(sale, Shop()));
+
+        Assert.Contains("TAX INVOICE", text);
+        Assert.Contains("GSTIN: 36ABCDE1234F1Z5", text);
+        Assert.Contains("GST SUMMARY", text);
+        Assert.Contains("CGST", text);
+    }
+
+    [StaFact]
+    public void A_registered_clinic_selling_zero_rated_goods_still_issues_a_tax_invoice()
+    {
+        // Being a tax invoice is about registration, not about whether this
+        // particular basket happened to carry tax.
+        var sale = Sale();
+        sale.IsTaxInvoice = true;
+        sale.CgstAmount = sale.SgstAmount = 0m;
+        foreach (var item in sale.Items) { item.GstRate = 0m; item.GstAmount = 0m; }
+
+        var text = TextOf(BillPrinter.Build(sale, Shop()));
+
+        Assert.Contains("TAX INVOICE", text);
+        Assert.Contains("GSTIN", text);
     }
 
     [StaFact]

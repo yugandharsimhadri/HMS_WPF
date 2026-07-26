@@ -99,6 +99,7 @@ public class AppFixture : IDisposable
     public ComboBox ComboBox(string automationId) => Require(automationId).AsComboBox();
     public Grid Grid(string automationId) => Require(automationId).AsGrid();
     public ListBox ListBox(string automationId) => Require(automationId).AsListBox();
+    public CheckBox CheckBox(string automationId) => Require(automationId).AsCheckBox();
 
     public Label? Label(string automationId)
     {

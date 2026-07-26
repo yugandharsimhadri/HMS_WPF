@@ -86,8 +86,13 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
     public Array PaymentModes => Enum.GetValues<PaymentMode>();
 
+    /// <summary>Read on entry; an unregistered clinic charges no tax at all.</summary>
+    private bool _gstRegistered;
+
     public async Task LoadAsync()
     {
+        _gstRegistered = (await settings.GetAsync()).GstRegistered;
+
         await FindAsync();
 
         PrescribedVisits.Clear();
@@ -169,7 +174,9 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             BatchNo = SelectedBatch.BatchNo,
             ExpiryDate = SelectedBatch.ExpiryDate,
             HsnCode = SelectedProduct.HsnCode,
-            GstRate = SelectedProduct.GstRate,
+            // Zero when the clinic is not registered, so no tax is extracted from
+            // the MRP and the bill carries none.
+            GstRate = _gstRegistered ? SelectedProduct.GstRate : 0m,
             Schedule = SelectedProduct.Schedule,
             Available = SelectedBatch.QtyOnHand,
             UnitsPerPack = SelectedBatch.UnitsPerPack,
@@ -246,7 +253,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                 BatchNo = batch.BatchNo,
                 ExpiryDate = batch.ExpiryDate,
                 HsnCode = product.HsnCode,
-                GstRate = product.GstRate,
+                GstRate = _gstRegistered ? product.GstRate : 0m,
                 Schedule = product.Schedule,
                 Available = batch.QtyOnHand,
                 UnitsPerPack = batch.UnitsPerPack,
@@ -286,7 +293,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             VisitId = SelectedVisit?.Id,
             CustomerName = string.IsNullOrWhiteSpace(CustomerName) ? "Cash" : CustomerName.Trim(),
             DoctorName = string.IsNullOrWhiteSpace(DoctorName) ? null : DoctorName.Trim(),
-            PaymentMode = PaymentMode
+            PaymentMode = PaymentMode,
+            IsTaxInvoice = _gstRegistered
         };
 
         var lines = Lines.Select(l => new SaleLine

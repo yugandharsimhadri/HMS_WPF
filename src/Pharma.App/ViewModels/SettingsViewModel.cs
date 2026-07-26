@@ -18,7 +18,15 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
     [ObservableProperty] private string _shopName = "";
     [ObservableProperty] private string _addressLine = "";
     [ObservableProperty] private string _phone = "";
+    [ObservableProperty] private bool _gstRegistered;
     [ObservableProperty] private string _gstin = "";
+
+    /// <summary>Spells out what the switch does to a printed bill.</summary>
+    public string GstHint => GstRegistered
+        ? "Bills print as TAX INVOICE with GSTIN, GST columns and a GST summary."
+        : "No GST is charged. Bills print as INVOICE with no GSTIN and no GST.";
+
+    partial void OnGstRegisteredChanged(bool value) => OnPropertyChanged(nameof(GstHint));
     [ObservableProperty] private string _drugLicenceNo = "";
     [ObservableProperty] private string _pharmacistName = "";
     [ObservableProperty] private string _billFooter = "";
@@ -43,6 +51,7 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
         ShopName = profile.Name;
         AddressLine = profile.AddressLine;
         Phone = profile.Phone;
+        GstRegistered = profile.GstRegistered;
         Gstin = profile.Gstin;
         DrugLicenceNo = profile.DrugLicenceNo;
         PharmacistName = profile.PharmacistName;
@@ -75,6 +84,7 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
             Name = ShopName.Trim(),
             AddressLine = AddressLine.Trim(),
             Phone = Phone.Trim(),
+            GstRegistered = GstRegistered,
             Gstin = Gstin.Trim(),
             DrugLicenceNo = DrugLicenceNo.Trim(),
             PharmacistName = PharmacistName.Trim(),

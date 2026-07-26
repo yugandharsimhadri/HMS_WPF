@@ -294,6 +294,16 @@ public class Sale : BaseEntity
     public PaymentMode PaymentMode { get; set; } = PaymentMode.Cash;
     public SaleStatus Status { get; set; } = SaleStatus.Completed;
 
+    /// <summary>
+    /// Whether this was issued as a tax invoice. Recorded on the bill rather than
+    /// read from settings, so a reprint years later shows what was actually given
+    /// to the customer even if the clinic has registered since.
+    ///
+    /// Not the same as "carries tax" — a registered clinic selling only zero-rated
+    /// goods still issues a tax invoice.
+    /// </summary>
+    public bool IsTaxInvoice { get; set; }
+
     public ICollection<SaleItem> Items { get; set; } = [];
 }
 

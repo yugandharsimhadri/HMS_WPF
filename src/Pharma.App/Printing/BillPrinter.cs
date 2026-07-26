@@ -16,7 +16,11 @@ public static class BillPrinter
     {
         var doc = NewDocument();
 
-        AddClinicHeader(doc, shop, isReprint ? "TAX INVOICE (DUPLICATE)" : "TAX INVOICE");
+        // A clinic that is not registered for GST issues a plain invoice. Calling
+        // it a tax invoice, or printing a GSTIN on it, would be a false claim.
+        var kind = sale.IsTaxInvoice ? "TAX INVOICE" : "INVOICE";
+
+        AddClinicHeader(doc, shop, isReprint ? $"{kind} (DUPLICATE)" : kind, showGstin: sale.IsTaxInvoice);
 
         var head = NewTable(1, 1);
         var headGroup = new TableRowGroup();
@@ -29,22 +33,29 @@ public static class BillPrinter
         head.RowGroups.Add(headGroup);
         doc.Blocks.Add(head);
 
-        var items = NewTable(3.2, 1.4, 0.9, 0.7, 0.9, 0.7, 1.1);
+        // The GST% column only earns its space on a tax invoice.
+        var items = sale.IsTaxInvoice
+            ? NewTable(3.2, 1.4, 0.9, 0.7, 0.9, 0.7, 1.1)
+            : NewTable(3.6, 1.4, 0.9, 0.8, 1.0, 1.2);
+
         var itemGroup = new TableRowGroup();
-        itemGroup.Rows.Add(Row(true, "MEDICINE", "BATCH", "EXPIRY", "QTY", "MRP", "GST%", "AMOUNT"));
+
+        itemGroup.Rows.Add(sale.IsTaxInvoice
+            ? Row(true, "MEDICINE", "BATCH", "EXPIRY", "QTY", "MRP", "GST%", "AMOUNT")
+            : Row(true, "MEDICINE", "BATCH", "EXPIRY", "QTY", "MRP", "AMOUNT"));
 
         foreach (var item in sale.Items)
         {
-            itemGroup.Rows.Add(Row(false,
-                item.ProductName,
-                item.BatchNo,
-                // Quoted separator: a bare "/" is replaced by the machine's date
-                // separator, which made the printed expiry differ between PCs.
-                item.ExpiryDate.ToString("MM'/'yy"),
-                item.UnitsPerPack > 1 ? item.QuantityDescription : item.Quantity.ToString(),
-                item.Mrp.ToString("0.00"),
-                item.GstRate.ToString("0.#"),
-                item.LineTotal.ToString("0.00")));
+            // Quoted separator: a bare "/" is replaced by the machine's date
+            // separator, which made the printed expiry differ between PCs.
+            var expiry = item.ExpiryDate.ToString("MM'/'yy");
+            var qty = item.UnitsPerPack > 1 ? item.QuantityDescription : item.Quantity.ToString();
+
+            itemGroup.Rows.Add(sale.IsTaxInvoice
+                ? Row(false, item.ProductName, item.BatchNo, expiry, qty,
+                      item.Mrp.ToString("0.00"), item.GstRate.ToString("0.#"), item.LineTotal.ToString("0.00"))
+                : Row(false, item.ProductName, item.BatchNo, expiry, qty,
+                      item.Mrp.ToString("0.00"), item.LineTotal.ToString("0.00")));
         }
 
         items.RowGroups.Add(itemGroup);
@@ -52,7 +63,7 @@ public static class BillPrinter
 
         // GST summary grouped by rate — what makes this a valid tax invoice.
         var slabs = sale.Items.GroupBy(i => i.GstRate).OrderBy(g => g.Key).ToList();
-        if (slabs.Count > 0)
+        if (sale.IsTaxInvoice && slabs.Count > 0)
         {
             doc.Blocks.Add(Text("GST SUMMARY", 9.5, FontWeights.SemiBold, Muted, topMargin: 4));
 
@@ -85,9 +96,12 @@ public static class BillPrinter
         totalGroup.Rows.Add(Row(false, "Gross", "", sale.GrossAmount.ToString("0.00")));
         if (sale.DiscountAmount > 0)
             totalGroup.Rows.Add(Row(false, "Discount", "", $"-{sale.DiscountAmount:0.00}"));
-        totalGroup.Rows.Add(Row(false, "Taxable value", "", sale.TaxableAmount.ToString("0.00")));
-        totalGroup.Rows.Add(Row(false, "CGST", "", sale.CgstAmount.ToString("0.00")));
-        totalGroup.Rows.Add(Row(false, "SGST", "", sale.SgstAmount.ToString("0.00")));
+        if (sale.IsTaxInvoice)
+        {
+            totalGroup.Rows.Add(Row(false, "Taxable value", "", sale.TaxableAmount.ToString("0.00")));
+            totalGroup.Rows.Add(Row(false, "CGST", "", sale.CgstAmount.ToString("0.00")));
+            totalGroup.Rows.Add(Row(false, "SGST", "", sale.SgstAmount.ToString("0.00")));
+        }
         if (sale.RoundOff != 0)
             totalGroup.Rows.Add(Row(false, "Round off", "", sale.RoundOff.ToString("+0.00;-0.00")));
         totals.RowGroups.Add(totalGroup);

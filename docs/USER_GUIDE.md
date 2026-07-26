@@ -71,7 +71,8 @@ Everything here prints on your bills, receipts and prescriptions.
 | **Clinic / shop name** | Printed largest, at the top of every document |
 | **Address** | One line, under the name |
 | **Phone** | Shown beside the address |
-| **GSTIN** | Your GST number. **Required on a tax invoice** |
+| **Registered for GST** | Off by default. See below — this changes what your bills are |
+| **GSTIN** | Your GST number. Only enabled when registered |
 | **Drug licence no** | Your 20B/21B number. **Required on a chemist's bill** |
 | **Pharmacist** | Printed at the foot of the bill |
 | **OPD queue layout** | `Tiles` or `Rows` — see [section 3](#choosing-tiles-or-rows) |
@@ -83,6 +84,24 @@ an **Open log folder** button. You need those only if reporting a problem.
 
 > The application works with these blank — the GSTIN line simply does not print.
 > Fill them in before you issue a real bill to a customer.
+
+> ### Registered for GST, or not
+>
+> This one setting changes what your bills legally are.
+>
+> | | Registered **off** | Registered **on** |
+> |---|---|---|
+> | Bill is headed | `INVOICE` | `TAX INVOICE` |
+> | GSTIN printed | no | yes |
+> | GST charged | **none** | extracted from the MRP |
+> | GST column and summary | hidden | shown |
+>
+> It is **off by default on purpose**. Issuing a document headed "tax invoice",
+> with a GSTIN on it, when you are not registered is a false statement — so
+> switching it on has to be a deliberate act.
+>
+> Turning it on later does not rewrite old bills. Each bill remembers what it was
+> when it was issued, so a reprint always shows what the customer was given.
 
 ## Doctors (right card)
 

@@ -8,6 +8,13 @@ public class ShopProfile
     public string Name { get; set; } = "Twinkle Children's Hospital";
     public string AddressLine { get; set; } = "";
     public string Phone { get; set; } = "";
+    /// <summary>
+    /// Whether the clinic is registered for GST. Off means no tax is charged and
+    /// bills print as a plain invoice — issuing a "tax invoice" without being
+    /// registered is not something to leave switched on by default.
+    /// </summary>
+    public bool GstRegistered { get; set; }
+
     public string Gstin { get; set; } = "";
     public string DrugLicenceNo { get; set; } = "";
     public string PharmacistName { get; set; } = "";
@@ -37,6 +44,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     private const string KeyPharmacist = "shop.pharmacist";
     private const string KeyFooter = "shop.footer";
     private const string KeyQueueLayout = "opd.queuelayout";
+    private const string KeyGstRegistered = "shop.gstregistered";
 
     public async Task<ShopProfile> GetAsync()
     {
@@ -55,7 +63,8 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
             BillFooter = Get(map, KeyFooter, fallback.BillFooter),
             QueueLayout = Enum.TryParse<QueueLayout>(Get(map, KeyQueueLayout, ""), out var layout)
                 ? layout
-                : fallback.QueueLayout
+                : fallback.QueueLayout,
+            GstRegistered = bool.TryParse(Get(map, KeyGstRegistered, ""), out var registered) && registered
         };
     }
 
@@ -71,6 +80,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         await SetAsync(db, KeyPharmacist, profile.PharmacistName);
         await SetAsync(db, KeyFooter, profile.BillFooter);
         await SetAsync(db, KeyQueueLayout, profile.QueueLayout.ToString());
+        await SetAsync(db, KeyGstRegistered, profile.GstRegistered.ToString());
 
         await db.SaveChangesAsync();
     }
