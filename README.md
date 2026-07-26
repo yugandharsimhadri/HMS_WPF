@@ -3,6 +3,8 @@
 A small Windows desktop application for a clinic with an attached pharmacy.
 Two modules only: **OPD** and **Pharmacy**.
 
+**[User guide](docs/USER_GUIDE.md)** — how to run a day on it, with screenshots.
+
 Completely independent of the HMS web solution — no shared projects, no shared
 database, no API. One executable, one SQLite file, no server to install.
 
