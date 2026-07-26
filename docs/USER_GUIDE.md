@@ -35,6 +35,146 @@ dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
 11. [Printing](#11-printing)
 12. [When something goes wrong](#12-when-something-goes-wrong)
 
+**[Common tasks, step by step](#common-tasks-step-by-step)** — the short version of
+everything above. Start here if you just want to get through a day.
+
+---
+
+# Common tasks, step by step
+
+Each task below is complete on its own. Screen-by-screen detail follows in
+sections 1 to 12.
+
+## A. Set the clinic up — once, before anything else
+
+1. Click **Settings**.
+2. Fill in **clinic name**, **address**, **phone**.
+3. Tick **Registered for GST** only if the clinic actually is. Then enter the
+   **GSTIN**. Leave it unticked and bills print as a plain invoice.
+4. Enter the **drug licence number** and the **pharmacist's name**.
+5. Click **Save shop details**.
+6. On the right, enter the first **doctor** — name, speciality, registration
+   number, usual fee — and click **Save doctor**.
+
+You cannot book a visit until at least one doctor exists.
+
+## B. Book a walk-in patient
+
+1. Click **OPD**, then **+ New visit**.
+2. Type the patient's **name or phone number** and press Enter.
+3. If they are listed, **click the right person**. If a whole family shares the
+   phone, everyone on it appears — pick the child who is actually here.
+4. If nobody matches, the new-patient form opens. Enter **name, phone, age, sex**.
+5. Choose the **doctor**, adjust **time** and **fee** if needed.
+6. Type the **complaint** if you want it on the tile and the prescription.
+7. Click **Book visit**. A token number is allocated.
+
+## C. Take the consultation fee
+
+1. On the **OPD** screen, find the patient's tile in **Waiting**.
+2. Set **Fee taken as** to Cash, UPI or Card.
+3. Click **Fee** on the tile.
+4. The receipt preview opens — click **Print**, or **Close** to skip printing.
+
+The badge changes to **Fee paid**. Clicking Fee twice does nothing.
+
+## D. See a patient and write a prescription
+
+1. Click **Consult** on the patient's tile.
+2. Fill in **vitals**, **complaint**, **diagnosis**, **advice** — all optional.
+3. For each medicine:
+   - Type two letters or more into **Medicine**.
+   - **Click a match** to use one you stock, or keep typing for one you do not.
+   - Enter **dose**, **frequency** (`1-0-1`, `BD`, `TDS`…) and **days**.
+   - **Qty is filled in for you** in individual tablets — change it if you want.
+   - Click **Add**.
+4. Set a **review date** if there is one.
+5. Click **Save & complete**. The tile moves to **Completed**.
+
+## E. Add a new medicine and put stock on the shelf
+
+1. Click **Medicines**, then **+ New medicine**.
+2. Enter the **name**, **manufacturer** and **pack size** as printed.
+3. Set **Sold as** — tablet, capsule, bottle, sachet.
+4. Set **Units in one pack** — `15` for a strip of fifteen, `1` for a bottle.
+5. Set **GST %**, **schedule**, **rack** and **reorder level**.
+6. Click **Save medicine**.
+7. In **Add stock** below, enter **batch no**, **expiry**, **packs received**,
+   any **free** packs, the **rate** you paid and the **MRP** printed on the pack.
+8. Check the line that appears — *"20 pack(s) × 15 = 300 tablets onto the shelf"*.
+9. Click **Add stock**.
+
+## F. Load a supplier's file instead of typing it
+
+1. Click **Medicines**, then **Import bill**.
+2. Choose the **supplier profile** that matches their format.
+3. Click **Browse…** and pick the file. It is read immediately.
+4. Type the **supplier name** — the file does not contain it.
+5. Check the grid, especially **PER PACK**. `30s` reads as 30; `60ML` stays 1.
+   **Type the real number for any strip.**
+6. Read the notices underneath — bill date, MRP changes, anything unclear.
+7. Click **Import**.
+
+Stock is **added** to what is already there. The same bill cannot be imported
+twice.
+
+## G. Sell to someone who walks in
+
+1. Click **Pharmacy counter**.
+2. Type part of the medicine name and press Enter.
+3. **Click the medicine** in the results.
+4. Enter **Qty (units)** — individual tablets, not strips.
+5. Click **Add to bill**. Repeat for each medicine.
+6. Leave the customer as **Cash**, or type their name.
+7. Choose **Payment**, then **Save & print bill**.
+
+## H. Sell part of a strip
+
+Exactly as task G — just enter the number of **tablets**. Five out of a strip of
+ten is `5`. The **PACKS** column shows what to hand over, and the price is
+proportional. A full strip always costs exactly the MRP printed on it.
+
+## I. Dispense what a doctor prescribed
+
+1. Click **Pharmacy counter**.
+2. Under **Or pull today's OPD prescription**, choose the patient.
+3. Click **Load prescription**. Everything prescribed **and in stock** is added
+   with the right quantity.
+4. Anything missing is named on screen — tell the parent to buy it outside.
+5. Choose **Payment**, then **Save & print bill**.
+
+## J. Correct a stock count
+
+1. Click **Medicines** and select the medicine.
+2. In **Correct the stock count**, choose the **batch**.
+3. Enter the **true count** — what is actually on the shelf, in units.
+4. Choose a **reason**: recount, breakage, expired, lost, entry error.
+5. Add a **note** if it is unusual.
+6. Click **Correct count**.
+
+Every correction is recorded underneath with was, now and why.
+
+## K. Print something again, however long ago
+
+1. Click **Patients** and search by name or phone.
+2. Select the patient.
+3. **Visits & prescriptions** tab → select the visit → **Print prescription** or
+   **Print fee receipt**.
+4. **Medicine bills** tab → select the bill → **Print bill**.
+
+For a walk-in with no patient record: **Reports → Day book → Find any bill**,
+search the bill number or customer name across all dates, then **Reprint**.
+
+## L. Close the day
+
+1. Click **Reports**.
+2. Check the totals along the top — pharmacy sales, cash, UPI, fees collected.
+3. **Day book** — every bill of the day.
+4. **GST summary** — only if registered.
+5. **Expiring soon** — return these to the distributor.
+6. **Low stock** — what to order.
+7. **Schedule H1 register** — keep for three years.
+
 ---
 
 # 1. The window
