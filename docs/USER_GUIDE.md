@@ -241,7 +241,7 @@ list below.
 
 | Control | Notes |
 |---|---|
-| **Medicine** | Start typing to search the catalogue, or type a name that isn't in it |
+| **Medicine** | Type two letters or more to search our pharmacy. Matches appear underneath — click one to use it |
 | **Dose** | e.g. `5 ml`, `1 tab` |
 | **Frequency** | `1-0-1`, `1-1-1`, `1/2-0-1/2`, or `OD` `BD` `TDS` `QID` `SOS` |
 | **Days** | Length of the course |
@@ -264,9 +264,19 @@ repeats the same course — only the medicine changes.
 > `SOS` and `PRN` have no fixed daily dose, so nothing is filled in and you type
 > the quantity yourself.
 
-> **Pick from the catalogue where you can.** A medicine chosen from the list can
-> be pulled straight onto a pharmacy bill later, with the quantity already
-> correct. Free text cannot.
+> ### Prescribing something the clinic does not stock
+>
+> Type the name and simply **do not pick anything from the list**. The line reads
+> *"Not in our pharmacy — it will be written on the prescription only"*, and it is
+> added exactly as typed. The parent buys it from an outside chemist.
+>
+> **It is never added to our medicine records.** A name typed on a prescription
+> does not create a medicine, a batch, or a price — our catalogue only ever grows
+> when stock is received.
+>
+> A medicine you **do** pick from the list shows *"In our pharmacy · 60 in stock"*
+> and can be pulled straight onto a bill at the counter, with the quantity already
+> correct. One prescription can mix the two freely.
 
 ## Bottom buttons
 

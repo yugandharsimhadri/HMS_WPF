@@ -103,15 +103,39 @@
                             BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                         <StackPanel>
                             <TextBlock Text="Medicine" Style="{StaticResource Label}"/>
-                            <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding NewMedicine, Mode=TwoWay}"
-                                      IsEditable="True" IsTextSearchEnabled="True"
-                                      Text="{Binding NewMedicineText, UpdateSourceTrigger=PropertyChanged}"
-                                      ToolTip="Pick from the catalogue so the pharmacy can load it onto a bill"
-                                      AutomationProperties.AutomationId="RxMedicine">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
+                            <TextBox Text="{Binding MedicineSearch, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Type to search our pharmacy. Anything not stocked can still be prescribed."
+                                     AutomationProperties.AutomationId="RxMedicine"/>
+
+                            <!-- Matches appear as you type and disappear once one is
+                                 chosen, so a medicine we do not stock can just be
+                                 typed and left. -->
+                            <ItemsControl ItemsSource="{Binding Matches}" Margin="0,0,0,6"
+                                          AutomationProperties.AutomationId="RxMatches">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button HorizontalContentAlignment="Stretch" Padding="9,6" Margin="0,0,0,2"
+                                                Style="{StaticResource BtnGhost}"
+                                                Command="{Binding DataContext.PickMedicineCommand,
+                                                          RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}"
+                                                AutomationProperties.AutomationId="RxMatch"
+                                                AutomationProperties.Name="{Binding Name}">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="0.7"
+                                                           VerticalAlignment="Center"
+                                                           Text="{Binding StockOnHand, StringFormat='{}{0} in stock'}"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </DockPanel>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="{Binding MedicineHint}" Style="{StaticResource Muted}"
+                                       TextWrapping="Wrap" Margin="0,0,0,8"
+                                       AutomationProperties.AutomationId="RxMedicineHint"/>
 
                             <Grid>
                                 <Grid.ColumnDefinitions>

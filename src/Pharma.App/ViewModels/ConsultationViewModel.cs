@@ -66,8 +66,17 @@ public partial class ConsultationViewModel : ObservableObject
 
     // The entry row. Filling a form and pressing Add is far easier than editing
     // cells in a grid, which needs a click to start and swallows the Tab key.
+
+    /// <summary>Matches for what has been typed. Empty once one is chosen.</summary>
+    public ObservableCollection<Product> Matches { get; } = [];
+
+    /// <summary>What was typed. Also the medicine name when nothing is chosen.</summary>
+    [ObservableProperty] private string _medicineSearch = "";
+
+    /// <summary>The catalogue medicine chosen, or null for one we do not stock.</summary>
     [ObservableProperty] private Product? _newMedicine;
-    [ObservableProperty] private string _newMedicineText = "";
+
+    [ObservableProperty] private string _medicineHint = "";
     [ObservableProperty] private string _newDosage = "1 tab";
     [ObservableProperty] private string _newFrequency = "1-0-1";
     [ObservableProperty] private int _newDays = 3;
@@ -128,9 +137,72 @@ public partial class ConsultationViewModel : ObservableObject
     // Recompute the course whenever anything it depends on changes.
     partial void OnNewFrequencyChanged(string value) => RecalculateCourse();
     partial void OnNewDaysChanged(int value) => RecalculateCourse();
-    partial void OnNewMedicineChanged(Product? value)
+    partial void OnNewMedicineChanged(Product? value) => RecalculateCourse();
+
+    /// <summary>
+    /// Filters the catalogue as the doctor types. The whole list is already in
+    /// memory, so this costs nothing and needs no database round trip.
+    ///
+    /// Typing something we do not stock is allowed on purpose — the parent buys
+    /// it outside, and it must not be added to our own medicine records.
+    /// </summary>
+    partial void OnMedicineSearchChanged(string value)
     {
-        if (value is not null) NewMedicineText = value.Name;
+        // Typing on after choosing one means they are choosing something else.
+        if (NewMedicine is not null &&
+            !string.Equals(NewMedicine.Name, value, StringComparison.OrdinalIgnoreCase))
+        {
+            NewMedicine = null;
+        }
+
+        Matches.Clear();
+
+        var term = value?.Trim() ?? "";
+
+        if (term.Length >= 2 && NewMedicine is null)
+        {
+            foreach (var product in Products
+                         .Where(p => p.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+                                  || (p.Manufacturer ?? "").Contains(term, StringComparison.OrdinalIgnoreCase))
+                         .Take(8))
+            {
+                Matches.Add(product);
+            }
+        }
+
+        UpdateMedicineHint();
+        RecalculateCourse();
+    }
+
+    private void UpdateMedicineHint()
+    {
+        if (NewMedicine is not null)
+        {
+            var stock = NewMedicine.StockOnHand;
+            MedicineHint = stock > 0
+                ? $"In our pharmacy · {stock} in stock"
+                : "In our pharmacy · out of stock";
+            return;
+        }
+
+        MedicineHint = string.IsNullOrWhiteSpace(MedicineSearch)
+            ? ""
+            : Matches.Count > 0
+                ? "Pick one from the list, or keep typing for a medicine we do not stock."
+                : "Not in our pharmacy — it will be written on the prescription only.";
+    }
+
+    /// <summary>Chooses a catalogue medicine, linking the line to our stock.</summary>
+    [RelayCommand]
+    private void PickMedicine(Product? product)
+    {
+        if (product is null) return;
+
+        NewMedicine = product;
+        MedicineSearch = product.Name;
+        Matches.Clear();
+
+        UpdateMedicineHint();
         RecalculateCourse();
     }
 
@@ -162,7 +234,10 @@ public partial class ConsultationViewModel : ObservableObject
     [RelayCommand]
     private void AddLine()
     {
-        var name = NewMedicine?.Name ?? NewMedicineText;
+        // Either a catalogue medicine, or whatever was typed. A typed name is
+        // written on the prescription and nowhere else — it never becomes a
+        // medicine in our pharmacy.
+        var name = NewMedicine?.Name ?? MedicineSearch;
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -189,13 +264,17 @@ public partial class ConsultationViewModel : ObservableObject
             PackLabel = NewMedicine?.PackSize
         });
 
-        Status = $"{name} added.";
+        Status = NewMedicine is null
+            ? $"{name} added — not stocked here, so the parent buys it outside."
+            : $"{name} added.";
 
         // Keep the frequency and days: a course is usually repeated across a
         // prescription, and retyping them for every line is the slow part.
         NewMedicine = null;
-        NewMedicineText = "";
+        MedicineSearch = "";
         NewInstructions = "";
+        Matches.Clear();
+        UpdateMedicineHint();
         RecalculateCourse();
     }
 
