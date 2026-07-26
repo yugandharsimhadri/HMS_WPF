@@ -219,18 +219,68 @@
                                 Command="{Binding AddStockCommand}"
                                 AutomationProperties.AutomationId="StockAdd"/>
 
-                        <TextBlock Text="Batches in stock" Style="{StaticResource Label}" Margin="0,14,0,4"/>
-                        <ItemsControl ItemsSource="{Binding Batches}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Display}" Style="{StaticResource Muted}" Margin="0,0,0,3"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
                         <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"
                                    TextWrapping="Wrap" Margin="0,12,0,0"
                                    AutomationProperties.AutomationId="ProductsStatus"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Correcting a count. Stock otherwise only moves by receiving or
+                     selling, so a manual change has to leave its own record. -->
+                <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Correct the stock count" Style="{StaticResource H2}"/>
+
+                        <TextBlock Text="Batch" Style="{StaticResource Label}"/>
+                        <ComboBox ItemsSource="{Binding Batches}" SelectedItem="{Binding SelectedBatch, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="CorrectBatch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="True count" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding CorrectedQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="What is actually on the shelf, in units"
+                                         AutomationProperties.AutomationId="CorrectQuantity"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Reason" Style="{StaticResource Label}"/>
+                                <ComboBox ItemsSource="{Binding AdjustmentReasons}"
+                                          SelectedItem="{Binding AdjustmentReason, Mode=TwoWay}"
+                                          AutomationProperties.AutomationId="CorrectReason"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="Notes" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding AdjustmentNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.AutomationId="CorrectNotes"/>
+
+                        <Button Content="Correct count" Style="{StaticResource BtnPrimary}"
+                                HorizontalAlignment="Left" Command="{Binding CorrectStockCommand}"
+                                AutomationProperties.AutomationId="CorrectStock"/>
+
+                        <TextBlock Text="Recent corrections" Style="{StaticResource Label}" Margin="0,14,0,4"/>
+                        <DataGrid ItemsSource="{Binding Adjustments}" MaxHeight="150"
+                                  AutomationProperties.AutomationId="AdjustmentsGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="WHEN" Binding="{Binding AdjustedOn, StringFormat='dd MMM HH:mm'}" Width="95"/>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*"/>
+                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="85"/>
+                                <DataGridTextColumn Header="WAS" Binding="{Binding QuantityBefore}" Width="50"/>
+                                <DataGridTextColumn Header="NOW" Binding="{Binding QuantityAfter}" Width="50"/>
+                                <DataGridTextColumn Header="CHANGE" Binding="{Binding Direction}" Width="65"/>
+                                <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="90"/>
+                                <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="140"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </StackPanel>
                 </Border>
             </StackPanel>

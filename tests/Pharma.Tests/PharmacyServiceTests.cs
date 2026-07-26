@@ -163,6 +163,78 @@ public class PharmacyServiceTests : IDisposable
         Assert.Equal("INV00002", second.BillNo);
     }
 
+    // ── Correcting stock ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Correcting_a_count_records_what_changed_and_why()
+    {
+        var product = await GivenProductAsync();
+        await GivenStockAsync(product, "B1", 100, 50m);
+        var batch = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+
+        var adjustment = await _pharmacy.AdjustStockAsync(
+            batch.Id, 94, AdjustmentReason.Breakage, "Six broken in transit", "Counter");
+
+        Assert.Equal(100, adjustment.QuantityBefore);
+        Assert.Equal(94, adjustment.QuantityAfter);
+        Assert.Equal(-6, adjustment.Change);
+        Assert.Equal(AdjustmentReason.Breakage, adjustment.Reason);
+        Assert.Equal("Six broken in transit", adjustment.Notes);
+
+        // The shelf and the trail agree.
+        var after = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+        Assert.Equal(94, after.QtyOnHand);
+
+        var trail = await _pharmacy.GetAdjustmentsAsync();
+        Assert.Single(trail);
+        Assert.Equal("Test Drug 500mg", trail[0].ProductName);
+        Assert.Equal("B1", trail[0].BatchNo);
+    }
+
+    [Fact]
+    public async Task A_correction_that_changes_nothing_is_refused()
+    {
+        var product = await GivenProductAsync();
+        await GivenStockAsync(product, "B1", 50, 20m);
+        var batch = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _pharmacy.AdjustStockAsync(batch.Id, 50, AdjustmentReason.Recount));
+
+        Assert.Empty(await _pharmacy.GetAdjustmentsAsync());
+    }
+
+    [Fact]
+    public async Task Stock_cannot_be_corrected_below_nothing()
+    {
+        var product = await GivenProductAsync();
+        await GivenStockAsync(product, "B1", 10, 20m);
+        var batch = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _pharmacy.AdjustStockAsync(batch.Id, -1, AdjustmentReason.Recount));
+
+        var after = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+        Assert.Equal(10, after.QtyOnHand);
+    }
+
+    [Fact]
+    public async Task Corrections_are_listed_newest_first()
+    {
+        var product = await GivenProductAsync();
+        await GivenStockAsync(product, "B1", 100, 50m);
+        var batch = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
+
+        await _pharmacy.AdjustStockAsync(batch.Id, 90, AdjustmentReason.Breakage);
+        await _pharmacy.AdjustStockAsync(batch.Id, 88, AdjustmentReason.Expired);
+
+        var trail = await _pharmacy.GetAdjustmentsAsync();
+
+        Assert.Equal(2, trail.Count);
+        Assert.Equal(AdjustmentReason.Expired, trail[0].Reason);
+        Assert.Equal(90, trail[0].QuantityBefore);
+    }
+
     private static SaleLine Line(Product product, Batch batch, int quantity, DrugSchedule schedule = DrugSchedule.None)
         => new()
         {

@@ -17,7 +17,29 @@ public partial class PrescriptionRow : ObservableObject
     [ObservableProperty] private int _days = 3;
     [ObservableProperty] private int _quantity;
     [ObservableProperty] private string? _instructions;
+
     public Guid? ProductId { get; set; }
+
+    /// <summary>Units in one pack, so the line can show what that is in strips.</summary>
+    public int UnitsPerPack { get; set; } = 1;
+    public string? PackLabel { get; set; }
+
+    /// <summary>
+    /// The course in words: "6 tablets · 1 × 10 TAB minus 4". The doctor writes
+    /// individual units; the pharmacy hands over strips.
+    /// </summary>
+    public string Course
+    {
+        get
+        {
+            if (Quantity <= 0) return "";
+            if (UnitsPerPack <= 1) return $"{Quantity}";
+
+            return $"{Quantity} · {PackMath.Describe(Quantity, UnitsPerPack, PackLabel)}";
+        }
+    }
+
+    partial void OnQuantityChanged(int value) => OnPropertyChanged(nameof(Course));
 }
 
 public partial class ConsultationViewModel : ObservableObject
@@ -41,6 +63,17 @@ public partial class ConsultationViewModel : ObservableObject
     [ObservableProperty] private decimal _fee;
     [ObservableProperty] private DateTime? _followUpOn;
     [ObservableProperty] private string _status = "";
+
+    // The entry row. Filling a form and pressing Add is far easier than editing
+    // cells in a grid, which needs a click to start and swallows the Tab key.
+    [ObservableProperty] private Product? _newMedicine;
+    [ObservableProperty] private string _newMedicineText = "";
+    [ObservableProperty] private string _newDosage = "1 tab";
+    [ObservableProperty] private string _newFrequency = "1-0-1";
+    [ObservableProperty] private int _newDays = 3;
+    [ObservableProperty] private int _newQuantity;
+    [ObservableProperty] private string _newInstructions = "";
+    [ObservableProperty] private string _courseHint = "";
 
     public event Action? RequestClose;
 
@@ -67,9 +100,14 @@ public partial class ConsultationViewModel : ObservableObject
         Fee = Visit.Fee;
         FollowUpOn = Visit.FollowUpOn;
 
+        Products.Clear();
+        foreach (var p in await _pharmacy.SearchProductsAsync(null, 500)) Products.Add(p);
+
         Lines.Clear();
         foreach (var item in Visit.Prescription)
         {
+            var product = item.ProductId is { } id ? Products.FirstOrDefault(p => p.Id == id) : null;
+
             Lines.Add(new PrescriptionRow
             {
                 Medicine = item.MedicineName,
@@ -78,24 +116,93 @@ public partial class ConsultationViewModel : ObservableObject
                 Days = item.Days,
                 Quantity = item.Quantity,
                 Instructions = item.Instructions,
-                ProductId = item.ProductId
+                ProductId = item.ProductId,
+                UnitsPerPack = product?.UnitsPerPack ?? 1,
+                PackLabel = product?.PackSize
             });
         }
 
-        if (Lines.Count == 0) Lines.Add(new PrescriptionRow());
+        RecalculateCourse();
+    }
 
-        Products.Clear();
-        foreach (var p in await _pharmacy.SearchProductsAsync(null, 500)) Products.Add(p);
+    // Recompute the course whenever anything it depends on changes.
+    partial void OnNewFrequencyChanged(string value) => RecalculateCourse();
+    partial void OnNewDaysChanged(int value) => RecalculateCourse();
+    partial void OnNewMedicineChanged(Product? value)
+    {
+        if (value is not null) NewMedicineText = value.Name;
+        RecalculateCourse();
+    }
+
+    /// <summary>
+    /// Works out how many individual units the course needs — "1-0-1" for 3 days
+    /// is 6 tablets — and says what that is in strips, because the pharmacy
+    /// dispenses from strips.
+    /// </summary>
+    private void RecalculateCourse()
+    {
+        var units = DoseMath.UnitsForCourse(NewFrequency, NewDays);
+
+        if (units is null)
+        {
+            CourseHint = string.IsNullOrWhiteSpace(NewFrequency)
+                ? ""
+                : $"'{NewFrequency}' has no fixed daily dose — enter the quantity yourself.";
+            return;
+        }
+
+        NewQuantity = units.Value;
+
+        var perPack = NewMedicine?.UnitsPerPack ?? 1;
+        CourseHint = perPack > 1
+            ? $"{units} units · {PackMath.Describe(units.Value, perPack, NewMedicine?.PackSize)}"
+            : $"{units} units";
     }
 
     [RelayCommand]
-    private void AddLine() => Lines.Add(new PrescriptionRow());
+    private void AddLine()
+    {
+        var name = NewMedicine?.Name ?? NewMedicineText;
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            Status = "Choose a medicine, or type its name.";
+            return;
+        }
+
+        if (NewQuantity <= 0)
+        {
+            Status = "Enter how many units to dispense.";
+            return;
+        }
+
+        Lines.Add(new PrescriptionRow
+        {
+            Medicine = name.Trim(),
+            Dosage = NewDosage,
+            Frequency = NewFrequency,
+            Days = NewDays,
+            Quantity = NewQuantity,
+            Instructions = string.IsNullOrWhiteSpace(NewInstructions) ? null : NewInstructions.Trim(),
+            ProductId = NewMedicine?.Id,
+            UnitsPerPack = NewMedicine?.UnitsPerPack ?? 1,
+            PackLabel = NewMedicine?.PackSize
+        });
+
+        Status = $"{name} added.";
+
+        // Keep the frequency and days: a course is usually repeated across a
+        // prescription, and retyping them for every line is the slow part.
+        NewMedicine = null;
+        NewMedicineText = "";
+        NewInstructions = "";
+        RecalculateCourse();
+    }
 
     [RelayCommand]
     private void RemoveLine(PrescriptionRow? row)
     {
         if (row is not null) Lines.Remove(row);
-        if (Lines.Count == 0) Lines.Add(new PrescriptionRow());
     }
 
     [RelayCommand]

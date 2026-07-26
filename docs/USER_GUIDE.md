@@ -236,21 +236,37 @@ The heading shows the token, the patient, their age and sex, and the doctor.
 
 ## Right — the prescription
 
-One row per medicine.
+Fill the form at the top and press **Add**. Each medicine then appears in the
+list below.
 
-| Column | Notes |
+| Control | Notes |
 |---|---|
-| **Medicine** | Type it, or **pick it from the catalogue** |
+| **Medicine** | Start typing to search the catalogue, or type a name that isn't in it |
 | **Dose** | e.g. `5 ml`, `1 tab` |
-| **Frequency** | e.g. `1-0-1`, `SOS` |
-| **Days** | How many days |
-| **Qty** | How many to dispense |
+| **Frequency** | `1-0-1`, `1-1-1`, `1/2-0-1/2`, or `OD` `BD` `TDS` `QID` `SOS` |
+| **Days** | Length of the course |
+| **Qty (units)** | **Individual tablets.** Worked out for you — change it if you want |
+| Grey line under the fields | What the course comes to, in tablets and in strips |
 | **Instructions** | e.g. "after food". Printed under the line |
-| **✕** | Removes the row |
-| **+ Add line** | Adds a row |
+| **Add** | Adds the medicine to the list |
+| **✕** in the list | Removes that medicine |
+
+Frequency and days are **kept after adding**, because a prescription usually
+repeats the same course — only the medicine changes.
+
+> ### Quantity is always in individual units
+>
+> You write `1-0-1` for `3` days and it fills in **6** — six tablets, not six
+> strips. The line underneath shows what the pharmacy will hand over, e.g.
+> *"6 units · 1 × 10 TAB minus 4"*, so there is never any doubt about whether a
+> number means tablets or strips.
+>
+> `SOS` and `PRN` have no fixed daily dose, so nothing is filled in and you type
+> the quantity yourself.
 
 > **Pick from the catalogue where you can.** A medicine chosen from the list can
-> be pulled straight onto a pharmacy bill later. Free text cannot.
+> be pulled straight onto a pharmacy bill later, with the quantity already
+> correct. Free text cannot.
 
 ## Bottom buttons
 
@@ -315,6 +331,30 @@ its expiry, MRP and quantity left.
 
 > **Adding stock always adds.** Receiving the same batch number again increases
 > what is on the shelf. It never replaces it.
+
+## Correct the stock count
+
+For when the shelf and the screen disagree — breakage, a miscount, or something
+keyed in wrongly.
+
+| Control | Notes |
+|---|---|
+| **Batch** | Which batch is wrong. Shows expiry, MRP and current count |
+| **True count** | What is **actually** on the shelf, in units |
+| **Reason** | `Recount`, `Breakage`, `Expired`, `Lost`, `Entry error`, `Other` |
+| **Notes** | Free text — worth writing for anything unusual |
+| **Correct count** | Applies it |
+| **Recent corrections** | When, what, was, now, change, reason and notes |
+
+> ### Every correction is recorded
+>
+> Stock otherwise only moves by receiving or selling, and both leave a document.
+> A manual correction has none, so it writes its own — otherwise a shortfall
+> looks the same as theft and nobody can say what happened.
+>
+> The correction and its record are saved together: you cannot get one without
+> the other. Setting the count to what it already is is refused, and stock cannot
+> go below zero.
 
 ---
 
@@ -565,9 +605,8 @@ reporting a problem.
 
 ## Not in this version
 
-Sales returns and credit notes · purchase returns · a stock adjustment screen for
-breakage · inter-state IGST · e-invoicing · multi-terminal use · the Schedule X
-narcotic register.
+Sales returns and credit notes · purchase returns · inter-state IGST ·
+e-invoicing · multi-terminal use · the Schedule X narcotic register.
 
 **Credit and part payment are not missing — they are deliberately absent.** The
 clinic settles every bill in full at the counter, so there is no outstanding

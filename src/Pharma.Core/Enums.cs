@@ -44,6 +44,22 @@ public enum PaymentMode
     Card = 3
 }
 
+/// <summary>Why a count on the shelf did not match the count in the system.</summary>
+public enum AdjustmentReason
+{
+    /// <summary>Physically counted and the system was wrong.</summary>
+    Recount = 1,
+
+    Breakage,
+    Expired,
+    Lost,
+
+    /// <summary>Keyed in wrongly when the stock was received.</summary>
+    EntryError,
+
+    Other
+}
+
 public enum SaleStatus
 {
     Completed = 1,

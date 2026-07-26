@@ -149,14 +149,60 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         return entry;
     }
 
-    public async Task AdjustStockAsync(Guid batchId, int newQuantity)
+    /// <summary>
+    /// Corrects what a batch holds and records why. The audit row is written in
+    /// the same transaction as the change, so a correction can never happen
+    /// without leaving a trail.
+    /// </summary>
+    public async Task<StockAdjustment> AdjustStockAsync(
+        Guid batchId, int newQuantity, AdjustmentReason reason, string? notes = null, string? by = null)
+    {
+        if (newQuantity < 0)
+            throw new InvalidOperationException("A batch cannot hold less than nothing.");
+
+        await using var db = await factory.CreateDbContextAsync();
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        var batch = await db.Batches.Include(b => b.Product).FirstOrDefaultAsync(b => b.Id == batchId)
+                    ?? throw new InvalidOperationException("That batch no longer exists.");
+
+        if (batch.QtyOnHand == newQuantity)
+            throw new InvalidOperationException("That is the quantity already recorded — nothing to correct.");
+
+        var adjustment = new StockAdjustment
+        {
+            BatchId = batch.Id,
+            ProductId = batch.ProductId,
+            ProductName = batch.Product.Name,
+            BatchNo = batch.BatchNo,
+            QuantityBefore = batch.QtyOnHand,
+            QuantityAfter = newQuantity,
+            Reason = reason,
+            Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
+            AdjustedBy = by
+        };
+
+        batch.QtyOnHand = newQuantity;
+        db.StockAdjustments.Add(adjustment);
+
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        AppLog.Info(
+            $"Stock corrected: {adjustment.ProductName} batch {adjustment.BatchNo} " +
+            $"{adjustment.QuantityBefore} → {adjustment.QuantityAfter} ({reason}).");
+
+        return adjustment;
+    }
+
+    /// <summary>The correction trail, newest first.</summary>
+    public async Task<List<StockAdjustment>> GetAdjustmentsAsync(int take = 200)
     {
         await using var db = await factory.CreateDbContextAsync();
-        var batch = await db.Batches.FirstOrDefaultAsync(b => b.Id == batchId);
-        if (batch is null) return;
-
-        batch.QtyOnHand = Math.Max(0, newQuantity);
-        await db.SaveChangesAsync();
+        return await db.StockAdjustments
+            .OrderByDescending(a => a.AdjustedOn)
+            .Take(take)
+            .ToListAsync();
     }
 
     // ── Sales ──────────────────────────────────────────────────────────────

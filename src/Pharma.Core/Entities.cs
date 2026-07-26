@@ -341,6 +341,38 @@ public class Counter : BaseEntity
     public int LastNumber { get; set; }
 }
 
+/// <summary>
+/// A correction to what the shelf holds, and why.
+///
+/// Stock only ever moves by receiving or selling, both of which leave a document.
+/// A manual correction has no document, so it writes one — otherwise a shortfall
+/// is indistinguishable from theft, and nobody can answer what happened.
+/// </summary>
+public class StockAdjustment : BaseEntity
+{
+    public DateTime AdjustedOn { get; set; } = DateTime.Now;
+
+    public Guid BatchId { get; set; }
+    public Batch Batch { get; set; } = null!;
+
+    public Guid ProductId { get; set; }
+    public Product Product { get; set; } = null!;
+
+    // Recorded rather than derived, so the trail survives later changes.
+    public string ProductName { get; set; } = string.Empty;
+    public string BatchNo { get; set; } = string.Empty;
+
+    public int QuantityBefore { get; set; }
+    public int QuantityAfter { get; set; }
+
+    public AdjustmentReason Reason { get; set; } = AdjustmentReason.Recount;
+    public string? Notes { get; set; }
+    public string? AdjustedBy { get; set; }
+
+    public int Change => QuantityAfter - QuantityBefore;
+    public string Direction => Change >= 0 ? $"+{Change}" : Change.ToString();
+}
+
 /// <summary>Schedule H1 sales register — statutory, retained three years.</summary>
 public class H1RegisterEntry : BaseEntity
 {

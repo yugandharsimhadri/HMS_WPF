@@ -24,6 +24,7 @@ public class AppDbContext : DbContext
     public DbSet<H1RegisterEntry> H1Register => Set<H1RegisterEntry>();
     public DbSet<ImportProfile> ImportProfiles => Set<ImportProfile>();
     public DbSet<VendorProductCode> VendorProductCodes => Set<VendorProductCode>();
+    public DbSet<StockAdjustment> StockAdjustments => Set<StockAdjustment>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -77,6 +78,17 @@ public class AppDbContext : DbContext
             e.Ignore(x => x.Display);
             e.Ignore(x => x.UnitPrice);
             e.Ignore(x => x.OnHand);
+        });
+
+        b.Entity<StockAdjustment>(e =>
+        {
+            e.HasIndex(x => x.AdjustedOn);
+            e.HasOne(x => x.Batch).WithMany()
+                .HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Product).WithMany()
+                .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+            e.Ignore(x => x.Change);
+            e.Ignore(x => x.Direction);
         });
 
         b.Entity<VendorProductCode>(e =>

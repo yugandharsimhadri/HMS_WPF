@@ -95,46 +95,84 @@
             <!-- Prescription -->
             <Border Grid.Column="2" Style="{StaticResource Card}">
                 <DockPanel>
-                    <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,10">
-                        <TextBlock Text="Prescription" Style="{StaticResource H2}" Margin="0" VerticalAlignment="Center"/>
-                        <Button DockPanel.Dock="Right" Content="+ Add line" Style="{StaticResource BtnGhost}"
-                                Command="{Binding AddLineCommand}"/>
-                    </DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Prescription" Style="{StaticResource H2}"/>
 
-                    <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap"
-                               Text="Type the medicine name, or pick one from the catalogue so the pharmacy can load it into a bill directly."/>
+                    <!-- Entry is a form, not an editable grid: a grid needs a click
+                         to start editing and eats the Tab key between fields. -->
+                    <Border DockPanel.Dock="Top" Background="#F7F9FA" BorderBrush="{StaticResource Border}"
+                            BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="Medicine" Style="{StaticResource Label}"/>
+                            <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding NewMedicine, Mode=TwoWay}"
+                                      IsEditable="True" IsTextSearchEnabled="True"
+                                      Text="{Binding NewMedicineText, UpdateSourceTrigger=PropertyChanged}"
+                                      ToolTip="Pick from the catalogue so the pharmacy can load it onto a bill"
+                                      AutomationProperties.AutomationId="RxMedicine">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
 
-                    <DataGrid ItemsSource="{Binding Lines}" IsReadOnly="False" CanUserSortColumns="False"
-                              RowHeight="34">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="70"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Dose" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding NewDosage, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="RxDose"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Frequency" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding NewFrequency, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="1-0-1, 1-1-1, OD, BD, TDS, SOS"
+                                             AutomationProperties.AutomationId="RxFrequency"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Days" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding NewDays, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="RxDays"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="6">
+                                    <TextBlock Text="Qty (units)" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding NewQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Individual tablets. Worked out from frequency and days"
+                                             AutomationProperties.AutomationId="RxQuantity"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="{Binding CourseHint}" Style="{StaticResource Muted}"
+                                       Margin="0,0,0,8" TextWrapping="Wrap"
+                                       AutomationProperties.AutomationId="RxCourseHint"/>
+
+                            <DockPanel>
+                                <Button DockPanel.Dock="Right" Content="Add" Style="{StaticResource BtnPrimary}"
+                                        MinWidth="90" Margin="8,0,0,0"
+                                        Command="{Binding AddLineCommand}"
+                                        AutomationProperties.AutomationId="RxAdd"/>
+                                <TextBox Text="{Binding NewInstructions, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0" ToolTip="Instructions, e.g. after food"
+                                         AutomationProperties.AutomationId="RxInstructions"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <DataGrid ItemsSource="{Binding Lines}" RowHeight="30"
+                              AutomationProperties.AutomationId="RxGrid">
                         <DataGrid.Columns>
-                            <DataGridComboBoxColumn Header="MEDICINE" Width="*"
-                                                    SelectedValueBinding="{Binding ProductId}"
-                                                    SelectedValuePath="Id" DisplayMemberPath="Name"
-                                                    IsReadOnly="False">
-                                <DataGridComboBoxColumn.ElementStyle>
-                                    <Style TargetType="ComboBox">
-                                        <Setter Property="ItemsSource"
-                                                Value="{Binding DataContext.Products,
-                                                        RelativeSource={RelativeSource AncestorType=Window}}"/>
-                                        <Setter Property="IsEditable" Value="True"/>
-                                        <Setter Property="Text" Value="{Binding Medicine, Mode=TwoWay}"/>
-                                    </Style>
-                                </DataGridComboBoxColumn.ElementStyle>
-                                <DataGridComboBoxColumn.EditingElementStyle>
-                                    <Style TargetType="ComboBox">
-                                        <Setter Property="ItemsSource"
-                                                Value="{Binding DataContext.Products,
-                                                        RelativeSource={RelativeSource AncestorType=Window}}"/>
-                                        <Setter Property="IsEditable" Value="True"/>
-                                        <Setter Property="Text" Value="{Binding Medicine, Mode=TwoWay}"/>
-                                    </Style>
-                                </DataGridComboBoxColumn.EditingElementStyle>
-                            </DataGridComboBoxColumn>
-                            <DataGridTextColumn Header="DOSE" Binding="{Binding Dosage}" Width="90"/>
-                            <DataGridTextColumn Header="FREQUENCY" Binding="{Binding Frequency}" Width="110"/>
-                            <DataGridTextColumn Header="DAYS" Binding="{Binding Days}" Width="60"/>
-                            <DataGridTextColumn Header="QTY" Binding="{Binding Quantity}" Width="60"/>
-                            <DataGridTextColumn Header="INSTRUCTIONS" Binding="{Binding Instructions}" Width="160"/>
+                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="*"/>
+                            <DataGridTextColumn Header="DOSE" Binding="{Binding Dosage}" Width="80"/>
+                            <DataGridTextColumn Header="FREQUENCY" Binding="{Binding Frequency}" Width="95"/>
+                            <DataGridTextColumn Header="DAYS" Binding="{Binding Days}" Width="55"/>
+                            <DataGridTextColumn Header="DISPENSE" Binding="{Binding Course}" Width="150"/>
+                            <DataGridTextColumn Header="INSTRUCTIONS" Binding="{Binding Instructions}" Width="140"/>
                             <DataGridTemplateColumn Width="34">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>

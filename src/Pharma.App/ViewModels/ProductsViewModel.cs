@@ -48,10 +48,26 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
 
     [ObservableProperty] private string _status = "";
 
+    // Correcting a count
+    [ObservableProperty] private Batch? _selectedBatch;
+    [ObservableProperty] private int _correctedQuantity;
+    [ObservableProperty] private AdjustmentReason _adjustmentReason = AdjustmentReason.Recount;
+    [ObservableProperty] private string _adjustmentNotes = "";
+
+    public ObservableCollection<StockAdjustment> Adjustments { get; } = [];
+    public Array AdjustmentReasons => Enum.GetValues<AdjustmentReason>();
+
+    partial void OnSelectedBatchChanged(Batch? value)
+        => CorrectedQuantity = value?.QtyOnHand ?? 0;
+
     public Array Schedules => Enum.GetValues<DrugSchedule>();
     public bool HasProduct => SelectedProduct is not null;
 
-    public async Task LoadAsync() => await FindAsync();
+    public async Task LoadAsync()
+    {
+        await FindAsync();
+        await LoadAdjustmentsAsync();
+    }
 
     [RelayCommand]
     private async Task FindAsync()
@@ -225,6 +241,42 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         {
             Warn(ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Corrects what a batch holds. Stock otherwise only moves by receiving or
+    /// selling, both of which leave a document — a correction writes its own, so
+    /// a shortfall can always be explained.
+    /// </summary>
+    [RelayCommand]
+    private async Task CorrectStockAsync()
+    {
+        if (SelectedBatch is null)
+        {
+            Warn("Choose the batch whose count is wrong.");
+            return;
+        }
+
+        await Safely.RunAsync(async () =>
+        {
+            var adjustment = await pharmacy.AdjustStockAsync(
+                SelectedBatch.Id, CorrectedQuantity, AdjustmentReason, AdjustmentNotes);
+
+            Status = $"{adjustment.ProductName} batch {adjustment.BatchNo}: " +
+                     $"{adjustment.QuantityBefore} → {adjustment.QuantityAfter} ({adjustment.Reason}).";
+
+            AdjustmentNotes = "";
+
+            if (SelectedProduct is not null) await LoadBatchesAsync(SelectedProduct.Id);
+            await LoadAdjustmentsAsync();
+            await FindAsync();
+        }, "Correcting the stock count", m => Status = m);
+    }
+
+    private async Task LoadAdjustmentsAsync()
+    {
+        Adjustments.Clear();
+        foreach (var a in await pharmacy.GetAdjustmentsAsync(100)) Adjustments.Add(a);
     }
 
     private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
