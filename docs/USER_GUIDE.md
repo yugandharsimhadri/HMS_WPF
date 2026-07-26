@@ -25,15 +25,16 @@ dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
 5. [The consultation](#5-the-consultation)
 
 **The pharmacy**
-6. [Medicines and stock](#6-medicines-and-stock)
-7. [Importing a supplier bill](#7-importing-a-supplier-bill)
-8. [The pharmacy counter](#8-the-pharmacy-counter)
+6. [Medicines — the catalogue](#6-medicines--the-catalogue)
+7. [Inventory — what is on the shelf](#7-inventory--what-is-on-the-shelf)
+8. [Importing a supplier bill](#8-importing-a-supplier-bill)
+9. [The pharmacy counter](#9-the-pharmacy-counter)
 
 **Everything else**
-9. [Patients](#9-patients)
-10. [Reports](#10-reports)
-11. [Printing](#11-printing)
-12. [When something goes wrong](#12-when-something-goes-wrong)
+10. [Patients](#10-patients)
+11. [Reports](#11-reports)
+12. [Printing](#12-printing)
+13. [When something goes wrong](#13-when-something-goes-wrong)
 
 **[Common tasks, step by step](#common-tasks-step-by-step)** — the short version of
 everything above. Start here if you just want to get through a day.
@@ -43,7 +44,7 @@ everything above. Start here if you just want to get through a day.
 # Common tasks, step by step
 
 Each task below is complete on its own. Screen-by-screen detail follows in
-sections 1 to 12.
+sections 1 to 13.
 
 ## A. Set the clinic up — once, before anything else
 
@@ -85,28 +86,50 @@ The badge changes to **Fee paid**. Clicking Fee twice does nothing.
 3. For each medicine:
    - Type two letters or more into **Medicine**.
    - **Click a match** to use one you stock, or keep typing for one you do not.
-   - Enter **dose**, **frequency** (`1-0-1`, `BD`, `TDS`…) and **days**.
+   - Enter the **dose**.
+   - Set **Morning · Afternoon · Night** from the three lists — `0`, `1/4`,
+     `1/2`, `1` or `2`. One in the morning and one at night is `1`, `0`, `1`.
+   - Enter **days**.
    - **Qty is filled in for you** in individual tablets — change it if you want.
    - Click **Add**.
 4. Set a **review date** if there is one.
 5. Click **Save & complete**. The tile moves to **Completed**.
 
+The consultation covers the whole window while it is open, and the rest of the
+app waits behind it. Nothing else can be started until you leave, so a
+consultation cannot be opened and then forgotten. **Close** or the **Esc** key
+leaves it; if anything has been typed and not saved you are asked first.
+
 ## E. Add a new medicine and put stock on the shelf
 
+This is two jobs on two screens. **Medicines** is where a medicine is described,
+once. **Inventory** is where stock arrives, every delivery.
+
+**First, describe the medicine — Medicines screen**
+
 1. Click **Medicines**, then **+ New medicine**.
-2. Enter the **name**, **manufacturer** and **pack size** as printed.
-3. Set **Sold as** — tablet, capsule, bottle, sachet.
-4. Set **Units in one pack** — `15` for a strip of fifteen, `1` for a bottle.
-5. Set **GST %**, **schedule**, **rack** and **reorder level**.
-6. Click **Save medicine**.
-7. In **Add stock** below, enter **batch no**, **expiry**, **packs received**,
-   any **free** packs, the **rate** you paid and the **MRP** printed on the pack.
-8. Check the line that appears — *"20 pack(s) × 15 = 300 tablets onto the shelf"*.
-9. Click **Add stock**.
+2. Enter the **brand name** as printed on the pack — *Calpol*.
+3. Enter the **drug / generic name** — *Paracetamol 250mg*. Staff search by
+   either, so filling both is worth the few seconds.
+4. Enter the **manufacturer** and **pack size** as printed.
+5. Set **Sold as** — tablet, capsule, bottle, sachet.
+6. Set **Units in one pack** — `15` for a strip of fifteen, `1` for a bottle.
+7. Set **GST %**, **schedule**, **rack** and **reorder level**.
+8. Click **Save medicine**.
+
+**Then, put stock on the shelf — Inventory screen**
+
+9. Click **Inventory**, type the name in the search box and click **Search**.
+10. Click the medicine in the list. The heading names it and says how much is
+    on hand.
+11. In **Receive stock**, enter **batch no**, **expiry**, **packs received**,
+    any **free** packs, the **rate** you paid and the **MRP** printed on the pack.
+12. Check the line that appears — *"20 pack(s) × 15 = 300 tablets onto the shelf"*.
+13. Click **Add stock**.
 
 ## F. Load a supplier's file instead of typing it
 
-1. Click **Medicines**, then **Import bill**.
+1. Click **Inventory**, then **Import supplier bill**.
 2. Choose the **supplier profile** that matches their format.
 3. Click **Browse…** and pick the file. It is read immediately.
 4. Type the **supplier name** — the file does not contain it.
@@ -145,7 +168,7 @@ proportional. A full strip always costs exactly the MRP printed on it.
 
 ## J. Correct a stock count
 
-1. Click **Medicines** and select the medicine.
+1. Click **Inventory** and select the medicine.
 2. In **Correct the stock count**, choose the **batch**.
 3. Enter the **true count** — what is actually on the shelf, in units.
 4. Choose a **reason**: recount, breakage, expired, lost, entry error.
@@ -179,16 +202,26 @@ search the bill number or customer name across all dates, then **Reprint**.
 
 # 1. The window
 
-Six screens down the left. The one you are on is highlighted.
+Seven screens down the left. The one you are on is highlighted.
 
 | Button | What it is for |
 |---|---|
 | **OPD** | The day's queue. Book visits, take fees, open consultations |
 | **Patients** | Everyone ever registered, with their whole history |
 | **Pharmacy counter** | Selling medicines |
-| **Medicines** | The catalogue and stock |
+| **Medicines** | The catalogue — what each medicine *is*. Set up once |
+| **Inventory** | Stock — what is on the shelf. Receiving, batches, corrections |
 | **Reports** | End of day, GST, expiry, low stock |
 | **Settings** | Clinic details, doctors, screen layout |
+
+**Medicines and Inventory are deliberately separate.** Describing a medicine is
+a one-off job usually done by whoever sets the shop up; receiving stock happens
+every delivery and is done at the counter. Keeping them apart means neither
+screen is crowded with the other's fields.
+
+Some screens — the consultation, importing a bill, a print preview — cover the
+window while they are open, and the rest of the app waits behind them. This is
+on purpose: nothing can be half-started and then forgotten.
 
 The heading of every screen shows the screen name and a one-line summary
 underneath — for example *"2 waiting · 1 completed · Sun, 26 Jul"*.
@@ -402,7 +435,7 @@ list below.
 |---|---|
 | **Medicine** | Type two letters or more to search our pharmacy. Matches appear underneath — click one to use it |
 | **Dose** | e.g. `5 ml`, `1 tab` |
-| **Frequency** | `1-0-1`, `1-1-1`, `1/2-0-1/2`, or `OD` `BD` `TDS` `QID` `SOS` |
+| **Morning · Afternoon · Night** | Three lists: `0`, `1/4`, `1/2`, `1`, `2`. Pick how many at each time of day |
 | **Days** | Length of the course |
 | | *Nothing is filled in for you — a dose is the doctor's decision, not the software's* |
 | **Qty (units)** | **Individual tablets.** Worked out for you — change it if you want |
@@ -411,13 +444,18 @@ list below.
 | **Add** | Adds the medicine to the list |
 | **✕** in the list | Removes that medicine |
 
+The three lists replace the old typed frequency box. `1-0-1` was quick for
+anyone who already knew the notation and a guess for everyone else; picking from
+three lists cannot be mistyped, and the prescription still prints in the
+familiar `1-0-1` form.
+
 Frequency and days are **kept after adding**, because a prescription usually
 repeats the same course — only the medicine changes.
 
 > ### Quantity is always in individual units
 >
-> You write `1-0-1` for `3` days and it fills in **6** — six tablets, not six
-> strips. The line underneath shows what the pharmacy will hand over, e.g.
+> You pick `1`, `0`, `1` for `3` days and it fills in **6** — six tablets, not
+> six strips. The line underneath shows what the pharmacy will hand over, e.g.
 > *"6 units · 1 × 10 TAB minus 4"*, so there is never any doubt about whether a
 > number means tablets or strips.
 >
@@ -442,27 +480,38 @@ repeats the same course — only the medicine changes.
 
 | Button | What it does |
 |---|---|
+| **Close** | Leaves the consultation. Asks first if anything is unsaved |
 | **Save** | Keeps everything. Patient stays in Waiting |
 | **Print prescription** | Saves, then opens the print preview |
 | **Save & complete** | Saves and **moves the tile to Completed** |
 
+The **Esc** key does the same as **Close**. While the consultation is open the
+rest of the app is greyed out and waits — you cannot wander off to another
+screen with a half-written prescription behind you.
+
 ---
 
-# 6. Medicines and stock
+# 6. Medicines — the catalogue
+
+What each medicine **is**. Set up once per medicine; stock is the next screen.
 
 ![Medicines](images/medicines.png)
 
 ## The catalogue (left)
 
-Search box, **Search**, **Import bill**, **+ New medicine**. The grid shows
-medicine, pack, maker, rack, GST %, schedule, units per pack, and stock on hand.
-Click a row to load it into the forms on the right.
+Search box, **Search** and **+ New medicine**. The grid shows medicine, drug,
+pack, maker, rack, GST %, schedule, units per pack, and stock on hand. Click a
+row to load it into the form on the right.
 
-## Medicine details (top right)
+Search matches the **brand name**, the **drug name**, the manufacturer and the
+rack. Typing `paracetamol` finds Calpol; typing `calpol` finds it too.
+
+## Medicine details (right)
 
 | Field | Notes |
 |---|---|
-| **Name** | The only required field |
+| **Brand name** | What is printed on the pack — *Calpol*. The only required field |
+| **Drug / generic name** | The drug itself — *Paracetamol 250mg*. Searched as well |
 | **Manufacturer** | Company name |
 | **Pack size** | As printed, e.g. `10 TAB`, `60ML` |
 | **HSN** | Tax code. `3004` covers most formulations |
@@ -481,7 +530,24 @@ Click a row to load it into the forms on the right.
 > so a customer can buy five. Leave it at `1` for a syrup bottle — half a bottle
 > is not a thing you can sell.
 
-## Add stock (bottom right)
+---
+
+# 7. Inventory — what is on the shelf
+
+Everything to do with stock: receiving it, seeing the batches, correcting a
+count. Nothing here changes what a medicine *is* — that is the Medicines screen.
+
+![Inventory](images/inventory.png)
+
+## Finding the medicine (left)
+
+Type any part of the brand name, drug name, maker or rack and click **Search**,
+then click the row. The heading at the top of the screen then names the medicine
+and how much is on hand, so you always know what you are about to change.
+
+**Import supplier bill** sits next to Search — see [section 8](#8-importing-a-supplier-bill).
+
+## Receive stock (top right)
 
 **This is the only way stock enters, and it always creates a batch.**
 
@@ -489,15 +555,25 @@ Click a row to load it into the forms on the right.
 |---|---|
 | **Batch no** | Printed on the pack. **Required — it goes on the bill by law** |
 | **Expiry** | The pack is good until the **end** of that month |
-| **Qty** | How many **packs** arrived |
+| **Packs** | How many **packs** arrived — strips, boxes, bottles |
 | **Free** | Scheme quantity, the "+1" in 10+1. Adds to stock, costs nothing |
 | **Rate** | What the hospital paid per pack |
 | **MRP** | The price printed on the pack. **The counter prices from this** |
 | **Supplier**, **Supplier bill no** | For your records |
 | **Add stock** | Adds it |
 
-Below that, **Batches in stock** lists every batch of the selected medicine with
-its expiry, MRP and quantity left.
+> ### Packs in, units out
+>
+> Under the quantity boxes a grey line reads back what you have entered:
+> *"20 pack(s) × 15 = 300 tablets onto the shelf"*. You count deliveries in
+> strips, the counter sells tablets, and this is the one place the two meet —
+> so it says so out loud rather than leaving you to trust it.
+
+The form clears whenever you pick a different medicine, so a price or expiry
+from the last delivery can never be carried onto the wrong batch.
+
+**Batches on the shelf** lists every batch of the selected medicine with its
+expiry, MRP and quantity left.
 
 > **Adding stock always adds.** Receiving the same batch number again increases
 > what is on the shelf. It never replaces it.
@@ -528,10 +604,10 @@ keyed in wrongly.
 
 ---
 
-# 7. Importing a supplier bill
+# 8. Importing a supplier bill
 
 Instead of keying in a delivery line by line, load the file your supplier sends.
-**Medicines → Import bill.**
+**Inventory → Import supplier bill.**
 
 ![Import a supplier bill](images/import.png)
 
@@ -587,7 +663,7 @@ unit(s) added to stock."*
 
 ---
 
-# 8. The pharmacy counter
+# 9. The pharmacy counter
 
 ![Pharmacy counter](images/counter.png)
 
@@ -663,7 +739,7 @@ NET PAYABLE      what the customer hands over
 
 ---
 
-# 9. Patients
+# 10. Patients
 
 ![Patients](images/patients.png)
 
@@ -699,7 +775,7 @@ number. Select one, then:
 
 ---
 
-# 10. Reports
+# 11. Reports
 
 ![Reports](images/reports.png)
 
@@ -717,7 +793,7 @@ collected, and OPD visits.
 
 ---
 
-# 11. Printing
+# 12. Printing
 
 Everything previews before any paper moves.
 
@@ -737,7 +813,7 @@ it cannot be mistaken for the original.
 
 ---
 
-# 12. When something goes wrong
+# 13. When something goes wrong
 
 ## The application does not close on an error
 
