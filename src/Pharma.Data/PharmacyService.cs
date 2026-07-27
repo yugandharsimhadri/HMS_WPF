@@ -243,15 +243,31 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         return await db.Sales.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
     }
 
-    public async Task<List<Sale>> GetSalesAsync(DateTime date)
+    public Task<List<Sale>> GetSalesAsync(DateTime date) => GetSalesAsync(date, date);
+
+    /// <summary>Sales whose bill date falls within [from, to], both dates inclusive.</summary>
+    public async Task<List<Sale>> GetSalesAsync(DateTime from, DateTime to)
     {
         await using var db = await factory.CreateDbContextAsync();
-        var from = date.Date;
-        var to = from.AddDays(1);
+        var start = from.Date;
+        var end = to.Date.AddDays(1);
 
         return await db.Sales.Include(s => s.Items)
-            .Where(s => s.BillDate >= from && s.BillDate < to)
+            .Where(s => s.BillDate >= start && s.BillDate < end)
             .OrderByDescending(s => s.BillDate)
+            .ToListAsync();
+    }
+
+    /// <summary>Schedule H1 statutory register entries within [from, to], both dates inclusive.</summary>
+    public async Task<List<H1RegisterEntry>> GetH1RegisterAsync(DateTime from, DateTime to)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var start = from.Date;
+        var end = to.Date.AddDays(1);
+
+        return await db.H1Register
+            .Where(h => h.SoldOn >= start && h.SoldOn < end)
+            .OrderBy(h => h.SoldOn)
             .ToListAsync();
     }
 

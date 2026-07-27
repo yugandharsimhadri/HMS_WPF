@@ -1,12 +1,18 @@
 <UserControl x:Class="Pharma.App.Views.ReportsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App">
+
+    <UserControl.Resources>
+        <local:ZeroToVisibilityConverter x:Key="ZeroVis"/>
+    </UserControl.Resources>
 
     <DockPanel Margin="20">
 
         <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14">
             <DockPanel>
-                <DatePicker DockPanel.Dock="Right" Width="150" SelectedDate="{Binding Date, Mode=TwoWay}" Margin="0"/>
+                <DatePicker DockPanel.Dock="Right" Width="150" SelectedDate="{Binding Date, Mode=TwoWay}" Margin="0"
+                            AutomationProperties.AutomationId="ReportsDate"/>
                 <UniformGrid Rows="1" Columns="5">
                     <StackPanel>
                         <TextBlock Text="PHARMACY SALES" Style="{StaticResource Label}"/>
@@ -33,96 +39,225 @@
         </Border>
 
         <Border Style="{StaticResource Card}" Padding="8">
-            <TabControl BorderThickness="0" Background="Transparent">
+            <DockPanel>
 
-                <TabItem Header="Day book">
-                    <DataGrid ItemsSource="{Binding Sales}" Margin="0,10,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
-                            <DataGridTextColumn Header="TIME" Binding="{Binding BillDate, StringFormat=HH:mm}" Width="70"/>
-                            <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="*"/>
-                            <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="160"/>
-                            <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}" Width="60"/>
-                            <DataGridTextColumn Header="TAXABLE" Binding="{Binding TaxableAmount, StringFormat=N2}" Width="90"/>
-                            <DataGridTextColumn Header="CGST" Binding="{Binding CgstAmount, StringFormat=N2}" Width="80"/>
-                            <DataGridTextColumn Header="SGST" Binding="{Binding SgstAmount, StringFormat=N2}" Width="80"/>
-                            <DataGridTextColumn Header="NET" Binding="{Binding NetAmount, StringFormat=N2}" Width="100"/>
-                            <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </TabItem>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Right" Margin="4,2,4,4">
+                    <Button Content="Export PDF" Style="{StaticResource BtnGhost}" Padding="12,6" Margin="0,0,8,0"
+                            Command="{Binding ExportPdfCommand}" AutomationProperties.AutomationId="ReportsExportPdf"/>
+                    <Button Content="Export Excel" Style="{StaticResource BtnGhost}" Padding="12,6"
+                            Command="{Binding ExportExcelCommand}" AutomationProperties.AutomationId="ReportsExportExcel"/>
+                </StackPanel>
 
-                <TabItem Header="GST summary">
-                    <DataGrid ItemsSource="{Binding GstSummary}" Margin="0,10,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="RATE" Binding="{Binding Rate, StringFormat='{}{0:N1}%'}" Width="100"/>
-                            <DataGridTextColumn Header="TAXABLE VALUE" Binding="{Binding Taxable, StringFormat=N2}" Width="160"/>
-                            <DataGridTextColumn Header="CGST" Binding="{Binding Cgst, StringFormat=N2}" Width="140"/>
-                            <DataGridTextColumn Header="SGST" Binding="{Binding Sgst, StringFormat=N2}" Width="140"/>
-                            <DataGridTextColumn Header="INVOICE VALUE" Binding="{Binding Total, StringFormat=N2}" Width="*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </TabItem>
+                <TabControl BorderThickness="0" Background="Transparent"
+                            SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                            AutomationProperties.AutomationId="ReportsTabs">
 
-                <TabItem Header="OPD register">
-                    <DataGrid ItemsSource="{Binding Visits}" Margin="0,10,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="TOKEN" Binding="{Binding TokenNo}" Width="70"/>
-                            <DataGridTextColumn Header="VISIT NO" Binding="{Binding VisitNo}" Width="100"/>
-                            <DataGridTextColumn Header="PATIENT" Binding="{Binding Patient.Name}" Width="*"/>
-                            <DataGridTextColumn Header="DOCTOR" Binding="{Binding Doctor.Name}" Width="160"/>
-                            <DataGridTextColumn Header="DIAGNOSIS" Binding="{Binding Diagnosis}" Width="220"/>
-                            <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="110"/>
-                            <DataGridTextColumn Header="FEE" Binding="{Binding Fee, StringFormat=N2}" Width="80"/>
-                            <DataGridCheckBoxColumn Header="PAID" Binding="{Binding FeePaid}" Width="60"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </TabItem>
+                    <TabItem Header="Day book">
+                        <DockPanel Margin="0,10,0,0">
+                            <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0"
+                                    Margin="0,6,0,0" Padding="8,10,8,2">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="Taxable: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding DayBookTaxableTotal, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="CGST: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding DayBookCgstTotal, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="SGST: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding DayBookSgstTotal, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="Net Sales: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding DayBookNetTotal, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="Cash: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding CashTotal, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="UPI: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding UpiTotal, StringFormat='₹{0:N2}'}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                            <Grid>
+                                <DataGrid ItemsSource="{Binding Sales}" AutomationProperties.AutomationId="ReportsDayBookGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
+                                        <DataGridTextColumn Header="TIME" Binding="{Binding BillDate, StringFormat=HH:mm}" Width="70"/>
+                                        <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="*"/>
+                                        <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="160"/>
+                                        <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}" Width="60"/>
+                                        <DataGridTextColumn Header="TAXABLE" Binding="{Binding TaxableAmount, StringFormat=N2}" Width="90"/>
+                                        <DataGridTextColumn Header="CGST" Binding="{Binding CgstAmount, StringFormat=N2}" Width="80"/>
+                                        <DataGridTextColumn Header="SGST" Binding="{Binding SgstAmount, StringFormat=N2}" Width="80"/>
+                                        <DataGridTextColumn Header="NET" Binding="{Binding NetAmount, StringFormat=N2}" Width="100"/>
+                                        <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="No records found for the selected date." Style="{StaticResource Muted}" FontSize="14"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding Sales.Count, Converter={StaticResource ZeroVis}}"/>
+                            </Grid>
+                        </DockPanel>
+                    </TabItem>
 
-                <TabItem Header="Expiring soon">
-                    <DataGrid ItemsSource="{Binding Expiring}" Margin="0,10,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
-                            <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="130"/>
-                            <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=dd MMM yyyy}" Width="130"/>
-                            <DataGridTextColumn Header="QTY LEFT" Binding="{Binding QtyOnHand}" Width="100"/>
-                            <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="100"/>
-                            <DataGridTextColumn Header="SUPPLIER" Binding="{Binding SupplierName}" Width="200"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </TabItem>
+                    <TabItem Header="GST summary">
+                        <DockPanel Margin="0,10,0,0">
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="2,0,0,10">
+                                <TextBlock Text="From" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
+                                <DatePicker Width="130" SelectedDate="{Binding FromDate, Mode=TwoWay}" Margin="0,0,14,0"/>
+                                <TextBlock Text="To" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
+                                <DatePicker Width="130" SelectedDate="{Binding ToDate, Mode=TwoWay}"/>
+                            </StackPanel>
+                            <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0"
+                                    Margin="0,6,0,0" Padding="8,10,8,2">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="Taxable: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding GstGrandTaxable, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="CGST: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding GstGrandCgst, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="SGST: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding GstGrandSgst, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="Invoice Value: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding GstGrandTotal, StringFormat='₹{0:N2}'}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                            <Grid>
+                                <DataGrid ItemsSource="{Binding GstSummary}" AutomationProperties.AutomationId="ReportsGstGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="RATE" Binding="{Binding Rate, StringFormat='{}{0:N1}%'}" Width="100"/>
+                                        <DataGridTextColumn Header="TAXABLE VALUE" Binding="{Binding Taxable, StringFormat=N2}" Width="160"/>
+                                        <DataGridTextColumn Header="CGST" Binding="{Binding Cgst, StringFormat=N2}" Width="140"/>
+                                        <DataGridTextColumn Header="SGST" Binding="{Binding Sgst, StringFormat=N2}" Width="140"/>
+                                        <DataGridTextColumn Header="INVOICE VALUE" Binding="{Binding Total, StringFormat=N2}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="No records found for the selected date range." Style="{StaticResource Muted}" FontSize="14"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding GstSummary.Count, Converter={StaticResource ZeroVis}}"/>
+                            </Grid>
+                        </DockPanel>
+                    </TabItem>
 
-                <TabItem Header="Low stock">
-                    <DataGrid ItemsSource="{Binding LowStock}" Margin="0,10,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="100"/>
-                            <DataGridTextColumn Header="RACK" Binding="{Binding RackLocation}" Width="80"/>
-                            <DataGridTextColumn Header="IN STOCK" Binding="{Binding StockOnHand}" Width="100"/>
-                            <DataGridTextColumn Header="REORDER AT" Binding="{Binding ReorderLevel}" Width="110"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </TabItem>
+                    <TabItem Header="OPD register">
+                        <DockPanel Margin="0,10,0,0">
+                            <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0"
+                                    Margin="0,6,0,0" Padding="8,10,8,2">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="Total OPD Visits: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding VisitCount}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="Total Consultation Fees: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding ConsultationTotal, StringFormat='₹{0:N2}'}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                            <Grid>
+                                <DataGrid ItemsSource="{Binding Visits}" AutomationProperties.AutomationId="ReportsOpdGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="VISIT NO" Binding="{Binding VisitNo}" Width="100"/>
+                                        <DataGridTextColumn Header="TIME" Binding="{Binding ScheduledOn, StringFormat=HH:mm}" Width="70"/>
+                                        <DataGridTextColumn Header="PATIENT" Binding="{Binding Patient.Name}" Width="*"/>
+                                        <DataGridTextColumn Header="AGE" Binding="{Binding Patient.Age}" Width="60"/>
+                                        <DataGridTextColumn Header="GENDER" Binding="{Binding Patient.Gender}" Width="90"/>
+                                        <DataGridTextColumn Header="DOCTOR" Binding="{Binding Doctor.Name}" Width="160"/>
+                                        <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="110"/>
+                                        <DataGridTextColumn Header="FEE" Binding="{Binding Fee, StringFormat=N2}" Width="90"/>
+                                        <DataGridCheckBoxColumn Header="PAID" Binding="{Binding FeePaid}" Width="60"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="No records found for the selected date." Style="{StaticResource Muted}" FontSize="14"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding Visits.Count, Converter={StaticResource ZeroVis}}"/>
+                            </Grid>
+                        </DockPanel>
+                    </TabItem>
 
-                <TabItem Header="Schedule H1 register">
-                    <DockPanel Margin="0,10,0,0">
-                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
-                                   Text="Statutory record of Schedule H1 sales. Retain for three years."/>
-                        <DataGrid ItemsSource="{Binding H1Register}">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="DATE" Binding="{Binding SoldOn, StringFormat='dd MMM yyyy HH:mm'}" Width="160"/>
-                                <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
-                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*"/>
-                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="120"/>
-                                <DataGridTextColumn Header="QTY" Binding="{Binding Quantity}" Width="70"/>
-                                <DataGridTextColumn Header="PATIENT" Binding="{Binding PatientName}" Width="180"/>
-                                <DataGridTextColumn Header="PRESCRIBER" Binding="{Binding DoctorName}" Width="180"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </DockPanel>
-                </TabItem>
+                    <TabItem Header="Expiring soon">
+                        <DockPanel Margin="0,10,0,0">
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="2,0,0,10">
+                                <TextBlock Text="Expiring within" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,8,10"/>
+                                <ComboBox Width="90" ItemsSource="{Binding ExpiringDayOptions}"
+                                          SelectedItem="{Binding ExpiringDays, Mode=TwoWay}"/>
+                                <TextBlock Text="days" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="8,0,0,10"/>
+                            </StackPanel>
+                            <Grid>
+                                <DataGrid ItemsSource="{Binding Expiring}" AutomationProperties.AutomationId="ReportsExpiringGrid">
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsExpired}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource Danger}"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Batch.Product.Name}" Width="*"/>
+                                        <DataGridTextColumn Header="BATCH" Binding="{Binding Batch.BatchNo}" Width="130"/>
+                                        <DataGridTextColumn Header="EXPIRY" Binding="{Binding Batch.ExpiryDate, StringFormat=dd MMM yyyy}" Width="120"/>
+                                        <DataGridTextColumn Header="QTY LEFT" Binding="{Binding Batch.QtyOnHand}" Width="90"/>
+                                        <DataGridTextColumn Header="MRP" Binding="{Binding Batch.Mrp, StringFormat=N2}" Width="90"/>
+                                        <DataGridTextColumn Header="SUPPLIER" Binding="{Binding Batch.SupplierName}" Width="170"/>
+                                        <DataGridTextColumn Header="DAYS REMAINING" Binding="{Binding DaysRemaining}" Width="130"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="No medicines are expiring in the selected window." Style="{StaticResource Muted}" FontSize="14"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding Expiring.Count, Converter={StaticResource ZeroVis}}"/>
+                            </Grid>
+                        </DockPanel>
+                    </TabItem>
 
-            </TabControl>
+                    <TabItem Header="Low stock">
+                        <Grid Margin="0,10,0,0">
+                            <DataGrid ItemsSource="{Binding LowStock}" AutomationProperties.AutomationId="ReportsLowStockGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="100"/>
+                                    <DataGridTextColumn Header="RACK" Binding="{Binding RackLocation}" Width="80"/>
+                                    <DataGridTextColumn Header="IN STOCK" Binding="{Binding StockOnHand}" Width="90"/>
+                                    <DataGridTextColumn Header="REORDER AT" Binding="{Binding ReorderLevel}" Width="100"/>
+                                    <DataGridTextColumn Header="SHORTAGE" Binding="{Binding Shortage}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock Text="No medicines are below their reorder level." Style="{StaticResource Muted}" FontSize="14"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="{Binding LowStock.Count, Converter={StaticResource ZeroVis}}"/>
+                        </Grid>
+                    </TabItem>
+
+                    <TabItem Header="Schedule H1 register">
+                        <DockPanel Margin="0,10,0,0">
+                            <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                       Text="Statutory record of Schedule H1 sales. Retain for three years."/>
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="2,0,0,10">
+                                <TextBlock Text="From" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
+                                <DatePicker Width="130" SelectedDate="{Binding FromDate, Mode=TwoWay}" Margin="0,0,14,0"/>
+                                <TextBlock Text="To" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
+                                <DatePicker Width="130" SelectedDate="{Binding ToDate, Mode=TwoWay}"/>
+                            </StackPanel>
+                            <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0"
+                                    Margin="0,6,0,0" Padding="8,10,8,2">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="Entries: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding H1Register.Count}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="Total Quantity: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding H1TotalQuantity}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                            <Grid>
+                                <DataGrid ItemsSource="{Binding H1Register}" AutomationProperties.AutomationId="ReportsH1Grid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="DATE" Binding="{Binding SoldOn, StringFormat='dd MMM yyyy HH:mm'}" Width="160"/>
+                                        <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
+                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*"/>
+                                        <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="120"/>
+                                        <DataGridTextColumn Header="QTY" Binding="{Binding Quantity}" Width="70"/>
+                                        <DataGridTextColumn Header="PATIENT" Binding="{Binding PatientName}" Width="180"/>
+                                        <DataGridTextColumn Header="PRESCRIBER" Binding="{Binding DoctorName}" Width="180"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="No records found for the selected date range." Style="{StaticResource Muted}" FontSize="14"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding H1Register.Count, Converter={StaticResource ZeroVis}}"/>
+                            </Grid>
+                        </DockPanel>
+                    </TabItem>
+
+                </TabControl>
+            </DockPanel>
         </Border>
     </DockPanel>
 </UserControl>
