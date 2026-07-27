@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.EntityFrameworkCore;
+using Pharma.App.Printing;
 using Microsoft.Win32;
 using Pharma.App.Reports;
 using Pharma.Core;
@@ -24,6 +26,8 @@ public class ExpiringRow(Batch batch)
 public partial class ReportsViewModel(
     PharmacyService pharmacy,
     OpdService opd,
+    SettingsService settings,
+    IDbContextFactory<AppDbContext> factory) : ObservableObject, IPage
     SettingsService settings) : ObservableObject, IPage
 {
     public string Title => "Reports";
@@ -33,6 +37,19 @@ public partial class ReportsViewModel(
     public ObservableCollection<Visit> Visits { get; } = [];
     public ObservableCollection<ExpiringRow> Expiring { get; } = [];
     public ObservableCollection<Product> LowStock { get; } = [];
+
+    /// <summary>
+    /// Stock put on the shelf at the counter with no supplier bill behind it.
+    /// Purchases will not tie out against sales until each of these is matched
+    /// to the real bill, so the list is the reconciliation worklist.
+    /// </summary>
+    public ObservableCollection<Batch> ToReconcile { get; } = [];
+
+    /// <summary>
+    /// Tail ends of opened strips — less than one full pack left. They expire
+    /// where they sit unless someone pushes them.
+    /// </summary>
+    public ObservableCollection<Batch> PartPacks { get; } = [];
     public ObservableCollection<GstSlab> GstSummary { get; } = [];
     public ObservableCollection<H1RegisterEntry> H1Register { get; } = [];
     public ObservableCollection<Batch> StockRegister { get; } = [];
@@ -57,6 +74,9 @@ public partial class ReportsViewModel(
 
     // ── Filters ────────────────────────────────────────────────────────────
     [ObservableProperty] private DateTime _date = DateTime.Today;
+    [ObservableProperty] private Sale? _selectedSale;
+    [ObservableProperty] private string _billSearch = "";
+    [ObservableProperty] private Visit? _selectedVisit;
     [ObservableProperty] private DateTime _fromDate = DateTime.Today;
     [ObservableProperty] private DateTime _toDate = DateTime.Today;
     [ObservableProperty] private int _expiringDays = 90;
@@ -70,6 +90,7 @@ public partial class ReportsViewModel(
     [ObservableProperty] private decimal _upiTotal;
     [ObservableProperty] private decimal _consultationTotal;
     [ObservableProperty] private int _visitCount;
+    [ObservableProperty] private string _status = "";
 
     // ── Day book totals ───────────────────────────────────────────────────
     [ObservableProperty] private decimal _dayBookTaxableTotal;
@@ -188,6 +209,15 @@ public partial class ReportsViewModel(
         foreach (var h in await pharmacy.GetH1RegisterAsync(from, to)) H1Register.Add(h);
         H1TotalQuantity = H1Register.Sum(h => h.Quantity);
 
+        ToReconcile.Clear();
+        foreach (var b in await pharmacy.GetProvisionalBatchesAsync()) ToReconcile.Add(b);
+
+        PartPacks.Clear();
+        foreach (var b in await pharmacy.GetPartPacksAsync()) PartPacks.Add(b);
+
+        await using var db = await factory.CreateDbContextAsync();
+        var from = Date.Date;
+        var to = from.AddDays(1);
         NotifyExportCanExecute();
     }
 
@@ -221,6 +251,52 @@ public partial class ReportsViewModel(
     [RelayCommand]
     private Task RefreshAsync() => LoadAsync();
 
+    /// <summary>
+    /// Looks a bill up across every date. A walk-in customer coming back for a
+    /// copy rarely remembers which day they bought on, only the name or the number.
+    /// </summary>
+    [RelayCommand]
+    private async Task FindBillAsync()
+    {
+        if (string.IsNullOrWhiteSpace(BillSearch))
+        {
+            await LoadAsync();
+            return;
+        }
+
+        Sales.Clear();
+        foreach (var s in await pharmacy.SearchSalesAsync(BillSearch)) Sales.Add(s);
+
+        Status = Sales.Count == 0
+            ? $"No bill matches '{BillSearch}'."
+            : $"{Sales.Count} bill(s) matching '{BillSearch}', across all dates.";
+    }
+
+    /// <summary>Reprints a bill from the day book, marked as a duplicate.</summary>
+    [RelayCommand]
+    private async Task ReprintBillAsync()
+    {
+        if (SelectedSale is null) return;
+
+        var sale = await pharmacy.GetSaleAsync(SelectedSale.Id);
+        if (sale is null) return;
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => BillPrinter.Build(sale, shop, isReprint: true),
+                             $"Bill {sale.BillNo} (duplicate)");
+    }
+
+    [RelayCommand]
+    private async Task ReprintReceiptAsync()
+    {
+        if (SelectedVisit is null || !SelectedVisit.FeePaid) return;
+
+        var visit = await opd.GetVisitAsync(SelectedVisit.Id);
+        if (visit is null) return;
+
+        var shop = await settings.GetAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop, isReprint: true),
+                             $"Receipt {visit.FeeReceiptNo} (duplicate)");
     // ── Export ─────────────────────────────────────────────────────────────
 
     private (ReportKind Kind, bool HasData) CurrentReport()

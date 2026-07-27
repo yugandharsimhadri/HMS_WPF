@@ -34,9 +34,19 @@ public readonly record struct BillAmounts(
 /// </summary>
 public static class GstCalculator
 {
-    public static LineAmounts Line(decimal mrp, int quantity, decimal discountPercent, decimal gstRate)
+    /// <summary>
+    /// A line sold in base units. Whole packs price from the pack MRP and only
+    /// the remainder is priced per unit — see <see cref="PackMath.Gross"/>. GST
+    /// still comes back out of the total, exactly as before.
+    ///
+    /// <para><b>unitsPerPack has no default on purpose.</b> There used to be an
+    /// overload without it that assumed 1, and the counter called it: every
+    /// tablet priced at the full strip MRP, so nine tablets of a ten-strip came
+    /// to nine strips. Pass 1 explicitly for anything genuinely sold singly.</para>
+    /// </summary>
+    public static LineAmounts Line(decimal mrp, int unitsPerPack, int quantity, decimal discountPercent, decimal gstRate)
     {
-        var gross = R(mrp * quantity);
+        var gross = PackMath.Gross(mrp, unitsPerPack, quantity);
         var discount = R(gross * discountPercent / 100m);
         var net = gross - discount;
 

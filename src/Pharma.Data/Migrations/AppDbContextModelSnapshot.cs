@@ -33,12 +33,21 @@ namespace Pharma.Data.Migrations
                     b.Property<DateTime>("ExpiryDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("FreePacks")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsProvisional")
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("Mrp")
                         .HasPrecision(12, 2)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("PacksReceived")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("TEXT");
@@ -53,8 +62,14 @@ namespace Pharma.Data.Migrations
                     b.Property<DateTime>("ReceivedOn")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SupplierInvoiceNo")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SupplierName")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("UnitsPerPack")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
@@ -340,7 +355,19 @@ namespace Pharma.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("AllowLooseSale")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Composition")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DispensingUnit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("GenericName")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("GstRate")
@@ -376,12 +403,26 @@ namespace Pharma.Data.Migrations
                     b.Property<int>("Schedule")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("SearchKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Storage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UnitsPerPack")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
+
+                    b.HasIndex("SearchKey")
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = 0");
 
                     b.ToTable("Products");
                 });
@@ -422,6 +463,9 @@ namespace Pharma.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsTaxInvoice")
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("NetAmount")
@@ -515,6 +559,9 @@ namespace Pharma.Data.Migrations
                         .HasPrecision(12, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("PackLabel")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("ProductId")
                         .HasColumnType("TEXT");
 
@@ -531,6 +578,9 @@ namespace Pharma.Data.Migrations
                     b.Property<decimal>("TaxableAmount")
                         .HasPrecision(12, 2)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("UnitsPerPack")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
@@ -573,6 +623,64 @@ namespace Pharma.Data.Migrations
                     b.ToTable("Settings");
                 });
 
+            modelBuilder.Entity("Pharma.Core.StockAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AdjustedBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AdjustedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BatchNo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("QuantityAfter")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("QuantityBefore")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Reason")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdjustedOn");
+
+                    b.HasIndex("BatchId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("StockAdjustments");
+                });
+
             modelBuilder.Entity("Pharma.Core.StockEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -582,6 +690,13 @@ namespace Pharma.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("DiscountPercent")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EnteredBy")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("EntryDate")
                         .HasColumnType("TEXT");
 
@@ -589,8 +704,21 @@ namespace Pharma.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ImportProfile")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImportedFile")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsProvisional")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("NetAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Notes")
                         .HasColumnType("TEXT");
@@ -612,6 +740,8 @@ namespace Pharma.Data.Migrations
 
                     b.HasIndex("EntryNo")
                         .IsUnique();
+
+                    b.HasIndex("SupplierInvoiceNo");
 
                     b.ToTable("StockEntries");
                 });
@@ -655,6 +785,9 @@ namespace Pharma.Data.Migrations
                     b.Property<Guid>("StockEntryId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("UnitsPerPack")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("TEXT");
 
@@ -665,6 +798,42 @@ namespace Pharma.Data.Migrations
                     b.HasIndex("StockEntryId");
 
                     b.ToTable("StockEntryItems");
+                });
+
+            modelBuilder.Entity("Pharma.Core.VendorProductCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VendorProfile")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("VendorProfile", "Code")
+                        .IsUnique();
+
+                    b.ToTable("VendorProductCodes");
                 });
 
             modelBuilder.Entity("Pharma.Core.Visit", b =>
@@ -694,6 +863,15 @@ namespace Pharma.Data.Migrations
 
                     b.Property<bool>("FeePaid")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("FeePaidOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("FeePaymentMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("FeeReceiptNo")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("FollowUpOn")
                         .HasColumnType("TEXT");
@@ -800,6 +978,25 @@ namespace Pharma.Data.Migrations
                     b.Navigation("Sale");
                 });
 
+            modelBuilder.Entity("Pharma.Core.StockAdjustment", b =>
+                {
+                    b.HasOne("Pharma.Core.Batch", "Batch")
+                        .WithMany()
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Pharma.Core.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Batch");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("Pharma.Core.StockEntryItem", b =>
                 {
                     b.HasOne("Pharma.Core.Product", "Product")
@@ -817,6 +1014,17 @@ namespace Pharma.Data.Migrations
                     b.Navigation("Product");
 
                     b.Navigation("StockEntry");
+                });
+
+            modelBuilder.Entity("Pharma.Core.VendorProductCode", b =>
+                {
+                    b.HasOne("Pharma.Core.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Pharma.Core.Visit", b =>

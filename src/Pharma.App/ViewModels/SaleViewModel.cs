@@ -20,15 +20,29 @@ public partial class SaleRow : ObservableObject
     public decimal GstRate { get; init; }
     public DrugSchedule Schedule { get; init; }
     public int Available { get; init; }
+    public int UnitsPerPack { get; init; } = 1;
+    public string? PackLabel { get; init; }
 
     [ObservableProperty] private int _quantity = 1;
     [ObservableProperty] private decimal _mrp;
     [ObservableProperty] private decimal _discountPercent;
 
-    public string Expiry => ExpiryDate.ToString("MM/yy");
-    public decimal Amount => GstCalculator.Line(Mrp, Quantity, DiscountPercent, GstRate).Net;
+    public string Expiry => ExpiryDate.ToString("MM'/'yy");
 
-    partial void OnQuantityChanged(int value) => OnPropertyChanged(nameof(Amount));
+    /// <summary>"2 × 10 TAB + 3" so the operator can see what is being handed over.</summary>
+    public string Packs => PackMath.Describe(Quantity, UnitsPerPack, PackLabel, UnitName);
+
+    /// <summary>What one of them is called, so "9 loose" reads "9 tablets".</summary>
+    public string? UnitName { get; init; }
+
+    public decimal Amount => GstCalculator.Line(Mrp, UnitsPerPack, Quantity, DiscountPercent, GstRate).Net;
+
+    partial void OnQuantityChanged(int value)
+    {
+        OnPropertyChanged(nameof(Amount));
+        OnPropertyChanged(nameof(Packs));
+    }
+
     partial void OnMrpChanged(decimal value) => OnPropertyChanged(nameof(Amount));
     partial void OnDiscountPercentChanged(decimal value) => OnPropertyChanged(nameof(Amount));
 }
@@ -45,17 +59,34 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
     public ObservableCollection<SaleRow> Lines { get; } = [];
     public ObservableCollection<Product> Matches { get; } = [];
-    public ObservableCollection<Batch> Batches { get; } = [];
     public ObservableCollection<Visit> PrescribedVisits { get; } = [];
 
-    // Step 1 — find the medicine
+    // Step 1 — find the medicine. Filters as it is typed; no button to press.
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private Product? _selectedProduct;
-    [ObservableProperty] private Batch? _selectedBatch;
 
-    // Step 2 — quantity
+    // Step 2 — how many, and of what. The unit sits beside the number because
+    // "9" on its own is what turned nine tablets into nine strips.
     [ObservableProperty] private int _quantity = 1;
-    [ObservableProperty] private decimal _discountPercent;
+
+    /// <summary>What the number in the quantity box counts.</summary>
+    public ObservableCollection<string> QuantityUnits { get; } = [];
+
+    [ObservableProperty] private string _quantityUnit = "";
+
+    /// <summary>
+    /// What was last chosen for each medicine, so the second sale of the day does
+    /// not have to be told again. Kept for the session; the first time a medicine
+    /// is picked the unit comes from what it is — tablets for a strip, bottles
+    /// for a syrup.
+    /// </summary>
+    private readonly Dictionary<Guid, string> _rememberedUnit = [];
+
+    /// <summary>No discounts are given at the counter, so every line is at MRP.</summary>
+    private const decimal NoDiscount = 0m;
+
+    /// <summary>What is in stock and what a unit costs, for the chosen medicine.</summary>
+    [ObservableProperty] private string _selectedSummary = "";
 
     // Bill header
     [ObservableProperty] private string _customerName = "Cash";
@@ -75,8 +106,13 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
     public Array PaymentModes => Enum.GetValues<PaymentMode>();
 
+    /// <summary>Read on entry; an unregistered clinic charges no tax at all.</summary>
+    private bool _gstRegistered;
+
     public async Task LoadAsync()
     {
+        _gstRegistered = (await settings.GetAsync()).GstRegistered;
+
         await FindAsync();
 
         PrescribedVisits.Clear();
@@ -89,8 +125,92 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Recalculate();
     }
 
+    /// <summary>Filters as the operator types — two letters is enough.</summary>
+    partial void OnSearchChanged(string value) => FindAsync().Forget("Searching medicines");
+
     partial void OnSelectedProductChanged(Product? value)
-        => LoadBatchesAsync(value).Forget("Loading batches for the counter");
+    {
+        UpdateSelectedSummary();
+        UpdateQuantityUnits(value);
+    }
+
+    partial void OnQuantityUnitChanged(string value)
+    {
+        if (SelectedProduct is { } product && !string.IsNullOrEmpty(value))
+            _rememberedUnit[product.Id] = value;
+    }
+
+    /// <summary>
+    /// Offers the units this medicine can actually be sold in. A syrup is bottles
+    /// and nothing else; a strip of ten is tablets, or strips of 10.
+    /// </summary>
+    private void UpdateQuantityUnits(Product? product)
+    {
+        QuantityUnits.Clear();
+
+        if (product is null)
+        {
+            QuantityUnit = "";
+            return;
+        }
+
+        var perPack = Math.Max(1, product.UnitsPerPack);
+        var single = product.DispensingUnit.Name(2);
+
+        QuantityUnits.Add(single);
+
+        // Only worth offering packs when a pack holds more than one.
+        if (perPack > 1) QuantityUnits.Add($"{PackWord(product)} of {perPack}");
+
+        QuantityUnit = _rememberedUnit.TryGetValue(product.Id, out var remembered)
+                       && QuantityUnits.Contains(remembered)
+            ? remembered
+            : QuantityUnits[0];
+    }
+
+    private static string PackWord(Product product) => product.DispensingUnit switch
+    {
+        DispensingUnit.Tablet or DispensingUnit.Capsule => "strips",
+        DispensingUnit.Sachet => "boxes",
+        _ => "packs"
+    };
+
+    /// <summary>The quantity box in base units, whatever unit was chosen beside it.</summary>
+    private int QuantityInUnits(Product product)
+    {
+        var perPack = Math.Max(1, product.UnitsPerPack);
+        var choseWholePacks = perPack > 1 && QuantityUnit == $"{PackWord(product)} of {perPack}";
+
+        return choseWholePacks ? Quantity * perPack : Quantity;
+    }
+
+    private void UpdateSelectedSummary()
+    {
+        if (SelectedProduct is null)
+        {
+            SelectedSummary = "";
+            return;
+        }
+
+        var stock = SelectedProduct.StockOnHand;
+        var unit = SelectedProduct.DispensingUnit.Name(stock);
+
+        SelectedSummary = stock > 0
+            ? $"{SelectedProduct.Name} · {stock} {unit} in stock · {UnitPriceOf(SelectedProduct):₹0.00} each"
+            : $"{SelectedProduct.Name} · out of stock";
+    }
+
+    /// <summary>Cheapest-to-read price: what one unit costs from the batch that
+    /// would actually be dispensed.</summary>
+    private static decimal UnitPriceOf(Product product)
+    {
+        var next = product.Batches
+            .Where(b => !b.IsDeleted && b.QtyOnHand > 0)
+            .OrderBy(b => b.ExpiryDate)
+            .FirstOrDefault();
+
+        return next is null ? 0m : next.UnitPrice;
+    }
 
     partial void OnSelectedVisitChanged(Visit? value)
     {
@@ -110,75 +230,240 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         if (Matches.Count == 1) SelectedProduct = Matches[0];
     }
 
-    private async Task LoadBatchesAsync(Product? product)
+    /// <summary>Set while lines are being rebuilt, so edits do not chase their own tail.</summary>
+    private bool _relaying;
+
+    private void Watch(SaleRow row) => row.PropertyChanged += OnLineChanged;
+
+    /// <summary>
+    /// Quantity is the one thing that can be changed on a bill line, and changing
+    /// it has to re-take the stock: raising it past what its batch holds needs
+    /// another batch, and lowering it should give the rest back. Without this the
+    /// line stays pinned to one batch and only fails when the bill is saved.
+    /// </summary>
+    private void OnLineChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        Batches.Clear();
-        SelectedBatch = null;
-        if (product is null) return;
+        Recalculate();
 
-        foreach (var b in await pharmacy.GetSellableBatchesAsync(product.Id)) Batches.Add(b);
+        if (_relaying || e.PropertyName != nameof(SaleRow.Quantity)) return;
+        if (sender is not SaleRow row) return;
 
-        // Nearest expiry first — dispensing order, and the default the counter wants.
-        SelectedBatch = Batches.FirstOrDefault();
+        ReallocateAsync(row.ProductId).Forget("Re-taking stock for an edited line");
     }
 
-    [RelayCommand]
-    private void AddLine()
+    private async Task ReallocateAsync(Guid productId)
     {
-        if (SelectedProduct is null || SelectedBatch is null)
+        var wanted = Lines.Where(l => l.ProductId == productId).Sum(l => l.Quantity);
+        if (wanted <= 0) return;
+
+        var product = Matches.FirstOrDefault(p => p.Id == productId)
+                      ?? (await pharmacy.SearchProductsAsync(null, 1000)).FirstOrDefault(p => p.Id == productId);
+
+        if (product is null) return;
+
+        using var log = AppLog.Enter("Counter.ReallocateLine", $"product={productId} wanted={wanted}");
+
+        var (allocations, shortfall) = await pharmacy.AllocateAsync(productId, wanted);
+
+        if (shortfall > 0)
         {
-            Warn("Pick a medicine that has stock before adding it to the bill.");
+            var have = allocations.Sum(a => a.Units);
+            log.Skip($"short by {shortfall}; only {have} sellable");
+
+            Warn($"Only {have} {product.DispensingUnit.Name(Math.Max(have, 2))} of " +
+                 $"{product.Name} can be sold. The line has been set back to {have}.");
+        }
+
+        Relay(product, allocations);
+        log.Ok($"{allocations.Count} line(s)");
+    }
+
+    /// <summary>Replaces every line for one medicine from a fresh allocation.</summary>
+    private void Relay(Product product, IReadOnlyList<PharmacyService.Allocation> allocations)
+    {
+        _relaying = true;
+
+        try
+        {
+            foreach (var existing in Lines.Where(l => l.ProductId == product.Id).ToList())
+            {
+                existing.PropertyChanged -= OnLineChanged;
+                Lines.Remove(existing);
+            }
+
+            foreach (var allocation in allocations)
+            {
+                var row = new SaleRow
+                {
+                    ProductId = product.Id,
+                    BatchId = allocation.Batch.Id,
+                    ProductName = product.Name,
+                    BatchNo = allocation.Batch.BatchNo,
+                    ExpiryDate = allocation.Batch.ExpiryDate,
+                    HsnCode = product.HsnCode,
+                    GstRate = _gstRegistered ? product.GstRate : 0m,
+                    Schedule = product.Schedule,
+                    Available = allocation.Batch.QtyOnHand,
+                    UnitsPerPack = allocation.Batch.UnitsPerPack,
+                    PackLabel = product.PackSize,
+                    UnitName = product.DispensingUnit.Name(2),
+                    Quantity = allocation.Units,
+                    Mrp = allocation.Batch.Mrp,
+                    DiscountPercent = NoDiscount
+                };
+
+                Watch(row);
+                Lines.Add(row);
+            }
+        }
+        finally
+        {
+            _relaying = false;
+        }
+
+        Recalculate();
+    }
+
+    // Batch selection is gone from the counter: nearest expiry is chosen for the
+    // operator, and a quantity larger than one batch simply spans several. The
+    // batch still reaches the bill, because it has to be printed.
+
+    /// <summary>
+    /// Adds the requested quantity, taken from whichever batches fill it — nearest
+    /// expiry first. The operator never picks a batch; asking for 20 when the
+    /// oldest holds 15 quietly becomes two lines rather than an error.
+    /// </summary>
+    [RelayCommand]
+    private async Task AddLineAsync()
+    {
+        using var log = AppLog.Enter(
+            "Counter.AddLine",
+            $"product='{SelectedProduct?.Name}' id={SelectedProduct?.Id} qty={Quantity} unit='{QuantityUnit}'");
+
+        if (SelectedProduct is null)
+        {
+            log.Skip("no medicine chosen");
+            Warn("Choose a medicine from the list first.");
             return;
         }
 
         if (Quantity <= 0)
         {
+            log.Skip($"quantity {Quantity} is not sellable");
             Warn("Quantity must be at least 1.");
             return;
         }
 
-        var alreadyOnBill = Lines.Where(l => l.BatchId == SelectedBatch.Id).Sum(l => l.Quantity);
-        if (alreadyOnBill + Quantity > SelectedBatch.QtyOnHand)
+        var product = SelectedProduct;
+
+        // Whatever the operator typed, the bill is built in base units.
+        var adding = QuantityInUnits(product);
+
+        // Some things cannot be broken open — a sealed bottle, a sachet strip
+        // the manufacturer seals as one. The checkbox on the medicine says so
+        // and this is where it has to mean something.
+        if (!product.AllowLooseSale && product.UnitsPerPack > 1 && adding % product.UnitsPerPack != 0)
         {
-            Warn($"Only {SelectedBatch.QtyOnHand - alreadyOnBill} left of {SelectedProduct.Name} in batch {SelectedBatch.BatchNo}.");
+            var packs = (adding / product.UnitsPerPack) + 1;
+
+            log.Skip($"loose sale refused: {adding} is not a multiple of {product.UnitsPerPack}");
+
+            Warn($"{product.Name} is not sold loose — it goes out in whole packs of " +
+                 $"{product.UnitsPerPack}. Enter {packs * product.UnitsPerPack} for {packs} pack(s).");
             return;
         }
 
-        if (SelectedBatch.IsExpired)
+        // Whatever is already on this bill is committed as far as stock goes.
+        var alreadyOnBill = Lines.Where(l => l.ProductId == product.Id).Sum(l => l.Quantity);
+
+        var (allocations, shortfall) = await pharmacy.AllocateAsync(product.Id, alreadyOnBill + adding);
+
+        if (shortfall > 0)
         {
-            Warn($"Batch {SelectedBatch.BatchNo} expired on {SelectedBatch.ExpiryDate:dd MMM yyyy} and cannot be sold.");
+            var have = allocations.Sum(a => a.Units) - alreadyOnBill;
+            var unit = product.DispensingUnit.Name(Math.Max(have, 2));
+
+            log.Skip($"short by {shortfall}; only {have} sellable");
+
+            Warn(have <= 0
+                ? $"{product.Name} has none left that can be sold."
+                : $"Only {have} {unit} of {product.Name} left to sell.");
             return;
         }
 
-        var row = new SaleRow
-        {
-            ProductId = SelectedProduct.Id,
-            BatchId = SelectedBatch.Id,
-            ProductName = SelectedProduct.Name,
-            BatchNo = SelectedBatch.BatchNo,
-            ExpiryDate = SelectedBatch.ExpiryDate,
-            HsnCode = SelectedProduct.HsnCode,
-            GstRate = SelectedProduct.GstRate,
-            Schedule = SelectedProduct.Schedule,
-            Available = SelectedBatch.QtyOnHand,
-            Quantity = Quantity,
-            Mrp = SelectedBatch.Mrp,
-            DiscountPercent = DiscountPercent
-        };
+        // Re-lay the lines for this medicine from the fresh allocation, so a second
+        // Add of the same medicine does not double-count against the same batch.
+        foreach (var existing in Lines.Where(l => l.ProductId == product.Id).ToList())
+            Lines.Remove(existing);
 
-        row.PropertyChanged += (_, _) => Recalculate();
-        Lines.Add(row);
+        foreach (var allocation in allocations)
+        {
+            var row = new SaleRow
+            {
+                ProductId = product.Id,
+                BatchId = allocation.Batch.Id,
+                ProductName = product.Name,
+                BatchNo = allocation.Batch.BatchNo,
+                ExpiryDate = allocation.Batch.ExpiryDate,
+                HsnCode = product.HsnCode,
+                // Zero when the clinic is not registered, so no tax is extracted
+                // from the MRP and the bill carries none.
+                GstRate = _gstRegistered ? product.GstRate : 0m,
+                Schedule = product.Schedule,
+                Available = allocation.Batch.QtyOnHand,
+                UnitsPerPack = allocation.Batch.UnitsPerPack,
+                PackLabel = product.PackSize,
+                UnitName = product.DispensingUnit.Name(2),
+                Quantity = allocation.Units,
+                Mrp = allocation.Batch.Mrp,
+                DiscountPercent = NoDiscount
+            };
+
+            Watch(row);
+            Lines.Add(row);
+        }
+
         Recalculate();
 
-        if (SelectedProduct.Schedule is DrugSchedule.H1)
-            Status = $"{SelectedProduct.Name} is Schedule H1 — record the prescriber's name on this bill.";
+        // Nearest expiry goes first, which is right — but handing over something
+        // with a fortnight left without saying so is how a parent comes back.
+        var soonest = allocations.Min(a => a.Batch.DaysToExpiry);
 
-        // Reset for the next line, keeping the cursor flow moving.
-        Search = "";
+        if (soonest <= 30)
+        {
+            var batch = allocations.First(a => a.Batch.DaysToExpiry == soonest).Batch;
+
+            Warn($"{product.Name} batch {batch.BatchNo} expires {batch.ExpiryDate:MMM yyyy} — " +
+                 $"{soonest} day(s) away. It is still on the bill; tell the customer.");
+        }
+
+        // Two prices for one medicine on a bill looks like a mistake unless the
+        // operator knows before the customer asks.
+        if (allocations.Count > 1)
+        {
+            var prices = allocations.Select(a => a.Batch.Mrp).Distinct().Count();
+
+            AppLog.Info(
+                $"Counter: {product.Name} split across {allocations.Count} batches " +
+                $"[{string.Join(", ", allocations.Select(a => $"{a.Batch.BatchNo}×{a.Units}"))}]" +
+                (prices > 1 ? " at different prices." : "."));
+        }
+
+        Status = product.Schedule is DrugSchedule.H1
+            ? $"{product.Name} is Schedule H1 — record the prescriber's name on this bill."
+            : allocations.Count > 1
+                ? $"{product.Name}: {adding} from {allocations.Count} batches — " +
+                  $"{string.Join(", ", allocations.Select(a => $"{a.Units} from {a.Batch.BatchNo}"))}" +
+                  (allocations.Select(a => a.Batch.Mrp).Distinct().Count() > 1
+                      ? " at different prices."
+                      : ".")
+                : $"{product.Name} added.";
+
+        log.Ok($"{Lines.Count} line(s) on the bill, net {Net:0.00}");
+
+        // The search and its results stay put, so the next medicine is one click
+        // away and the operator can see what else is on the shelf.
         Quantity = 1;
-        DiscountPercent = 0;
-        SelectedProduct = null;
-        Matches.Clear();
     }
 
     [RelayCommand]
@@ -189,19 +474,64 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Recalculate();
     }
 
+    /// <summary>
+    /// Puts stock on the shelf for the selected medicine without leaving the
+    /// bill. The shop knows the medicine is there; the system does not, and
+    /// sending the operator away to do a full goods-inward with a patient
+    /// waiting is how a counter stops being used.
+    /// </summary>
+    [RelayCommand]
+    private async Task QuickStockAsync()
+    {
+        if (SelectedProduct is null)
+        {
+            Warn("Choose the medicine you are adding stock for.");
+            return;
+        }
+
+        await Safely.RunAsync(async () =>
+        {
+            var window = new Views.QuickStockWindow(SelectedProduct)
+            {
+                Owner = Application.Current.MainWindow
+            };
+
+            window.ShowDialog();
+            if (!window.Added) return;
+
+            var id = SelectedProduct.Id;
+
+            await FindAsync();
+            SelectedProduct = Matches.FirstOrDefault(p => p.Id == id);
+            UpdateSelectedSummary();
+
+            Status = $"{SelectedProduct?.Name} is now on the shelf. " +
+                     $"It is listed under Reports → Stock to reconcile until the supplier bill arrives.";
+        }, "Adding stock at the counter", m => Status = m);
+    }
+
     [RelayCommand]
     private async Task LoadPrescriptionAsync()
     {
+        using var log = AppLog.Enter("Counter.LoadPrescription", $"visit={SelectedVisit?.Id}");
+
         if (SelectedVisit is null)
         {
+            log.Skip("no visit chosen");
             Warn("Choose a patient from today's OPD list first.");
             return;
         }
 
         var visit = await opd.GetVisitAsync(SelectedVisit.Id);
-        if (visit is null) return;
+
+        if (visit is null)
+        {
+            log.Skip("visit no longer exists");
+            return;
+        }
 
         var missing = new List<string>();
+        var partial = new List<string>();
 
         foreach (var item in visit.Prescription)
         {
@@ -218,36 +548,63 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                 continue;
             }
 
-            var batch = (await pharmacy.GetSellableBatchesAsync(product.Id)).FirstOrDefault();
-            if (batch is null)
+            var wanted = Math.Max(1, item.Quantity);
+            var (allocations, shortfall) = await pharmacy.AllocateAsync(product.Id, wanted);
+
+            if (allocations.Count == 0)
             {
                 missing.Add($"{item.MedicineName} (no stock)");
                 continue;
             }
 
-            var row = new SaleRow
-            {
-                ProductId = product.Id,
-                BatchId = batch.Id,
-                ProductName = product.Name,
-                BatchNo = batch.BatchNo,
-                ExpiryDate = batch.ExpiryDate,
-                HsnCode = product.HsnCode,
-                GstRate = product.GstRate,
-                Schedule = product.Schedule,
-                Available = batch.QtyOnHand,
-                Quantity = Math.Max(1, Math.Min(item.Quantity, batch.QtyOnHand)),
-                Mrp = batch.Mrp
-            };
+            // Say so rather than quietly billing less than the doctor wrote.
+            if (shortfall > 0)
+                partial.Add($"{product.Name} ({wanted - shortfall} of {wanted})");
 
-            row.PropertyChanged += (_, _) => Recalculate();
-            Lines.Add(row);
+            // Loading twice is normal — the operator loads, finds something is
+            // out of stock, receives it, and loads again. Re-lay this medicine's
+            // lines instead of adding a second copy of it to the bill.
+            foreach (var existing in Lines.Where(l => l.ProductId == product.Id).ToList())
+                Lines.Remove(existing);
+
+            // A course can span batches; each batch is its own line because the
+            // batch number handed over has to appear on the invoice.
+            foreach (var allocation in allocations)
+            {
+                var row = new SaleRow
+                {
+                    ProductId = product.Id,
+                    BatchId = allocation.Batch.Id,
+                    ProductName = product.Name,
+                    BatchNo = allocation.Batch.BatchNo,
+                    ExpiryDate = allocation.Batch.ExpiryDate,
+                    HsnCode = product.HsnCode,
+                    GstRate = _gstRegistered ? product.GstRate : 0m,
+                    Schedule = product.Schedule,
+                    Available = allocation.Batch.QtyOnHand,
+                    UnitsPerPack = allocation.Batch.UnitsPerPack,
+                    PackLabel = product.PackSize,
+                    UnitName = product.DispensingUnit.Name(2),
+                    Quantity = allocation.Units,
+                    Mrp = allocation.Batch.Mrp
+                };
+
+                row.PropertyChanged += (_, _) => Recalculate();
+                Lines.Add(row);
+            }
         }
 
         Recalculate();
-        Status = missing.Count == 0
+
+        var notes = new List<string>();
+        if (missing.Count > 0) notes.Add($"Not added: {string.Join(", ", missing)}");
+        if (partial.Count > 0) notes.Add($"Short: {string.Join(", ", partial)}");
+
+        Status = notes.Count == 0
             ? $"Loaded {visit.Prescription.Count} item(s) from token {visit.TokenNo}."
-            : $"Loaded. Not added: {string.Join(", ", missing)}.";
+            : $"Loaded. {string.Join(". ", notes)}.";
+
+        log.Ok($"{Lines.Count} line(s) added; missing={missing.Count} short={partial.Count}");
     }
 
     [RelayCommand]
@@ -258,9 +615,29 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
     private async Task CompleteSaleAsync(bool print)
     {
+        using var log = AppLog.Enter(
+            "Counter.SaveBill",
+            $"print={print} lines={Lines.Count} customer='{CustomerName}' pay={PaymentMode}");
+
         if (Lines.Count == 0)
         {
+            log.Skip("nothing on the bill");
             Warn("Add at least one medicine to the bill.");
+            return;
+        }
+
+        // The H1 register is a statutory record kept for three years, and the
+        // prescriber is the whole point of it. Recording the sale without one
+        // leaves a hole in a book an inspector can ask to see.
+        if (Lines.Any(l => l.Schedule == DrugSchedule.H1) && string.IsNullOrWhiteSpace(DoctorName))
+        {
+            var h1 = string.Join(", ", Lines.Where(l => l.Schedule == DrugSchedule.H1)
+                                            .Select(l => l.ProductName).Distinct());
+
+            log.Skip($"H1 refused: no prescriber for {h1}");
+
+            Warn($"{h1} is Schedule H1. Enter the prescribing doctor's name before saving — " +
+                 $"it goes in the H1 register, which has to be kept for three years.");
             return;
         }
 
@@ -271,7 +648,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             VisitId = SelectedVisit?.Id,
             CustomerName = string.IsNullOrWhiteSpace(CustomerName) ? "Cash" : CustomerName.Trim(),
             DoctorName = string.IsNullOrWhiteSpace(DoctorName) ? null : DoctorName.Trim(),
-            PaymentMode = PaymentMode
+            PaymentMode = PaymentMode,
+            IsTaxInvoice = _gstRegistered
         };
 
         var lines = Lines.Select(l => new SaleLine
@@ -283,6 +661,8 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             ExpiryDate = l.ExpiryDate,
             HsnCode = l.HsnCode,
             Quantity = l.Quantity,
+            UnitsPerPack = l.UnitsPerPack,
+            PackLabel = l.PackLabel,
             Mrp = l.Mrp,
             DiscountPercent = l.DiscountPercent,
             GstRate = l.GstRate,
@@ -297,13 +677,23 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             if (print)
             {
                 var full = await pharmacy.GetSaleAsync(saved.Id);
-                if (full is not null) BillPrinter.Print(full, await settings.GetAsync());
+                if (full is not null)
+                {
+                    var shop = await settings.GetAsync();
+                    PrintService.Preview(() => BillPrinter.Build(full, shop), $"Bill {full.BillNo}");
+                }
             }
 
             NewBill();
+            log.Ok($"{saved.BillNo} net={saved.NetAmount:0.00} printed={print}");
         }
         catch (Exception ex)
         {
+            // The counter shows the plain message; the log keeps the whole thing,
+            // because this is the one place money stops being recorded.
+            log.Skip($"refused: {ex.GetType().Name}: {ex.Message}");
+            AppLog.Error("Saving the bill failed.", ex);
+
             Warn(ex.Message);
         }
     }
@@ -314,20 +704,22 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Lines.Clear();
         Search = "";
         Quantity = 1;
-        DiscountPercent = 0;
         CustomerName = "Cash";
         DoctorName = "";
         SelectedProduct = null;
         SelectedVisit = null;
         Matches.Clear();
-        Batches.Clear();
+
         Recalculate();
     }
 
     private void Recalculate()
     {
+        // UnitsPerPack has to be passed: without it every tablet prices at the
+        // full strip MRP, and the total on screen stops matching the bill that
+        // gets saved and printed.
         var amounts = GstCalculator.Bill(
-            Lines.Select(l => GstCalculator.Line(l.Mrp, l.Quantity, l.DiscountPercent, l.GstRate)));
+            Lines.Select(l => GstCalculator.Line(l.Mrp, l.UnitsPerPack, l.Quantity, l.DiscountPercent, l.GstRate)));
 
         Gross = amounts.Gross;
         Discount = amounts.Discount;

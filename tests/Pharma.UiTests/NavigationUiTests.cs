@@ -1,7 +1,7 @@
 namespace Pharma.UiTests;
 
-[Collection("ui")]
-public class NavigationUiTests(AppFixture app)
+
+public class NavigationUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
     [Fact]
     public void App_opens_on_the_opd_screen()
@@ -16,7 +16,7 @@ public class NavigationUiTests(AppFixture app)
     [InlineData("NavProducts", "Medicines", "ProductsGrid")]
     [InlineData("NavReports", "Reports", null)]
     [InlineData("NavSettings", "Settings", "ShopName")]
-    [InlineData("NavOpd", "OPD", "OpdQueueGrid")]
+    [InlineData("NavOpd", "OPD", "OpdWaitingList")]
     public void Every_module_opens_from_the_sidebar(string navId, string title, string? expectedElement)
     {
         app.Navigate(navId, title);

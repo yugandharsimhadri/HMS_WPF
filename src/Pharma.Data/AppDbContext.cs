@@ -23,6 +23,8 @@ public class AppDbContext : DbContext
     public DbSet<Counter> Counters => Set<Counter>();
     public DbSet<H1RegisterEntry> H1Register => Set<H1RegisterEntry>();
     public DbSet<ImportProfile> ImportProfiles => Set<ImportProfile>();
+    public DbSet<VendorProductCode> VendorProductCodes => Set<VendorProductCode>();
+    public DbSet<StockAdjustment> StockAdjustments => Set<StockAdjustment>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -53,12 +55,30 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.DoctorId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Prescription).WithOne(p => p.Visit)
                 .HasForeignKey(p => p.VisitId).OnDelete(DeleteBehavior.Cascade);
+
+            e.Ignore(x => x.IsWaiting);
+            e.Ignore(x => x.PatientLine);
+            e.Ignore(x => x.FeeBadge);
+            e.Ignore(x => x.RowSummary);
+            e.Ignore(x => x.WaitedFor);
         });
 
         b.Entity<Product>(e =>
         {
             e.HasIndex(x => x.Name);
+
+            // The same medicine twice splits its stock and shows up twice at the
+            // counter. A filtered unique index so a removed record does not block
+            // the name being used again.
+            e.HasIndex(x => x.SearchKey)
+             .IsUnique()
+             .HasFilter("\"IsDeleted\" = 0");
+
             e.Ignore(x => x.StockOnHand);
+            e.Ignore(x => x.PackDescription);
+            e.Ignore(x => x.UnitPriceLabel);
+            e.Ignore(x => x.PackPriceLabel);
+            e.Ignore(x => x.RackLabel);
             e.Ignore(x => x.Shortage);
         });
 
@@ -69,16 +89,47 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
             e.Ignore(x => x.IsExpired);
             e.Ignore(x => x.Display);
+            e.Ignore(x => x.UnitPrice);
+            e.Ignore(x => x.OnHand);
+            e.Ignore(x => x.Returnable);
+            e.Ignore(x => x.DaysToExpiry);
+            e.Ignore(x => x.EffectivePackCost);
+        });
+
+        b.Entity<StockAdjustment>(e =>
+        {
+            e.HasIndex(x => x.AdjustedOn);
+            e.HasOne(x => x.Batch).WithMany()
+                .HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Product).WithMany()
+                .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+            e.Ignore(x => x.Change);
+            e.Ignore(x => x.Direction);
+        });
+
+        b.Entity<VendorProductCode>(e =>
+        {
+            e.HasIndex(x => new { x.VendorProfile, x.Code }).IsUnique();
+            e.HasOne(x => x.Product).WithMany()
+                .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<StockEntry>(e =>
         {
             e.HasIndex(x => x.EntryNo).IsUnique();
+            e.HasIndex(x => x.SupplierInvoiceNo);
+            e.Ignore(x => x.WasImported);
             e.HasMany(x => x.Items).WithOne(i => i.StockEntry)
                 .HasForeignKey(i => i.StockEntryId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        b.Entity<StockEntryItem>(e => e.Ignore(x => x.LineTotal));
+        b.Entity<StockEntryItem>(e =>
+        {
+            e.Ignore(x => x.LineTotal);
+            e.Ignore(x => x.UnitsReceived);
+        });
+
+        b.Entity<SaleItem>(e => e.Ignore(x => x.QuantityDescription));
 
         b.Entity<Sale>(e =>
         {

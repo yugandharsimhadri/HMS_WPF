@@ -1,7 +1,7 @@
 namespace Pharma.UiTests;
 
-[Collection("ui")]
-public class SettingsUiTests(AppFixture app)
+
+public class SettingsUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
     [Fact]
     public void Shop_details_persist_across_screens()
@@ -10,6 +10,9 @@ public class SettingsUiTests(AppFixture app)
 
         var shopName = $"UI Test Pharmacy {DateTime.Now:HHmmss}";
         app.Type("ShopName", shopName);
+
+        // A GSTIN can only be entered once the clinic says it is registered.
+        app.CheckBox("ShopGstRegistered").IsChecked = true;
         app.Type("ShopGstin", "29ABCDE1234F1Z5");
         app.Click("ShopSave");
 

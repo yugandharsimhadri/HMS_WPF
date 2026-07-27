@@ -13,8 +13,8 @@ namespace Pharma.UiTests;
 /// correctly (verified), but this harness cannot deliver synthetic keystrokes to
 /// the application, so that path is untested rather than known-good.
 /// </summary>
-[Collection("ui")]
-public class DatePickerUiTests(AppFixture app)
+
+public class DatePickerUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
     [Fact]
     public void The_calendar_popup_opens_and_the_app_stays_responsive()

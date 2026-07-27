@@ -9,22 +9,13 @@ namespace Pharma.App.Printing;
 /// <summary>OPD prescription slip — clinic header, patient line, vitals, Rx table, follow-up.</summary>
 public static class PrescriptionPrinter
 {
-    public static void Print(Visit visit, ShopProfile shop)
-        => Send(Build(visit, shop), $"Prescription {visit.VisitNo}");
-
     public static FlowDocument Build(Visit visit, ShopProfile shop)
     {
         var doc = NewDocument();
 
-        doc.Blocks.Add(Text(shop.Name, 18, FontWeights.Bold, align: TextAlignment.Center));
+        AddClinicHeader(doc, shop, null);
 
-        var identity = new List<string>();
-        if (!string.IsNullOrWhiteSpace(shop.AddressLine)) identity.Add(shop.AddressLine);
-        if (!string.IsNullOrWhiteSpace(shop.Phone)) identity.Add($"Ph {shop.Phone}");
-        if (identity.Count > 0)
-            doc.Blocks.Add(Text(string.Join("  ·  ", identity), 10, brush: Muted, align: TextAlignment.Center));
-
-        doc.Blocks.Add(Text(visit.Doctor.Name, 12, FontWeights.SemiBold, align: TextAlignment.Center, topMargin: 8));
+        doc.Blocks.Add(Text(visit.Doctor.Name, 12, FontWeights.SemiBold, align: TextAlignment.Center));
 
         var credentials = new List<string>();
         if (!string.IsNullOrWhiteSpace(visit.Doctor.Speciality)) credentials.Add(visit.Doctor.Speciality!);

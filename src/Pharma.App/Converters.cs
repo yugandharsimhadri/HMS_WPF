@@ -39,6 +39,35 @@ public class BoolToVisibilityConverter : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>Shows a band only when there is something to say in it.</summary>
+public class TextToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => string.IsNullOrWhiteSpace(value?.ToString()) ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Fee badge fill: paid reads calm, due has to catch the eye.</summary>
+public class FeeBrushConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is true
+            ? new SolidColorBrush(Color.FromRgb(0xE4, 0xF3, 0xEA))
+            : new SolidColorBrush(Color.FromRgb(0xFB, 0xEF, 0xDC));
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>Text on the fee badge, dark enough to read on its own fill.</summary>
+public class FeeInkConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is true
+            ? new SolidColorBrush(Color.FromRgb(0x0B, 0x5A, 0x54))
+            : new SolidColorBrush(Color.FromRgb(0x8A, 0x53, 0x0B));
 /// <summary>Shows a "no records" placeholder when a report's row count is zero.</summary>
 public class ZeroToVisibilityConverter : IValueConverter
 {

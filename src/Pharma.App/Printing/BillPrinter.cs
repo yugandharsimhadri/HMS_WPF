@@ -12,29 +12,15 @@ namespace Pharma.App.Printing;
 /// </summary>
 public static class BillPrinter
 {
-    public static void Print(Sale sale, ShopProfile shop)
-        => Send(Build(sale, shop), $"Bill {sale.BillNo}");
-
-    public static FlowDocument Build(Sale sale, ShopProfile shop)
+    public static FlowDocument Build(Sale sale, ShopProfile shop, bool isReprint = false)
     {
         var doc = NewDocument();
 
-        doc.Blocks.Add(Text(shop.Name, 18, FontWeights.Bold, align: TextAlignment.Center));
+        // A clinic that is not registered for GST issues a plain invoice. Calling
+        // it a tax invoice, or printing a GSTIN on it, would be a false claim.
+        var kind = sale.IsTaxInvoice ? "TAX INVOICE" : "INVOICE";
 
-        var identity = new List<string>();
-        if (!string.IsNullOrWhiteSpace(shop.AddressLine)) identity.Add(shop.AddressLine);
-        if (!string.IsNullOrWhiteSpace(shop.Phone)) identity.Add($"Ph {shop.Phone}");
-        if (identity.Count > 0)
-            doc.Blocks.Add(Text(string.Join("  ·  ", identity), 10, brush: Muted, align: TextAlignment.Center));
-
-        var licences = new List<string>();
-        if (!string.IsNullOrWhiteSpace(shop.Gstin)) licences.Add($"GSTIN: {shop.Gstin}");
-        if (!string.IsNullOrWhiteSpace(shop.DrugLicenceNo)) licences.Add($"D.L. No: {shop.DrugLicenceNo}");
-        if (licences.Count > 0)
-            doc.Blocks.Add(Text(string.Join("  ·  ", licences), 10, brush: Muted, align: TextAlignment.Center));
-
-        doc.Blocks.Add(Text("TAX INVOICE", 11, FontWeights.SemiBold, align: TextAlignment.Center, topMargin: 8));
-        doc.Blocks.Add(Rule());
+        AddClinicHeader(doc, shop, isReprint ? $"{kind} (DUPLICATE)" : kind, showGstin: sale.IsTaxInvoice);
 
         var head = NewTable(1, 1);
         var headGroup = new TableRowGroup();
@@ -47,20 +33,54 @@ public static class BillPrinter
         head.RowGroups.Add(headGroup);
         doc.Blocks.Add(head);
 
-        var items = NewTable(3.2, 1.4, 0.9, 0.7, 0.9, 0.7, 1.1);
-        var itemGroup = new TableRowGroup();
-        itemGroup.Rows.Add(Row(true, "MEDICINE", "BATCH", "EXPIRY", "QTY", "MRP", "GST%", "AMOUNT"));
+        // The GST% column only earns its space on a tax invoice.
+        var items = sale.IsTaxInvoice
+            ? NewTable(3.2, 1.4, 0.9, 0.7, 0.9, 0.7, 1.1)
+            : NewTable(3.6, 1.4, 0.9, 0.8, 1.0, 1.2);
 
-        foreach (var item in sale.Items)
+        var itemGroup = new TableRowGroup();
+
+        itemGroup.Rows.Add(sale.IsTaxInvoice
+            ? Row(true, "MEDICINE", "BATCH", "EXPIRY", "QTY", "MRP", "GST%", "AMOUNT")
+            : Row(true, "MEDICINE", "BATCH", "EXPIRY", "QTY", "MRP", "AMOUNT"));
+
+        // One heading per medicine, its batches beneath it. A course that spans
+        // two batches is two lines at two prices, and printed flat it reads like
+        // a billing mistake to the parent holding it.
+        foreach (var medicine in sale.Items.GroupBy(i => i.ProductName))
         {
-            itemGroup.Rows.Add(Row(false,
-                item.ProductName,
-                item.BatchNo,
-                item.ExpiryDate.ToString("MM/yy"),
-                item.Quantity.ToString(),
-                item.Mrp.ToString("0.00"),
-                item.GstRate.ToString("0.#"),
-                item.LineTotal.ToString("0.00")));
+            var split = medicine.Count() > 1;
+
+            if (split)
+            {
+                var total = medicine.Sum(i => i.LineTotal).ToString("0.00");
+                var quantity = medicine.Sum(i => i.Quantity);
+                var unit = medicine.First();
+
+                itemGroup.Rows.Add(sale.IsTaxInvoice
+                    ? Row(false, medicine.Key, "", "",
+                          PackMath.Describe(quantity, unit.UnitsPerPack, unit.PackLabel), "", "", total)
+                    : Row(false, medicine.Key, "", "",
+                          PackMath.Describe(quantity, unit.UnitsPerPack, unit.PackLabel), "", total));
+            }
+
+            foreach (var item in medicine)
+            {
+                // Quoted separator: a bare "/" is replaced by the machine's date
+                // separator, which made the printed expiry differ between PCs.
+                var expiry = item.ExpiryDate.ToString("MM'/'yy");
+                var qty = item.UnitsPerPack > 1 ? item.QuantityDescription : item.Quantity.ToString();
+
+                // Indented under the heading when this medicine came from more
+                // than one batch, so the batches read as detail, not as extra items.
+                var name = split ? $"    from batch" : item.ProductName;
+
+                itemGroup.Rows.Add(sale.IsTaxInvoice
+                    ? Row(false, name, item.BatchNo, expiry, qty,
+                          item.Mrp.ToString("0.00"), item.GstRate.ToString("0.#"), item.LineTotal.ToString("0.00"))
+                    : Row(false, name, item.BatchNo, expiry, qty,
+                          item.Mrp.ToString("0.00"), item.LineTotal.ToString("0.00")));
+            }
         }
 
         items.RowGroups.Add(itemGroup);
@@ -68,7 +88,7 @@ public static class BillPrinter
 
         // GST summary grouped by rate — what makes this a valid tax invoice.
         var slabs = sale.Items.GroupBy(i => i.GstRate).OrderBy(g => g.Key).ToList();
-        if (slabs.Count > 0)
+        if (sale.IsTaxInvoice && slabs.Count > 0)
         {
             doc.Blocks.Add(Text("GST SUMMARY", 9.5, FontWeights.SemiBold, Muted, topMargin: 4));
 
@@ -101,9 +121,12 @@ public static class BillPrinter
         totalGroup.Rows.Add(Row(false, "Gross", "", sale.GrossAmount.ToString("0.00")));
         if (sale.DiscountAmount > 0)
             totalGroup.Rows.Add(Row(false, "Discount", "", $"-{sale.DiscountAmount:0.00}"));
-        totalGroup.Rows.Add(Row(false, "Taxable value", "", sale.TaxableAmount.ToString("0.00")));
-        totalGroup.Rows.Add(Row(false, "CGST", "", sale.CgstAmount.ToString("0.00")));
-        totalGroup.Rows.Add(Row(false, "SGST", "", sale.SgstAmount.ToString("0.00")));
+        if (sale.IsTaxInvoice)
+        {
+            totalGroup.Rows.Add(Row(false, "Taxable value", "", sale.TaxableAmount.ToString("0.00")));
+            totalGroup.Rows.Add(Row(false, "CGST", "", sale.CgstAmount.ToString("0.00")));
+            totalGroup.Rows.Add(Row(false, "SGST", "", sale.SgstAmount.ToString("0.00")));
+        }
         if (sale.RoundOff != 0)
             totalGroup.Rows.Add(Row(false, "Round off", "", sale.RoundOff.ToString("+0.00;-0.00")));
         totals.RowGroups.Add(totalGroup);
@@ -112,6 +135,7 @@ public static class BillPrinter
         doc.Blocks.Add(Text($"NET PAYABLE   ₹{sale.NetAmount:0.00}", 16, FontWeights.Bold,
                             align: TextAlignment.Right, topMargin: 2));
         doc.Blocks.Add(Text($"Paid by {sale.PaymentMode}", 10, brush: Muted, align: TextAlignment.Right));
+        doc.Blocks.Add(Text(FeeReceiptDocument.InWords(sale.NetAmount), 10, brush: Muted, topMargin: 4));
 
         doc.Blocks.Add(Rule());
 

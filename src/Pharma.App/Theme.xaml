@@ -1,5 +1,15 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:Pharma.App">
+
+    <local:FeeBrushConverter x:Key="FeeBrush"/>
+    <local:FeeInkConverter x:Key="FeeInk"/>
+    <local:TextToVisibilityConverter x:Key="TextToVisible"/>
+
+    <!-- Application-wide, because a StaticResource declared on one window is
+         invisible to another. Declaring it on MainWindow made the data health
+         grid throw a XamlParseException as its template loaded. -->
+    <BooleanToVisibilityConverter x:Key="BoolToVisible"/>
 
     <!-- Palette -->
     <SolidColorBrush x:Key="Bg"          Color="#F4F6F8"/>
@@ -80,7 +90,7 @@
 
     <Style TargetType="TextBox">
         <Setter Property="Padding" Value="9,7"/>
-        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="MinHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{StaticResource Ink}"/>
         <Setter Property="Background" Value="{StaticResource InputFill}"/>
@@ -173,7 +183,7 @@
     </ControlTemplate>
 
     <Style TargetType="DatePicker">
-        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="MinHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Background" Value="{StaticResource InputFill}"/>
         <Setter Property="BorderBrush" Value="{StaticResource InputStroke}"/>
@@ -289,7 +299,7 @@
     </Style>
 
     <Style TargetType="ComboBox">
-        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="MinHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{StaticResource Ink}"/>
         <Setter Property="Padding" Value="10,0"/>
@@ -425,12 +435,16 @@
 
     <Style x:Key="BtnBase" TargetType="Button">
         <Setter Property="Padding" Value="14,8"/>
-        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="MinHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <!-- Centred by default, but a caller can left-align — a search suggestion
+             has to line up under the box it came from, not float in the middle. -->
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -444,7 +458,8 @@
                         <Border.Effect>
                             <DropShadowEffect Color="#26323C" BlurRadius="4" ShadowDepth="1" Opacity="0.16"/>
                         </Border.Effect>
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -481,6 +496,18 @@
         <Setter Property="Background" Value="{StaticResource AccentFill}"/>
         <Setter Property="BorderBrush" Value="{StaticResource AccentDark}"/>
         <Setter Property="Foreground" Value="White"/>
+    </Style>
+
+    <!--
+        The one action a screen exists for — Book visit, Save & print bill.
+        A named style rather than Height="42" written on the button, so "this is
+        the big one" is a decision recorded once instead of a number that drifts
+        to 38 on one screen and 44 on another.
+    -->
+    <Style x:Key="BtnPrimaryLarge" TargetType="Button" BasedOn="{StaticResource BtnPrimary}">
+        <Setter Property="MinHeight" Value="44"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="18,10"/>
     </Style>
 
     <Style x:Key="BtnGhost" TargetType="Button" BasedOn="{StaticResource BtnBase}">
@@ -541,6 +568,33 @@
     <Style TargetType="TabItem">
         <Setter Property="Padding" Value="14,7"/>
         <Setter Property="FontSize" Value="13"/>
+    </Style>
+
+    <!-- Doctor tabs: radio buttons drawn as tabs, so exactly one is ever active. -->
+    <Style x:Key="DoctorTab" TargetType="RadioButton">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="Foreground" Value="{StaticResource InkMuted}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="Bd" Background="Transparent" Padding="14,9,14,10"
+                            BorderBrush="Transparent" BorderThickness="0,0,0,2">
+                        <ContentPresenter VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#EEF2F5"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                            <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

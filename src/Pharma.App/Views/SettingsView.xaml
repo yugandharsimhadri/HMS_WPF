@@ -35,9 +35,17 @@
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="GSTIN" Style="{StaticResource Label}"/>
                         <TextBox Text="{Binding Gstin, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding GstRegistered}"
                                  AutomationProperties.AutomationId="ShopGstin"/>
                     </StackPanel>
                 </Grid>
+
+                <CheckBox Content="Registered for GST" IsChecked="{Binding GstRegistered, Mode=TwoWay}"
+                          Margin="0,2,0,4"
+                          AutomationProperties.AutomationId="ShopGstRegistered"/>
+                <TextBlock Text="{Binding GstHint}" Style="{StaticResource Muted}"
+                           TextWrapping="Wrap" Margin="0,0,0,10"
+                           AutomationProperties.AutomationId="ShopGstHint"/>
 
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -55,18 +63,57 @@
                     </StackPanel>
                 </Grid>
 
+                <TextBlock Text="OPD queue layout" Style="{StaticResource Label}"/>
+                <ComboBox ItemsSource="{Binding QueueLayouts}" SelectedItem="{Binding QueueLayout, Mode=TwoWay}"
+                          ToolTip="Tiles read at a glance; rows fit more people on screen"
+                          AutomationProperties.AutomationId="QueueLayout"/>
+
                 <TextBlock Text="Bill footer" Style="{StaticResource Label}"/>
                 <TextBox Text="{Binding BillFooter, UpdateSourceTrigger=PropertyChanged}"
                          AcceptsReturn="True" Height="50" TextWrapping="Wrap"/>
 
-                <Button Content="Save shop details" Style="{StaticResource BtnPrimary}"
-                        HorizontalAlignment="Left" Command="{Binding SaveShopCommand}"
-                        AutomationProperties.AutomationId="ShopSave"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Save shop details" Style="{StaticResource BtnPrimary}"
+                            Command="{Binding SaveShopCommand}"
+                            AutomationProperties.AutomationId="ShopSave"/>
+                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="8,0,0,0" MinWidth="80"
+                            Command="{Binding ClearShopCommand}"
+                            ToolTip="Empties the form. Saved details are unchanged until you save again."
+                            AutomationProperties.AutomationId="ShopClear"/>
+                </StackPanel>
 
                 <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap"
                            AutomationProperties.AutomationId="SettingsStatus"/>
 
                 <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,16,0,12"/>
+
+                <TextBlock Text="Data health" Style="{StaticResource Label}"/>
+                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                           Text="Finds medicines whose pack size and units-per-pack disagree — the records that make the counter sell strips to someone asking for tablets — and puts them right together."/>
+                <Button Content="Check data health" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
+                        Margin="0,0,0,12"
+                        Command="{Binding CheckDataHealthCommand}"
+                        AutomationProperties.AutomationId="CheckDataHealth"/>
+
+                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
+
+                <TextBlock Text="Backup" Style="{StaticResource Label}"/>
+                <TextBlock Text="{Binding BackupPath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                           Margin="0,0,0,4" AutomationProperties.AutomationId="BackupPath"/>
+                <TextBlock Text="{Binding LastBackup}" TextWrapping="Wrap" FontWeight="SemiBold"
+                           Margin="0,0,0,8" AutomationProperties.AutomationId="LastBackup"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                    <Button Content="Back up now" Style="{StaticResource BtnPrimary}"
+                            Command="{Binding BackUpNowCommand}"
+                            ToolTip="Copies the database as it stands. Do this before closing up."
+                            AutomationProperties.AutomationId="BackUpNow"/>
+                    <Button Content="Open backup folder" Style="{StaticResource BtnGhost}"
+                            Margin="8,0,0,0" Command="{Binding OpenBackupFolderCommand}"
+                            AutomationProperties.AutomationId="OpenBackupFolder"/>
+                </StackPanel>
+
+                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
                 <TextBlock Text="Database file" Style="{StaticResource Label}"/>
                 <TextBlock Text="{Binding DatabasePath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
                            Margin="0,0,0,10"/>
@@ -115,8 +162,13 @@
                 <StackPanel Orientation="Horizontal">
                     <Button Content="Save doctor" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
                             Command="{Binding SaveDoctorCommand}"/>
+                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,0,8,0" MinWidth="80"
+                            Command="{Binding NewDoctorCommand}"
+                            ToolTip="Empties the form. Saved doctors are unchanged."
+                            AutomationProperties.AutomationId="DoctorClear"/>
                     <Button Content="+ New doctor" Style="{StaticResource BtnGhost}"
-                            Command="{Binding NewDoctorCommand}"/>
+                            Command="{Binding NewDoctorCommand}"
+                            AutomationProperties.AutomationId="NewDoctor"/>
                 </StackPanel>
             </StackPanel>
         </Border>

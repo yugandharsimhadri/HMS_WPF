@@ -16,16 +16,21 @@ public static class DbBootstrapper
     {
         get
         {
+            // Environment first so a test can point somewhere harmless, then the
+            // config file, then the default under ProgramData.
             var overridden = Environment.GetEnvironmentVariable(PathOverrideVariable);
+            if (string.IsNullOrWhiteSpace(overridden)) overridden = AppConfig.Current.DatabasePath;
+
             if (!string.IsNullOrWhiteSpace(overridden))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(overridden)!);
                 return overridden;
             }
 
-            var dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "TwinkleHMS");
+            // C:\HMS keeps the database, its backups and the logs together, where
+            // a clinic can find them, copy them to a pen drive and hand them to
+            // whoever is helping. ProgramData is hidden and nobody goes there.
+            var dir = DefaultRoot("DB");
             Directory.CreateDirectory(dir);
 
             var path = Path.Combine(dir, "twinkle.db");
@@ -34,13 +39,43 @@ public static class DbBootstrapper
         }
     }
 
+    /// <summary>Where backups are written. Beside the database unless configured.</summary>
+    public static string BackupDirectory
+    {
+        get
+        {
+            var configured = AppConfig.Current.BackupDirectory;
+
+            var dir = string.IsNullOrWhiteSpace(configured) ? DefaultRoot("DBBackup") : configured;
+            Directory.CreateDirectory(dir);
+
+            return dir;
+        }
+    }
+
+    private static string DefaultRoot(string leaf)
+    {
+        var root = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\", "HMS");
+        return Path.Combine(root, leaf);
+    }
+
     /// <summary>
     /// The application was called ClinicDesk before it was branded. Carry an
     /// existing database over on first launch rather than silently starting empty.
     /// </summary>
+    /// <remarks>
+    /// It carries over <b>once</b>, and leaves a marker saying so. Without the
+    /// marker it fired every time the database was missing, so deleting the
+    /// database to start again silently resurrected the old one instead —
+    /// complete with the records the shop was trying to be rid of, and with the
+    /// copied file's original timestamp, which made it look untouched.
+    /// </remarks>
     private static void MoveLegacyDatabase(string newPath)
     {
         if (File.Exists(newPath)) return;
+
+        var carried = Path.Combine(Path.GetDirectoryName(newPath)!, ".carried-over");
+        if (File.Exists(carried)) return;
 
         var legacy = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
@@ -54,6 +89,9 @@ public static class DbBootstrapper
             {
                 if (File.Exists(legacy + suffix)) File.Copy(legacy + suffix, newPath + suffix);
             }
+
+            File.WriteAllText(carried, $"Carried over from {legacy} on {DateTime.Now:yyyy-MM-dd HH:mm}.");
+            AppLog.Info($"Carried the ClinicDesk database over from {legacy}.");
         }
         catch (IOException)
         {
@@ -78,28 +116,73 @@ public static class DbBootstrapper
         await Import.ImportProfileSeeder.SeedAsync(db);
     }
 
+    /// <summary>The newest backup on disk, or null if there has never been one.</summary>
+    public static FileInfo? LastBackup
+    {
+        get
+        {
+            try
+            {
+                return new DirectoryInfo(BackupDirectory)
+                    .GetFiles("twinkle-*.db")
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .FirstOrDefault();
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Copies the database now, whatever has already been taken today. This is
+    /// the button a clinic presses before closing up, and before anything they
+    /// are nervous about.
+    /// </summary>
+    public static FileInfo BackupNow()
+    {
+        if (!File.Exists(DatabasePath))
+            throw new InvalidOperationException("There is no database to back up yet.");
+
+        var target = Path.Combine(BackupDirectory, $"twinkle-{DateTime.Now:yyyyMMdd-HHmmss}.db");
+
+        File.Copy(DatabasePath, target, overwrite: true);
+        Prune();
+
+        AppLog.Info($"Backup taken: {target}");
+        return new FileInfo(target);
+    }
+
+    private static void Prune()
+    {
+        try
+        {
+            foreach (var stale in new DirectoryInfo(BackupDirectory)
+                         .GetFiles("twinkle-*.db")
+                         .OrderByDescending(f => f.LastWriteTime)
+                         .Skip(Math.Max(1, AppConfig.Current.BackupsToKeep)))
+            {
+                stale.Delete();
+            }
+        }
+        catch (IOException)
+        {
+            // A backup that could not be pruned is still a backup.
+        }
+    }
+
     private static void BackupOnce()
     {
         if (!File.Exists(DatabasePath)) return;
 
-        var backupDir = Path.Combine(Path.GetDirectoryName(DatabasePath)!, "backups");
-        Directory.CreateDirectory(backupDir);
-
-        var target = Path.Combine(backupDir, $"twinkle-{DateTime.Now:yyyyMMdd}.db");
-        if (File.Exists(target)) return;   // one backup per day is enough
+        var target = Path.Combine(BackupDirectory, $"twinkle-{DateTime.Now:yyyyMMdd}.db");
+        if (File.Exists(target)) return;   // one automatic backup per day is enough
 
         try
         {
             File.Copy(DatabasePath, target);
-
-            // Keep the last 14 daily backups.
-            foreach (var stale in new DirectoryInfo(backupDir)
-                         .GetFiles("twinkle-*.db")
-                         .OrderByDescending(f => f.Name)
-                         .Skip(14))
-            {
-                stale.Delete();
-            }
+            Prune();
         }
         catch (IOException)
         {
@@ -123,16 +206,57 @@ public static class DbBootstrapper
 
         if (!await db.Products.AnyAsync())
         {
-            // A handful of everyday drugs so the counter is usable on first launch.
-            db.Products.AddRange(
-                new Product { Name = "Paracetamol 500mg", Manufacturer = "Generic", PackSize = "15 TAB", GstRate = 12m, RackLocation = "A1", ReorderLevel = 100 },
-                new Product { Name = "Amoxicillin 500mg", Manufacturer = "Generic", PackSize = "10 CAP", GstRate = 12m, Schedule = DrugSchedule.H, RackLocation = "A2", ReorderLevel = 50 },
-                new Product { Name = "Cetirizine 10mg", Manufacturer = "Generic", PackSize = "10 TAB", GstRate = 12m, RackLocation = "B1", ReorderLevel = 50 },
-                new Product { Name = "Pantoprazole 40mg", Manufacturer = "Generic", PackSize = "15 TAB", GstRate = 12m, RackLocation = "B2", ReorderLevel = 50 },
-                new Product { Name = "ORS Powder", Manufacturer = "Generic", PackSize = "21.8 G", GstRate = 5m, RackLocation = "C1", ReorderLevel = 30 },
-                new Product { Name = "Cough Syrup 100ml", Manufacturer = "Generic", PackSize = "100 ML", GstRate = 12m, RackLocation = "C2", ReorderLevel = 20 });
+            var catalogue = StarterCatalogue();
+
+            // The catalogue is keyed on brand, maker and pack, and a unique index
+            // enforces it. Seeding is a way into the catalogue like any other, so
+            // it sets the key — without it all six collide on an empty one and
+            // the application cannot open its own database.
+            foreach (var product in catalogue) product.SearchKey = product.BuildKey();
+
+            db.Products.AddRange(catalogue);
         }
 
         await db.SaveChangesAsync();
     }
+
+    /// <summary>
+    /// A handful of everyday drugs so the counter is usable on first launch.
+    ///
+    /// UnitsPerPack is stated on every one of them. Leaving it at its default of
+    /// 1 while the pack size says "15 TAB" makes the shop sell whole strips to
+    /// anyone who asks for tablets, at fifteen times the price, and nothing
+    /// anywhere reports an error.
+    /// </summary>
+    public static Product[] StarterCatalogue() =>
+    [
+        new Product { Name = "Paracetamol 500mg", GenericName = "Paracetamol", Manufacturer = "Generic",
+                      PackSize = "15 TAB", UnitsPerPack = 15, AllowLooseSale = true,
+                      GstRate = 12m, RackLocation = "A1", ReorderLevel = 100 },
+
+        new Product { Name = "Amoxicillin 500mg", GenericName = "Amoxicillin", Manufacturer = "Generic",
+                      PackSize = "10 CAP", UnitsPerPack = 10, AllowLooseSale = true,
+                      DispensingUnit = DispensingUnit.Capsule,
+                      GstRate = 12m, Schedule = DrugSchedule.H, RackLocation = "A2", ReorderLevel = 50 },
+
+        new Product { Name = "Cetirizine 10mg", GenericName = "Cetirizine", Manufacturer = "Generic",
+                      PackSize = "10 TAB", UnitsPerPack = 10, AllowLooseSale = true,
+                      GstRate = 12m, RackLocation = "B1", ReorderLevel = 50 },
+
+        new Product { Name = "Pantoprazole 40mg", GenericName = "Pantoprazole", Manufacturer = "Generic",
+                      PackSize = "15 TAB", UnitsPerPack = 15, AllowLooseSale = true,
+                      GstRate = 12m, RackLocation = "B2", ReorderLevel = 50 },
+
+        // A sachet and a bottle really are one unit each — half of either is
+        // not something a shop can hand over.
+        new Product { Name = "ORS Powder", GenericName = "Oral rehydration salts", Manufacturer = "Generic",
+                      PackSize = "21.8 G", UnitsPerPack = 1, AllowLooseSale = false,
+                      DispensingUnit = DispensingUnit.Sachet,
+                      GstRate = 5m, RackLocation = "C1", ReorderLevel = 30 },
+
+        new Product { Name = "Cough Syrup 100ml", GenericName = "Dextromethorphan", Manufacturer = "Generic",
+                      PackSize = "100 ML", UnitsPerPack = 1, AllowLooseSale = false,
+                      DispensingUnit = DispensingUnit.Bottle,
+                      GstRate = 12m, RackLocation = "C2", ReorderLevel = 20 }
+    ];
 }

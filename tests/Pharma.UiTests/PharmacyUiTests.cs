@@ -4,8 +4,8 @@ namespace Pharma.UiTests;
 /// The money path, driven through the UI: create a medicine, receive stock,
 /// sell it, and check the printed-total arithmetic on screen.
 /// </summary>
-[Collection("ui")]
-public class PharmacyUiTests(AppFixture app)
+
+public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
     private string CreateMedicineWithStock(string suffix, decimal gstRate, int quantity, decimal mrp)
     {
@@ -22,7 +22,13 @@ public class PharmacyUiTests(AppFixture app)
             () => app.TextOf("ProductsStatus").Contains("saved", StringComparison.OrdinalIgnoreCase),
             "medicine to save");
 
-        // Saving selects the new medicine, so the stock form applies to it.
+        // Stock now lives on its own screen; find the medicine there.
+        app.Navigate("NavInventory", "Inventory");
+        app.Type("InventorySearch", name);
+        app.Click("InventorySearchButton");
+        AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine in inventory");
+        app.Grid("InventoryProductsGrid").Rows[0].Select();
+
         app.Type("StockBatchNo", $"B{suffix}");
         app.Type("StockQuantity", quantity.ToString());
         app.Type("StockPurchaseRate", (mrp * 0.7m).ToString("0.00"));
@@ -30,7 +36,7 @@ public class PharmacyUiTests(AppFixture app)
         app.Click("StockAdd");
 
         AppFixture.WaitUntil(
-            () => app.TextOf("ProductsStatus").Contains("added to batch", StringComparison.OrdinalIgnoreCase),
+            () => app.TextOf("InventoryStatus").Contains("added to batch", StringComparison.OrdinalIgnoreCase),
             "stock to be added");
 
         return name;
@@ -42,6 +48,7 @@ public class PharmacyUiTests(AppFixture app)
         var suffix = DateTime.Now.ToString("HHmmssfff");
         var name = CreateMedicineWithStock(suffix, gstRate: 12m, quantity: 100, mrp: 50m);
 
+        app.Navigate("NavProducts", "Medicines");
         app.Type("ProductSearch", name);
         app.Click("ProductsSearchButton");
 
@@ -50,7 +57,7 @@ public class PharmacyUiTests(AppFixture app)
         var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
 
         Assert.Equal(name, cells[0]);
-        Assert.Equal("100", cells[6]);   // stock on hand
+        Assert.Equal("100", cells[8]);   // stock on hand; 7 is units per pack
     }
 
     [Fact]
@@ -63,12 +70,9 @@ public class PharmacyUiTests(AppFixture app)
         app.Navigate("NavSale", "Pharmacy counter");
 
         app.Type("SaleSearch", name);
-        app.Click("SaleFind");
 
         AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine to be found");
         app.ListBox("SaleMatches").Items[0].Select();
-
-        AppFixture.WaitUntil(() => app.ComboBox("SaleBatch").SelectedItems.Length == 1, "a batch to be chosen");
 
         app.Type("SaleQuantity", "10");
         app.Click("SaleAddLine");
@@ -88,10 +92,8 @@ public class PharmacyUiTests(AppFixture app)
         app.Navigate("NavSale", "Pharmacy counter");
 
         app.Type("SaleSearch", name);
-        app.Click("SaleFind");
         AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine to be found");
         app.ListBox("SaleMatches").Items[0].Select();
-        AppFixture.WaitUntil(() => app.ComboBox("SaleBatch").SelectedItems.Length == 1, "a batch to be chosen");
 
         app.Type("SaleCustomerName", "UI Counter Customer");
         app.Type("SaleQuantity", "4");
@@ -115,7 +117,7 @@ public class PharmacyUiTests(AppFixture app)
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine to be listed");
 
         var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
-        Assert.Equal("36", cells[6]);
+        Assert.Equal("36", cells[8]);
     }
 
     [Fact]
@@ -126,10 +128,8 @@ public class PharmacyUiTests(AppFixture app)
 
         app.Navigate("NavSale", "Pharmacy counter");
         app.Type("SaleSearch", name);
-        app.Click("SaleFind");
         AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine to be found");
         app.ListBox("SaleMatches").Items[0].Select();
-        AppFixture.WaitUntil(() => app.ComboBox("SaleBatch").SelectedItems.Length == 1, "a batch to be chosen");
 
         app.Type("SaleQuantity", "2");
         app.Click("SaleAddLine");

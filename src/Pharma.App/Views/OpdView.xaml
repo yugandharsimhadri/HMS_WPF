@@ -5,64 +5,344 @@
 
     <UserControl.Resources>
         <local:BoolToVisibilityConverter x:Key="BoolVis"/>
+
+        <!-- A waiting patient. Token first and large: it is what the desk calls out. -->
+        <DataTemplate x:Key="WaitingTile">
+            <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1"
+                    CornerRadius="9" Padding="9" Margin="0,0,8,8" Width="178">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,6">
+                        <Border DockPanel.Dock="Left" Width="28" Height="28" CornerRadius="7"
+                                Background="#E4EFED" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding TokenNo}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Accent}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Patient.Name}" FontSize="13" FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding PatientLine}" FontSize="11"
+                                       Foreground="{StaticResource InkMuted}"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <TextBlock Text="{Binding Complaint}" FontSize="11" Foreground="{StaticResource InkMuted}"
+                               TextWrapping="Wrap" MaxHeight="28" Margin="0,0,0,6"/>
+
+                    <DockPanel Margin="0,0,0,7">
+                        <Border DockPanel.Dock="Left" CornerRadius="4" Padding="6,1" Margin="0,0,5,0"
+                                Background="{Binding FeePaid, Converter={StaticResource FeeBrush}}">
+                            <TextBlock Text="{Binding FeeBadge}" FontSize="10.5"
+                                       Foreground="{Binding FeePaid, Converter={StaticResource FeeInk}}"/>
+                        </Border>
+                        <TextBlock Text="{Binding WaitedFor}" FontSize="10.5" VerticalAlignment="Center"
+                                   Foreground="{StaticResource InkMuted}"/>
+                    </DockPanel>
+
+                    <Button Content="Consult" Style="{StaticResource BtnPrimary}" Padding="6,6" FontSize="12.5"
+                            Command="{Binding DataContext.ConsultCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"
+                            AutomationProperties.AutomationId="TileConsult"
+                            AutomationProperties.Name="{Binding Patient.Name}"/>
+
+                    <UniformGrid Columns="3" Margin="0,5,0,0">
+                        <Button Content="Fee" Style="{StaticResource BtnGhost}" Margin="0,0,4,0" Padding="2,4"
+                                FontSize="11.5" MinHeight="26"
+                                Command="{Binding DataContext.CollectFeeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileFee"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Done" Style="{StaticResource BtnGhost}" Margin="0,0,4,0" Padding="2,4"
+                                FontSize="11.5" MinHeight="26" ToolTip="Move to completed"
+                                Command="{Binding DataContext.CompleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileDone"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Cancel" Style="{StaticResource BtnDanger}" Padding="2,4"
+                                FontSize="11.5" MinHeight="26"
+                                Command="{Binding DataContext.CancelVisitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileCancel"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Completed: same shape, quieter, and the actions are about paperwork. -->
+        <DataTemplate x:Key="CompletedTile">
+            <Border Background="#FAFBFC" BorderBrush="{StaticResource Border}" BorderThickness="1"
+                    CornerRadius="9" Padding="9" Margin="0,0,8,8" Width="178">
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,5">
+                        <Border DockPanel.Dock="Left" Width="26" Height="26" CornerRadius="7"
+                                Background="#EDF0F2" Margin="0,0,8,0">
+                            <TextBlock Text="{Binding TokenNo}" FontSize="12"
+                                       Foreground="{StaticResource InkMuted}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Patient.Name}" FontSize="12.5" FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding PatientLine}" FontSize="11"
+                                       Foreground="{StaticResource InkMuted}"/>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <TextBlock Text="{Binding Diagnosis}" FontSize="11" Foreground="{StaticResource InkMuted}"
+                               TextWrapping="Wrap" MaxHeight="26" Margin="0,0,0,6"/>
+
+                    <UniformGrid Columns="3">
+                        <Button Content="Rx" Style="{StaticResource BtnGhost}" Margin="0,0,4,0" Padding="2,4"
+                                FontSize="11.5" MinHeight="26" ToolTip="Print prescription"
+                                Command="{Binding DataContext.PrintPrescriptionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileRx"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Receipt" Style="{StaticResource BtnGhost}" Margin="0,0,4,0" Padding="2,4" FontSize="11.5" MinHeight="26"
+                                Command="{Binding DataContext.PrintReceiptCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileReceipt"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Reopen" Style="{StaticResource BtnGhost}" Padding="2,4" FontSize="11.5" MinHeight="26"
+                                ToolTip="Move back to waiting"
+                                Command="{Binding DataContext.ReopenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileReopen"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+        <!-- Same information and the same actions, laid out to fit more people. -->
+        <DataTemplate x:Key="WaitingRow">
+            <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1"
+                    Padding="10,8">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Width="30" Height="30" CornerRadius="6"
+                            Background="#E4EFED" Margin="0,0,10,0">
+                        <TextBlock Text="{Binding TokenNo}" FontSize="13.5" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Accent}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Consult" Style="{StaticResource BtnPrimary}" Padding="10,5" Margin="0,0,4,0"
+                                Command="{Binding DataContext.ConsultCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileConsult"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Fee" Style="{StaticResource BtnGhost}" Padding="9,5" Margin="0,0,4,0"
+                                Command="{Binding DataContext.CollectFeeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileFee"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Done" Style="{StaticResource BtnGhost}" Padding="9,5" Margin="0,0,4,0"
+                                Command="{Binding DataContext.CompleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileDone"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Cancel" Style="{StaticResource BtnDanger}" Padding="9,5"
+                                Command="{Binding DataContext.CancelVisitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileCancel"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                    </StackPanel>
+
+                    <Border DockPanel.Dock="Right" CornerRadius="4" Padding="7,2" Margin="8,0,10,0"
+                            VerticalAlignment="Center"
+                            Background="{Binding FeePaid, Converter={StaticResource FeeBrush}}">
+                        <TextBlock Text="{Binding FeeBadge}" FontSize="11"
+                                   Foreground="{Binding FeePaid, Converter={StaticResource FeeInk}}"/>
+                    </Border>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Patient.Name}" FontSize="13.5" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding RowSummary}" Style="{StaticResource Muted}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="CompletedRow">
+            <Border Background="#FAFBFC" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1"
+                    Padding="10,8">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Width="28" Height="28" CornerRadius="6"
+                            Background="#EDF0F2" Margin="0,0,10,0">
+                        <TextBlock Text="{Binding TokenNo}" FontSize="12.5"
+                                   Foreground="{StaticResource InkMuted}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Rx" Style="{StaticResource BtnGhost}" Padding="9,5" Margin="0,0,4,0"
+                                Command="{Binding DataContext.PrintPrescriptionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileRx"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Receipt" Style="{StaticResource BtnGhost}" Padding="9,5" Margin="0,0,4,0"
+                                Command="{Binding DataContext.PrintReceiptCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileReceipt"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                        <Button Content="Reopen" Style="{StaticResource BtnGhost}" Padding="9,5"
+                                Command="{Binding DataContext.ReopenCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TileReopen"
+                                AutomationProperties.Name="{Binding Patient.Name}"/>
+                    </StackPanel>
+
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                        <TextBlock Text="{Binding Patient.Name}" FontSize="13" FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding Diagnosis}" Style="{StaticResource Muted}"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </DataTemplate>
+
+        <!-- Layout is a user setting, so both columns switch together. -->
+        <Style x:Key="WaitingList" TargetType="ItemsControl">
+            <Setter Property="ItemTemplate" Value="{StaticResource WaitingRow}"/>
+            <Setter Property="ItemsPanel">
+                <Setter.Value><ItemsPanelTemplate><StackPanel/></ItemsPanelTemplate></Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding UseTiles}" Value="True">
+                    <Setter Property="ItemTemplate" Value="{StaticResource WaitingTile}"/>
+                    <Setter Property="ItemsPanel">
+                        <Setter.Value><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CompletedList" TargetType="ItemsControl">
+            <Setter Property="ItemTemplate" Value="{StaticResource CompletedRow}"/>
+            <Setter Property="ItemsPanel">
+                <Setter.Value><ItemsPanelTemplate><StackPanel/></ItemsPanelTemplate></Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding UseTiles}" Value="True">
+                    <Setter Property="ItemTemplate" Value="{StaticResource CompletedTile}"/>
+                    <Setter Property="ItemsPanel">
+                        <Setter.Value><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="18"/>
-            <ColumnDefinition Width="330"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Today's queue -->
-        <Border Grid.Column="0" Style="{StaticResource Card}">
+        <!-- Doctor tabs. One per doctor plus All, so the doctor never repeats on a tile. -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2" BorderBrush="{StaticResource Border}"
+                BorderThickness="0,0,0,1" Margin="0,0,0,14">
             <DockPanel>
-                <DockPanel DockPanel.Dock="Top" LastChildFill="False" Margin="0,0,0,12">
-                    <TextBlock Text="Queue" Style="{StaticResource H2}" VerticalAlignment="Center" Margin="0"/>
-                    <DatePicker DockPanel.Dock="Right" Width="140" Margin="8,0,0,0"
-                                SelectedDate="{Binding Date, Mode=TwoWay}"
-                                AutomationProperties.AutomationId="OpdDate"/>
-                    <Button DockPanel.Dock="Right" Content="Refresh" Style="{StaticResource BtnGhost}"
-                            Command="{Binding RefreshCommand}"/>
-                </DockPanel>
+                <DatePicker DockPanel.Dock="Right" Width="140" Margin="8,0,0,6"
+                            SelectedDate="{Binding Date, Mode=TwoWay}"
+                            AutomationProperties.AutomationId="OpdDate"/>
+                <Button DockPanel.Dock="Right" Content="+ New visit" Style="{StaticResource BtnPrimary}"
+                        Margin="8,0,0,6" Command="{Binding NewVisitCommand}"
+                        AutomationProperties.AutomationId="OpdNewVisit"/>
 
-                <Border DockPanel.Dock="Bottom" Margin="0,12,0,0">
-                    <StackPanel Orientation="Horizontal">
-                        <Button Content="Mark arrived" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
-                                Command="{Binding ArrivedCommand}"/>
-                        <Button Content="Open consultation" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
-                                Command="{Binding ConsultCommand}"
-                                AutomationProperties.AutomationId="OpdConsult"/>
-                        <Button Content="Fee received" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
-                                Command="{Binding CollectFeeCommand}"/>
-                        <Button Content="Cancel visit" Style="{StaticResource BtnDanger}"
-                                Command="{Binding CancelVisitCommand}"/>
-                    </StackPanel>
-                </Border>
-
-                <DataGrid ItemsSource="{Binding Visits}" SelectedItem="{Binding SelectedVisit, Mode=TwoWay}"
-                          AutomationProperties.AutomationId="OpdQueueGrid">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="TOKEN" Binding="{Binding TokenNo}" Width="58"/>
-                        <DataGridTextColumn Header="TIME" Binding="{Binding ScheduledOn, StringFormat=HH:mm}" Width="55"/>
-                        <DataGridTextColumn Header="PATIENT" Binding="{Binding Patient.Name}" Width="*" MinWidth="130"/>
-                        <DataGridTextColumn Header="DOCTOR" Binding="{Binding Doctor.Name}" Width="125"/>
-                        <DataGridTextColumn Header="COMPLAINT" Binding="{Binding Complaint}" Width="145"/>
-                        <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="95"/>
-                        <DataGridTextColumn Header="FEE" Binding="{Binding Fee, StringFormat=N2}" Width="62"/>
-                        <DataGridCheckBoxColumn Header="PAID" Binding="{Binding FeePaid}" Width="46"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Content="All doctors" GroupName="DoctorTab" IsChecked="True"
+                                 Style="{StaticResource DoctorTab}"
+                                 Command="{Binding ShowAllDoctorsCommand}"
+                                 AutomationProperties.AutomationId="OpdTabAll"/>
+                    <ItemsControl ItemsSource="{Binding Doctors}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <RadioButton Content="{Binding Name}" GroupName="DoctorTab"
+                                             Style="{StaticResource DoctorTab}"
+                                             AutomationProperties.Name="{Binding Name}"
+                                             Command="{Binding DataContext.SelectDoctorTabCommand,
+                                                       RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                             CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
             </DockPanel>
         </Border>
 
-        <!-- Book a visit -->
-        <Border Grid.Column="2" Style="{StaticResource Card}">
+        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Status}" Style="{StaticResource Muted}"
+                   TextWrapping="Wrap" Margin="0,0,0,10"
+                   AutomationProperties.AutomationId="OpdStatus"/>
+
+        <!-- Waiting and completed, side by side on one page. -->
+        <Grid Grid.Row="2" Grid.Column="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource Card}" Padding="14">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBlock Text="Waiting" Style="{StaticResource H2}" Margin="0"/>
+                        <TextBlock Text="{Binding Waiting.Count}" Style="{StaticResource H2}" Margin="6,0,0,0"
+                                   Foreground="{StaticResource Accent}"
+                                   AutomationProperties.AutomationId="OpdWaitingCount"/>
+                    </DockPanel>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Waiting}" Style="{StaticResource WaitingList}"
+                                      AutomationProperties.AutomationId="OpdWaitingList"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="14">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBlock Text="Completed" Style="{StaticResource H2}" Margin="0"/>
+                        <TextBlock Text="{Binding Completed.Count}" Style="{StaticResource H2}" Margin="6,0,0,0"
+                                   Foreground="{StaticResource InkMuted}"
+                                   AutomationProperties.AutomationId="OpdCompletedCount"/>
+                    </DockPanel>
+
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Completed}" Style="{StaticResource CompletedList}"
+                                      AutomationProperties.AutomationId="OpdCompletedList"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Booking, only while it is being used. -->
+        <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource Card}" Width="330" Margin="14,0,0,0"
+                Visibility="{Binding IsBooking, Converter={StaticResource BoolVis}}">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
-                    <TextBlock Text="Book a visit" Style="{StaticResource H2}"/>
+                    <DockPanel Margin="0,0,0,8">
+                        <TextBlock Text="Book a visit" Style="{StaticResource H2}" Margin="0"/>
+                        <Button Content="✕" DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                Foreground="{StaticResource InkMuted}"
+                                Command="{Binding CloseBookingCommand}"
+                                AutomationProperties.AutomationId="OpdCloseBooking"/>
+                    </DockPanel>
 
-                    <TextBlock Text="1 — Find the patient" Style="{StaticResource Label}" Margin="0,4,0,4"/>
+                    <TextBlock Text="1 — Find the patient" Style="{StaticResource Label}" Margin="0,0,0,4"/>
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Content="Find" Style="{StaticResource BtnGhost}"
                                 Margin="8,0,0,10" Command="{Binding FindCommand}"
@@ -77,7 +357,8 @@
                     </DockPanel>
 
                     <ListBox ItemsSource="{Binding Matches}" SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
-                             DisplayMemberPath="Display" Height="150" Margin="0,0,0,8"
+                             DisplayMemberPath="Display" Height="132" Margin="0,0,0,8"
+                             AutomationProperties.AutomationId="OpdMatches"
                              Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
 
                     <Button Content="+ New patient" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
@@ -93,11 +374,10 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="60"/>
                                 <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="88"/>
                             </Grid.ColumnDefinitions>
-
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Phone" Style="{StaticResource Label}"/>
                                 <TextBox Text="{Binding NewPhone, UpdateSourceTrigger=PropertyChanged}"
@@ -118,18 +398,11 @@
                                 Margin="0,0,0,10" Command="{Binding CancelNewPatientCommand}"/>
                     </StackPanel>
 
-                    <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
-
-                    <TextBlock Text="2 — Doctor and time" Style="{StaticResource Label}" Margin="0,0,0,4"/>
-                    <!-- ItemTemplate rather than DisplayMemberPath: the selected item in a
-                         templated ComboBox renders through SelectionBoxItemTemplate, which
-                         only picks up an explicit ItemTemplate. -->
+                    <TextBlock Text="2 — Doctor and time" Style="{StaticResource Label}" Margin="0,4,0,4"/>
                     <ComboBox ItemsSource="{Binding Doctors}" SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
                               AutomationProperties.AutomationId="OpdDoctor">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Name}"/>
-                            </DataTemplate>
+                            <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
@@ -144,22 +417,29 @@
                             <TextBox Text="{Binding Time, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="Consultation fee" Style="{StaticResource Label}"/>
+                            <TextBlock Text="Fee" Style="{StaticResource Label}"/>
                             <TextBox Text="{Binding Fee, UpdateSourceTrigger=PropertyChanged}"/>
                         </StackPanel>
                     </Grid>
 
                     <TextBlock Text="3 — Complaint (optional)" Style="{StaticResource Label}" Margin="0,0,0,4"/>
                     <TextBox Text="{Binding Complaint, UpdateSourceTrigger=PropertyChanged}"
-                             AcceptsReturn="True" Height="54" TextWrapping="Wrap"/>
+                             AcceptsReturn="True" Height="50" TextWrapping="Wrap"/>
 
-                    <Button Content="Book visit" Style="{StaticResource BtnPrimary}" Height="42"
-                            Command="{Binding BookCommand}"
-                            AutomationProperties.AutomationId="OpdBook"/>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="Clear" Style="{StaticResource BtnGhost}"
+                                MinHeight="44" MinWidth="80" Margin="8,0,0,0"
+                                Command="{Binding ClearBookingCommand}"
+                                ToolTip="Empties this form. No visit is booked until you press Book visit."
+                                AutomationProperties.AutomationId="OpdClearBooking"/>
+                        <Button Content="Book visit" Style="{StaticResource BtnPrimaryLarge}"
+                                Command="{Binding BookCommand}"
+                                AutomationProperties.AutomationId="OpdBook"/>
+                    </DockPanel>
 
-                    <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"
-                               TextWrapping="Wrap" Margin="0,10,0,0"
-                               AutomationProperties.AutomationId="OpdStatus"/>
+                    <TextBlock Text="Fee taken as" Style="{StaticResource Label}" Margin="0,12,0,3"/>
+                    <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding FeePaymentMode, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="OpdFeeMode"/>
                 </StackPanel>
             </ScrollViewer>
         </Border>

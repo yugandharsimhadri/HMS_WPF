@@ -1,0 +1,241 @@
+<UserControl x:Class="Pharma.App.Views.InventoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="18"/>
+            <ColumnDefinition Width="380"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: which medicine, and what is on the shelf -->
+        <DockPanel Grid.Column="0">
+            <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Import supplier bill" Style="{StaticResource BtnGhost}"
+                            Margin="8,0,0,0" Command="{Binding ImportBillCommand}"
+                            ToolTip="Load a supplier's file instead of typing each medicine"
+                            AutomationProperties.AutomationId="InventoryImport"/>
+                    <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
+                            Margin="8,0,0,0" Command="{Binding FindCommand}"
+                            AutomationProperties.AutomationId="InventorySearchButton"/>
+                    <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
+                             Margin="0" VerticalAlignment="Center"
+                             ToolTip="Search by brand, drug, maker or rack"
+                             AutomationProperties.AutomationId="InventorySearch">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding FindCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+                </DockPanel>
+            </Border>
+
+            <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14" Height="230">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Medicines" Style="{StaticResource H2}"/>
+                    <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="InventoryProductsGrid">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}" Width="*" MinWidth="160"/>
+                            <DataGridTextColumn Header="DRUG" Binding="{Binding GenericName}" Width="150"/>
+                            <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="80"/>
+                            <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="75"/>
+                            <DataGridTextColumn Header="ON HAND" Binding="{Binding StockOnHand}" Width="80"/>
+                            <DataGridTextColumn Header="RACK" Binding="{Binding RackLocation}" Width="60"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Recent corrections" Style="{StaticResource H2}"/>
+                    <DataGrid ItemsSource="{Binding Adjustments}"
+                              AutomationProperties.AutomationId="AdjustmentsGrid">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="WHEN" Binding="{Binding AdjustedOn, StringFormat='dd MMM HH:mm'}" Width="100"/>
+                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*" MinWidth="140"/>
+                            <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="90"/>
+                            <DataGridTextColumn Header="WAS" Binding="{Binding QuantityBefore}" Width="55"/>
+                            <DataGridTextColumn Header="NOW" Binding="{Binding QuantityAfter}" Width="55"/>
+                            <DataGridTextColumn Header="CHANGE" Binding="{Binding Direction}" Width="70"/>
+                            <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="95"/>
+                            <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="150"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Border>
+        </DockPanel>
+
+        <!-- Right: receive, then correct -->
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="Receive stock" Style="{StaticResource H2}"/>
+
+                        <!-- Only visible when the pack size and units-per-pack disagree. -->
+                        <Border Background="#FFF4E5" BorderBrush="#F5B742" BorderThickness="1"
+                                CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
+                                Visibility="{Binding PackWarning, Converter={StaticResource TextToVisible}}">
+                            <TextBlock Text="{Binding PackWarning}" TextWrapping="Wrap"
+                                       Foreground="#7A4B00" FontSize="12"
+                                       AutomationProperties.AutomationId="InventoryPackWarning"/>
+                        </Border>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Batch no" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding BatchNo, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="StockBatchNo"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Expiry" Style="{StaticResource Label}"/>
+                                <DatePicker SelectedDate="{Binding ExpiryDate, Mode=TwoWay}"
+                                            AutomationProperties.AutomationId="StockExpiry"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Packs" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding Packs, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Strips, boxes or bottles — not individual tablets"
+                                         AutomationProperties.AutomationId="StockQuantity"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Free" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding FreePacks, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="Scheme packs, the +1 in 10+1"
+                                         AutomationProperties.AutomationId="StockFreeQuantity"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Rate" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding PurchaseRate, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="StockPurchaseRate"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="6">
+                                <TextBlock Text="MRP" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding Mrp, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="StockMrp"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Supplier" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding SupplierName, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Supplier bill no" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding SupplierInvoiceNo, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Packs in, units out, spelled out before it is saved. -->
+                        <TextBlock Text="{Binding IntakePreview}" Style="{StaticResource Muted}"
+                                   TextWrapping="Wrap" Margin="0,0,0,8"
+                                   AutomationProperties.AutomationId="StockIntakePreview"/>
+
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Clear" Style="{StaticResource BtnGhost}"
+                                    Margin="8,0,0,0" MinWidth="80"
+                                    Command="{Binding ClearReceiveCommand}"
+                                    AutomationProperties.AutomationId="StockClear"/>
+                            <Button Content="Add stock" Style="{StaticResource BtnPrimary}"
+                                    Command="{Binding ReceiveStockCommand}"
+                                    AutomationProperties.AutomationId="StockAdd"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+                    <StackPanel>
+                        <TextBlock Text="Batches on the shelf" Style="{StaticResource H2}"/>
+                        <ItemsControl ItemsSource="{Binding Batches}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Display}" Style="{StaticResource Muted}"
+                                               Margin="0,0,0,3" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Correct the stock count" Style="{StaticResource H2}"/>
+
+                        <TextBlock Text="Batch" Style="{StaticResource Label}"/>
+                        <ComboBox ItemsSource="{Binding Batches}" SelectedItem="{Binding SelectedBatch, Mode=TwoWay}"
+                                  AutomationProperties.AutomationId="CorrectBatch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Display}"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="110"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="True count" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding CorrectedQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="What is actually on the shelf, in units"
+                                         AutomationProperties.AutomationId="CorrectQuantity"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Reason" Style="{StaticResource Label}"/>
+                                <ComboBox ItemsSource="{Binding AdjustmentReasons}"
+                                          SelectedItem="{Binding AdjustmentReason, Mode=TwoWay}"
+                                          AutomationProperties.AutomationId="CorrectReason"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="Notes" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding AdjustmentNotes, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.AutomationId="CorrectNotes"/>
+
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="Clear" Style="{StaticResource BtnGhost}"
+                                    Margin="8,0,0,0" MinWidth="80"
+                                    Command="{Binding ClearCorrectionCommand}"
+                                    AutomationProperties.AutomationId="CorrectClear"/>
+                            <Button Content="Correct count" Style="{StaticResource BtnPrimary}"
+                                    Command="{Binding CorrectStockCommand}"
+                                    AutomationProperties.AutomationId="CorrectStock"/>
+                        </DockPanel>
+
+                        <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"
+                                   TextWrapping="Wrap" Margin="0,12,0,0"
+                                   AutomationProperties.AutomationId="InventoryStatus"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

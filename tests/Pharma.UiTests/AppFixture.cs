@@ -18,6 +18,7 @@ public class AppFixture : IDisposable
     public UIA3Automation Automation { get; }
     public Window MainWindow { get; }
     public string DatabasePath { get; }
+    public string LogDirectory { get; private set; } = "";
 
     public AppFixture()
     {
@@ -28,6 +29,10 @@ public class AppFixture : IDisposable
 
         var startInfo = new ProcessStartInfo(FindExecutable()) { UseShellExecute = false };
         startInfo.Environment[DbBootstrapper.PathOverrideVariable] = DatabasePath;
+
+        // Keep test runs out of the clinic's real log folder.
+        LogDirectory = Path.Combine(Path.GetTempPath(), $"twinkle-ui-logs-{Guid.NewGuid():N}");
+        startInfo.Environment[AppLog.DirectoryOverrideVariable] = LogDirectory;
 
         _app = Application.Launch(startInfo);
         Automation = new UIA3Automation();
@@ -120,8 +125,57 @@ public class AppFixture : IDisposable
     /// <summary>Clicks a left-hand nav button and waits for the page header to change.</summary>
     public void Navigate(string navAutomationId, string expectedTitle)
     {
+        // Nothing can be clicked behind a modal, so clear any the previous test
+        // left behind before trying.
+        DismissModals();
+
         Button(navAutomationId).Invoke();
         WaitUntil(() => TextOf("PageTitle") == expectedTitle, $"page '{expectedTitle}'");
+    }
+
+    /// <summary>
+    /// Selects the grid row containing the given text. Tests share one app and one
+    /// database, so addressing a row by position picks up whatever another test
+    /// happened to add.
+    /// </summary>
+    public void SelectRowByText(string gridAutomationId, string text)
+    {
+        AppFixture.WaitUntil(() => FindRow(gridAutomationId, text) is not null, $"a row containing '{text}'");
+
+        var row = FindRow(gridAutomationId, text)
+                  ?? throw new InvalidOperationException($"No row in {gridAutomationId} contains '{text}'.");
+
+        row.Select();
+    }
+
+    private FlaUI.Core.AutomationElements.GridRow? FindRow(string gridAutomationId, string text)
+        => Grid(gridAutomationId).Rows
+            .FirstOrDefault(r => r.Cells.Any(c => (c.Value ?? "").Contains(text, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>How many tiles are in a queue column.</summary>
+    public int TileCount(string listAutomationId)
+        => Require(listAutomationId).FindAllDescendants(cf => cf.ByAutomationId("TileConsult")).Length;
+
+    /// <summary>
+    /// Finds a tile action by what it does and who it belongs to. Tiles have no
+    /// index a test can rely on — the queue reorders as people are seen — so every
+    /// tile button carries the patient's name as its automation name.
+    /// </summary>
+    public AutomationElement? TileAction(string listAutomationId, string action, string patientName)
+        => Find(listAutomationId)?
+            .FindAllDescendants(cf => cf.ByAutomationId(action))
+            .FirstOrDefault(e => string.Equals(e.Name, patientName, StringComparison.Ordinal));
+
+    public bool HasTile(string listAutomationId, string patientName)
+        => TileAction(listAutomationId, listAutomationId == "OpdWaitingList" ? "TileConsult" : "TileRx",
+                      patientName) is not null;
+
+    public void ClickTile(string listAutomationId, string action, string patientName)
+    {
+        WaitUntil(() => TileAction(listAutomationId, action, patientName) is not null,
+                  $"the {action} button on {patientName}'s tile");
+
+        TileAction(listAutomationId, action, patientName)!.AsButton().Invoke();
     }
 
     public void Type(string automationId, string value)
@@ -132,6 +186,66 @@ public class AppFixture : IDisposable
     }
 
     public void Click(string automationId) => Button(automationId).Invoke();
+
+    // ── The consultation layer ─────────────────────────────────────────────
+    // It is part of the main window rather than a window of its own, so that it
+    // cannot be lost behind another application.
+
+    public bool IsConsultationOpen => Find("ConsultationHeader") is not null;
+
+    public void WaitForConsultation(string patient)
+        => WaitUntil(() => TextOf("ConsultationHeader").Contains(patient),
+                     $"the consultation for {patient}");
+
+    /// <summary>Closes it, answering the unsaved-changes question if it appears.</summary>
+    public void CloseConsultation()
+    {
+        if (!IsConsultationOpen) return;
+
+        Click("ConsultationClose");
+        ConfirmDiscard();
+
+        WaitUntil(() => !IsConsultationOpen, "the consultation to close");
+    }
+
+    /// <summary>Says yes to "close and lose them?" if the app asks.</summary>
+    private void ConfirmDiscard()
+    {
+        Thread.Sleep(250);
+
+        var dialog = MainWindow.ModalWindows.FirstOrDefault();
+        var yes = dialog?.FindFirstDescendant(cf => cf.ByName("Yes"))?.AsButton();
+
+        yes?.Invoke();
+    }
+
+    /// <summary>
+    /// Closes anything modal left open. The suite shares one app, so a test that
+    /// fails while a preview or a message box is up would otherwise poison every
+    /// test after it.
+    /// </summary>
+    public void DismissModals()
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            var modal = MainWindow.ModalWindows.FirstOrDefault();
+            if (modal is null) return;
+
+            try
+            {
+                var close = modal.FindFirstDescendant(cf => cf.ByAutomationId("PreviewClose"))?.AsButton();
+
+                if (close is not null) close.Invoke();
+                else modal.AsWindow().Close();
+            }
+            catch (Exception)
+            {
+                // Already gone, or closing raced with the app.
+            }
+
+            Thread.Sleep(250);
+        }
+    }
 
     public static void WaitUntil(Func<bool> condition, string what, int timeoutSeconds = 15)
     {
@@ -172,12 +286,20 @@ public class AppFixture : IDisposable
         {
             try { File.Delete(DatabasePath + suffix); } catch (IOException) { }
         }
+
+        try { Directory.Delete(LogDirectory, recursive: true); } catch (Exception) { }
     }
 }
 
 /// <summary>
-/// UI Automation drives one desktop, so every UI test shares a single app
-/// instance and runs sequentially.
+/// Each test class gets its own application and its own database.
+///
+/// A single instance shared by every class was cheaper to launch but made the
+/// suite unrepeatable: one test failing with a modal open left it on screen for
+/// the next class, and data created by one class changed what another class saw.
+/// Classes still run one at a time — UI Automation drives one desktop.
 /// </summary>
-[CollectionDefinition("ui")]
-public class UiCollection : ICollectionFixture<AppFixture>;
+public abstract class UiTestBase(AppFixture app) : IClassFixture<AppFixture>
+{
+    protected readonly AppFixture App = app;
+}

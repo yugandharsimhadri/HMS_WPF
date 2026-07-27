@@ -48,6 +48,48 @@
                             Command="{Binding ExportExcelCommand}" AutomationProperties.AutomationId="ReportsExportExcel"/>
                 </StackPanel>
 
+                <TabItem Header="Day book">
+                  <DockPanel Margin="0,10,0,0">
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                        <TextBlock DockPanel.Dock="Left" Text="Find any bill" VerticalAlignment="Center"
+                                   Style="{StaticResource Label}" Margin="0,0,10,0"/>
+                        <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,0" Command="{Binding FindBillCommand}"
+                                AutomationProperties.AutomationId="FindBillButton"/>
+                        <TextBox Text="{Binding BillSearch, UpdateSourceTrigger=PropertyChanged}" Margin="0"
+                                 ToolTip="Bill number or customer name — searches every date"
+                                 AutomationProperties.AutomationId="BillSearchBox">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding FindBillCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </DockPanel>
+
+                    <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+                        <Button DockPanel.Dock="Left" Content="Reprint selected bill"
+                                Style="{StaticResource BtnGhost}" Margin="0,0,12,0"
+                                Command="{Binding ReprintBillCommand}"
+                                AutomationProperties.AutomationId="ReprintBill"/>
+                        <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" VerticalAlignment="Center"
+                                   AutomationProperties.AutomationId="ReportsStatus"/>
+                    </DockPanel>
+                    <DataGrid ItemsSource="{Binding Sales}" SelectedItem="{Binding SelectedSale, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="DayBookGrid">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
+                            <DataGridTextColumn Header="TIME" Binding="{Binding BillDate, StringFormat=HH:mm}" Width="70"/>
+                            <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="*"/>
+                            <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="160"/>
+                            <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}" Width="60"/>
+                            <DataGridTextColumn Header="TAXABLE" Binding="{Binding TaxableAmount, StringFormat=N2}" Width="90"/>
+                            <DataGridTextColumn Header="CGST" Binding="{Binding CgstAmount, StringFormat=N2}" Width="80"/>
+                            <DataGridTextColumn Header="SGST" Binding="{Binding SgstAmount, StringFormat=N2}" Width="80"/>
+                            <DataGridTextColumn Header="NET" Binding="{Binding NetAmount, StringFormat=N2}" Width="100"/>
+                            <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                  </DockPanel>
+                </TabItem>
                 <TabControl BorderThickness="0" Background="Transparent"
                             SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
                             AutomationProperties.AutomationId="ReportsTabs">
@@ -131,6 +173,26 @@
                         </DockPanel>
                     </TabItem>
 
+                <TabItem Header="Expiring soon">
+                    <DockPanel Margin="0,10,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                   TextWrapping="Wrap"
+                                   Text="Only sealed packs can go back to the distributor — an opened strip cannot. The returnable column separates the two."/>
+                        <DataGrid ItemsSource="{Binding Expiring}"
+                                  AutomationProperties.AutomationId="ExpiringGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
+                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="120"/>
+                                <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=dd MMM yyyy}" Width="120"/>
+                                <DataGridTextColumn Header="DAYS" Binding="{Binding DaysToExpiry}" Width="60"/>
+                                <DataGridTextColumn Header="QTY LEFT" Binding="{Binding QtyOnHand}" Width="90"/>
+                                <DataGridTextColumn Header="RETURNABLE" Binding="{Binding Returnable}" Width="210"/>
+                                <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
+                                <DataGridTextColumn Header="SUPPLIER" Binding="{Binding SupplierName}" Width="160"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
                     <TabItem Header="OPD register">
                         <DockPanel Margin="0,10,0,0">
                             <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0"
@@ -200,6 +262,64 @@
                         </DockPanel>
                     </TabItem>
 
+                <TabItem Header="Part packs">
+                    <DockPanel Margin="0,10,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                   TextWrapping="Wrap"
+                                   Text="Opened strips with less than a full pack left. Nobody asks for exactly three, so these sit until they expire — sell them first, or write them off deliberately under Inventory → Correct the stock count."/>
+                        <DataGrid ItemsSource="{Binding PartPacks}"
+                                  AutomationProperties.AutomationId="PartPacksGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
+                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="130"/>
+                                <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=MMM yyyy}" Width="110"/>
+                                <DataGridTextColumn Header="LEFT" Binding="{Binding QtyOnHand}" Width="80"/>
+                                <DataGridTextColumn Header="OF A PACK OF" Binding="{Binding UnitsPerPack}" Width="120"/>
+                                <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Stock to reconcile">
+                    <DockPanel Margin="0,10,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                   TextWrapping="Wrap"
+                                   Text="Put on the shelf at the counter to serve a patient, with no supplier bill behind it yet. Purchases will not tie out against sales until each of these is matched to the bill when it arrives. A batch number starting CTR- was allocated by the system, not printed on the pack."/>
+                        <DataGrid ItemsSource="{Binding ToReconcile}"
+                                  AutomationProperties.AutomationId="ReconcileGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ADDED" Binding="{Binding ReceivedOn, StringFormat=dd MMM yyyy}" Width="110"/>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
+                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="150"/>
+                                <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=MMM yyyy}" Width="100"/>
+                                <DataGridTextColumn Header="ON HAND" Binding="{Binding QtyOnHand}" Width="90"/>
+                                <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
+                                <DataGridTextColumn Header="RATE PAID" Binding="{Binding PurchaseRate, StringFormat=N2}" Width="100"/>
+                                <DataGridTextColumn Header="SUPPLIER" Binding="{Binding SupplierName}" Width="150"/>
+                                <DataGridTextColumn Header="THEIR BILL" Binding="{Binding SupplierInvoiceNo}" Width="120"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Schedule H1 register">
+                    <DockPanel Margin="0,10,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                   Text="Statutory record of Schedule H1 sales. Retain for three years."/>
+                        <DataGrid ItemsSource="{Binding H1Register}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="DATE" Binding="{Binding SoldOn, StringFormat='dd MMM yyyy HH:mm'}" Width="160"/>
+                                <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*"/>
+                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="120"/>
+                                <DataGridTextColumn Header="QTY" Binding="{Binding Quantity}" Width="70"/>
+                                <DataGridTextColumn Header="PATIENT" Binding="{Binding PatientName}" Width="180"/>
+                                <DataGridTextColumn Header="PRESCRIBER" Binding="{Binding DoctorName}" Width="180"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
                     <TabItem Header="Low stock">
                         <Grid Margin="0,10,0,0">
                             <DataGrid ItemsSource="{Binding LowStock}" AutomationProperties.AutomationId="ReportsLowStockGrid">
