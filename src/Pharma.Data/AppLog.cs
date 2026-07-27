@@ -99,29 +99,47 @@ public static class AppLog
     /// and the one time anyone needs the log is the one time it must not be a
     /// gigabyte that Notepad refuses.
     /// </summary>
+    private static string? _currentFile;
+    private static string _currentDay = "";
+    private static int _sinceSizeCheck;
+
     public static string CurrentFile
     {
         get
         {
-            var today = Path.Combine(LogDirectory, $"twinkle-{DateTime.Now:yyyyMMdd}.log");
+            var day = DateTime.Now.ToString("yyyyMMdd");
+
+            // Cached. Working this out meant a File.Exists and a FileInfo.Length
+            // on every single line written, and with tracing on that is several
+            // file system calls per database call. The size is re-checked
+            // periodically instead, which is soon enough for a 10 MB limit.
+            if (_currentFile is not null && day == _currentDay && ++_sinceSizeCheck < 200)
+                return _currentFile;
+
+            _currentDay = day;
+            _sinceSizeCheck = 0;
+
+            var today = Path.Combine(LogDirectory, $"twinkle-{day}.log");
             var limit = Math.Max(1, AppConfig.Current.LogFileMaxMb) * 1024L * 1024L;
 
             try
             {
-                if (!File.Exists(today) || new FileInfo(today).Length < limit) return today;
+                if (!File.Exists(today) || new FileInfo(today).Length < limit)
+                    return _currentFile = today;
 
                 for (var part = 2; part < 1000; part++)
                 {
-                    var rolled = Path.Combine(LogDirectory, $"twinkle-{DateTime.Now:yyyyMMdd}-{part}.log");
+                    var rolled = Path.Combine(LogDirectory, $"twinkle-{day}-{part}.log");
 
-                    if (!File.Exists(rolled) || new FileInfo(rolled).Length < limit) return rolled;
+                    if (!File.Exists(rolled) || new FileInfo(rolled).Length < limit)
+                        return _currentFile = rolled;
                 }
 
-                return today;
+                return _currentFile = today;
             }
             catch (IOException)
             {
-                return today;
+                return _currentFile = today;
             }
         }
     }
