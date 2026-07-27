@@ -10,7 +10,6 @@
 
     <Window.Resources>
         <local:NavBrushConverter x:Key="NavBrush"/>
-        <BooleanToVisibilityConverter x:Key="BoolToVisible"/>
 
         <DataTemplate DataType="{x:Type vm:ConsultationViewModel}">
             <views:ConsultationView/>

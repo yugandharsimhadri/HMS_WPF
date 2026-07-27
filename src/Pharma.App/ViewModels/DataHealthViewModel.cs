@@ -125,10 +125,12 @@ public partial class DataHealthViewModel(DataHealthService health) : ObservableO
         {
             var repaired = await health.RepairAsync(chosen, Environment.UserName);
 
+            // Re-scan first: it clears the status, and the operator needs to be
+            // told what happened, not what was happening before.
+            await ScanAsync();
+
             Status = $"{repaired} put right. Stock that was re-counted is recorded " +
                      $"under Inventory → Recent corrections.";
-
-            await ScanAsync();
         }, "Repairing the data", m => Status = m);
 
         Busy = false;

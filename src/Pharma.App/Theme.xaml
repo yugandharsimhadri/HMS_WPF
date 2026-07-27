@@ -6,6 +6,11 @@
     <local:FeeInkConverter x:Key="FeeInk"/>
     <local:TextToVisibilityConverter x:Key="TextToVisible"/>
 
+    <!-- Application-wide, because a StaticResource declared on one window is
+         invisible to another. Declaring it on MainWindow made the data health
+         grid throw a XamlParseException as its template loaded. -->
+    <BooleanToVisibilityConverter x:Key="BoolToVisible"/>
+
     <!-- Palette -->
     <SolidColorBrush x:Key="Bg"          Color="#F4F6F8"/>
     <SolidColorBrush x:Key="Surface"     Color="#FFFFFF"/>

@@ -42,9 +42,19 @@ public static class DbBootstrapper
     /// The application was called ClinicDesk before it was branded. Carry an
     /// existing database over on first launch rather than silently starting empty.
     /// </summary>
+    /// <remarks>
+    /// It carries over <b>once</b>, and leaves a marker saying so. Without the
+    /// marker it fired every time the database was missing, so deleting the
+    /// database to start again silently resurrected the old one instead —
+    /// complete with the records the shop was trying to be rid of, and with the
+    /// copied file's original timestamp, which made it look untouched.
+    /// </remarks>
     private static void MoveLegacyDatabase(string newPath)
     {
         if (File.Exists(newPath)) return;
+
+        var carried = Path.Combine(Path.GetDirectoryName(newPath)!, ".carried-over");
+        if (File.Exists(carried)) return;
 
         var legacy = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
@@ -58,6 +68,9 @@ public static class DbBootstrapper
             {
                 if (File.Exists(legacy + suffix)) File.Copy(legacy + suffix, newPath + suffix);
             }
+
+            File.WriteAllText(carried, $"Carried over from {legacy} on {DateTime.Now:yyyy-MM-dd HH:mm}.");
+            AppLog.Info($"Carried the ClinicDesk database over from {legacy}.");
         }
         catch (IOException)
         {
