@@ -452,7 +452,11 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Status = product.Schedule is DrugSchedule.H1
             ? $"{product.Name} is Schedule H1 — record the prescriber's name on this bill."
             : allocations.Count > 1
-                ? $"{product.Name} added from {allocations.Count} batches."
+                ? $"{product.Name}: {adding} from {allocations.Count} batches — " +
+                  $"{string.Join(", ", allocations.Select(a => $"{a.Units} from {a.Batch.BatchNo}"))}" +
+                  (allocations.Select(a => a.Batch.Mrp).Distinct().Count() > 1
+                      ? " at different prices."
+                      : ".")
                 : $"{product.Name} added.";
 
         log.Ok($"{Lines.Count} line(s) on the bill, net {Net:0.00}");

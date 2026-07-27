@@ -176,6 +176,30 @@ public class DataHealthTests : IDisposable
     }
 
     [Fact]
+    public async Task The_startup_check_says_what_is_wrong_in_one_sentence()
+    {
+        await GivenTheReportedShopAsync();
+
+        var summary = await _health.DailyCheckAsync();
+
+        Assert.NotNull(summary);
+        Assert.Contains("pack size and units-per-pack disagree", summary);
+        Assert.Contains("sold by the pack", summary);
+    }
+
+    [Fact]
+    public async Task The_startup_check_stays_quiet_when_there_is_nothing_to_say()
+    {
+        await _pharmacy.SaveProductAsync(new Product
+        {
+            Name = "Amoxicillin 500mg", Manufacturer = "Generic", PackSize = "10 CAP",
+            UnitsPerPack = 10, DispensingUnit = DispensingUnit.Capsule
+        });
+
+        Assert.Null(await _health.DailyCheckAsync());
+    }
+
+    [Fact]
     public async Task A_healthy_shop_reports_nothing()
     {
         await _pharmacy.SaveProductAsync(new Product

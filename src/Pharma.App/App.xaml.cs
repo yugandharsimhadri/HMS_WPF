@@ -88,6 +88,8 @@ public partial class App : Application
             var window = new MainWindow { DataContext = Services.GetRequiredService<MainViewModel>() };
             window.Show();
             AppLog.Info("Main window shown.");
+
+            CheckDataHealthAsync(window).Forget("Checking the data at startup");
         }
         catch (Exception ex)
         {
@@ -96,6 +98,37 @@ public partial class App : Application
                 $"The application could not start.\n\n{ex.Message}\n\nDetails were written to:\n{AppLog.CurrentFile}",
                 ProductName, MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
+        }
+    }
+
+    /// <summary>
+    /// Says so, once, when the medicine records cannot be right — a pack size
+    /// that disagrees with its units-per-pack sells strips to people asking for
+    /// tablets and reports no error, so something has to raise it.
+    ///
+    /// Never blocks the desk: the window is already up, and this only offers.
+    /// </summary>
+    private static async Task CheckDataHealthAsync(Window owner)
+    {
+        try
+        {
+            var summary = await Services.GetRequiredService<DataHealthService>().DailyCheckAsync();
+            if (summary is null) return;
+
+            var answer = MessageBox.Show(
+                $"Some medicine records need attention:\n\n{summary}.\n\n" +
+                $"Until they are put right, prices and stock counts for those medicines " +
+                $"will be wrong.\n\nOpen the data health check now?",
+                ProductName, MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+            if (answer != MessageBoxResult.Yes) return;
+
+            new Views.DataHealthWindow { Owner = owner }.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            // A failed health check must never be why the clinic cannot open.
+            AppLog.Error("The startup data health check failed.", ex);
         }
     }
 

@@ -56,6 +56,47 @@ public enum HealthProblem
 /// </summary>
 public class DataHealthService(IDbContextFactory<AppDbContext> factory, PharmacyService pharmacy)
 {
+    /// <summary>
+    /// A quick look at whether anything is obviously wrong, run at startup.
+    ///
+    /// Cheap enough to run every day, and it turns silent damage into a sentence
+    /// on the day it happens rather than a discrepancy at the annual stock take.
+    /// Returns null when there is nothing to say.
+    /// </summary>
+    public async Task<string?> DailyCheckAsync()
+    {
+        using var log = AppLog.Enter(nameof(DailyCheckAsync));
+
+        var findings = await ScanAsync();
+
+        if (findings.Count == 0)
+        {
+            log.Ok("clean");
+            return null;
+        }
+
+        var pack = findings.Count(f => f.Problem is HealthProblem.PackSizeDisagrees
+                                                 or HealthProblem.BatchPackDisagrees);
+        var duplicates = findings.Count(f => f.Problem == HealthProblem.Duplicate);
+        var units = findings.Count(f => f.Problem == HealthProblem.UnitNotSet);
+
+        var parts = new List<string>();
+
+        if (pack > 0)
+            parts.Add($"{pack} medicine(s) whose pack size and units-per-pack disagree — " +
+                      $"those are being sold by the pack to anyone asking for singles");
+
+        if (duplicates > 0) parts.Add($"{duplicates} duplicate record(s)");
+        if (units > 0) parts.Add($"{units} with no dispensing unit set");
+
+        var summary = string.Join(", ", parts);
+
+        AppLog.Warn($"Data health: {summary}.");
+        log.Ok($"{findings.Count} finding(s)");
+
+        return summary;
+    }
+
     public async Task<List<HealthFinding>> ScanAsync()
     {
         using var log = AppLog.Enter(nameof(ScanAsync));

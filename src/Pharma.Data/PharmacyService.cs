@@ -171,18 +171,57 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             return (allocations, 0);
         }
 
+        // Expired stock is never dispensed, whatever else happens.
+        var sellable = (await GetSellableBatchesAsync(productId)).Where(b => !b.IsExpired).ToList();
+
+        var taken = new Dictionary<Guid, int>();
         var remaining = units;
 
-        foreach (var batch in await GetSellableBatchesAsync(productId))
+        // Pass one: split at a pack boundary where one is available.
+        //
+        // The whole-pack price guarantee holds per bill line, so a split that
+        // leaves a part pack on both lines loses it — 20 of a 15-strip taken as
+        // 12 + 8 prices every unit loose and comes to five paise less than taking
+        // 15 + 5. Whole packs first, the remainder on the last line.
+        foreach (var batch in sellable)
         {
             if (remaining == 0) break;
-            if (batch.IsExpired) continue;          // never dispense expired stock
 
             var take = Math.Min(remaining, batch.QtyOnHand);
             if (take <= 0) continue;
 
-            allocations.Add(new Allocation(batch, take));
+            var perPack = Math.Max(1, batch.UnitsPerPack);
+
+            // Only when this batch cannot cover the rest. If it can, the whole
+            // quantity is one line and there is nothing to protect.
+            if (perPack > 1 && take < remaining && take >= perPack)
+                take = take / perPack * perPack;
+
+            taken[batch.Id] = take;
             remaining -= take;
+        }
+
+        // Pass two: top up from what pass one rounded past. Tidy pricing must
+        // never cost a sale — a batch holding 13 of a 10-pack has to give all
+        // thirteen when thirteen are needed, not ten.
+        foreach (var batch in sellable)
+        {
+            if (remaining == 0) break;
+
+            var already = taken.GetValueOrDefault(batch.Id);
+            var spare = Math.Min(remaining, batch.QtyOnHand - already);
+
+            if (spare <= 0) continue;
+
+            taken[batch.Id] = already + spare;
+            remaining -= spare;
+        }
+
+        // Nearest expiry first, as they were read.
+        foreach (var batch in sellable)
+        {
+            if (taken.TryGetValue(batch.Id, out var units_) && units_ > 0)
+                allocations.Add(new Allocation(batch, units_));
         }
 
         log.Ok($"{allocations.Count} batch(es) " +
