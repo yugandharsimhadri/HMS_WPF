@@ -94,6 +94,18 @@ public class AppFixture : IDisposable
     public ComboBox ComboBox(string automationId) => Require(automationId).AsComboBox();
     public Grid Grid(string automationId) => Require(automationId).AsGrid();
     public ListBox ListBox(string automationId) => Require(automationId).AsListBox();
+    public CheckBox CheckBox(string automationId) => Require(automationId).AsCheckBox();
+
+    /// <summary>Selects a TabItem by its header text within the named TabControl.</summary>
+    public void SelectTab(string tabControlAutomationId, string header)
+    {
+        var tab = Require(tabControlAutomationId)
+                      .FindAllChildren(cf => cf.ByControlType(ControlType.TabItem))
+                      .FirstOrDefault(t => t.Name == header)
+                  ?? throw new InvalidOperationException($"Tab '{header}' not found in '{tabControlAutomationId}'.");
+
+        tab.AsTabItem().Select();
+    }
 
     public Label? Label(string automationId)
     {

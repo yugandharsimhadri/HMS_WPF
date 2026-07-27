@@ -23,6 +23,10 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.*" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.*" />
+    <!-- Report export: QuestPDF (Community licence — free under ~$1M USD annual revenue) and
+         ClosedXML (MIT) for real .xlsx workbooks with numeric/date cells. -->
+    <PackageReference Include="QuestPDF" Version="2025.*" />
+    <PackageReference Include="ClosedXML" Version="0.*" />
   </ItemGroup>
 
 </Project>

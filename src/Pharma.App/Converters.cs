@@ -39,6 +39,16 @@ public class BoolToVisibilityConverter : IValueConverter
         => Binding.DoNothing;
 }
 
+/// <summary>Shows a "no records" placeholder when a report's row count is zero.</summary>
+public class ZeroToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => value is int i && i == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>Blank instead of "0" in empty numeric boxes, so forms do not look pre-filled.</summary>
 public class BlankIfZeroConverter : IValueConverter
 {

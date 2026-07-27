@@ -104,6 +104,9 @@ public class Product : BaseEntity
     public ICollection<Batch> Batches { get; set; } = [];
 
     public int StockOnHand => Batches.Where(b => !b.IsDeleted).Sum(b => b.QtyOnHand);
+
+    /// <summary>How far under the reorder level current stock has fallen. Zero when not low.</summary>
+    public int Shortage => Math.Max(0, ReorderLevel - StockOnHand);
 }
 
 /// <summary>
