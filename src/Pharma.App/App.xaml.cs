@@ -20,6 +20,10 @@ public partial class App : Application
 
         HookGlobalExceptionHandlers();
 
+        // Community licence: free for organisations under ~$1M USD annual revenue,
+        // which covers a single clinic. Required before any PDF is generated.
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
         var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
         AppLog.Info($"---- {ProductName} starting (v{version}) ----");
         AppLog.Info($"Settings: {AppConfig.FilePath}");

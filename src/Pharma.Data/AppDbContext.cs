@@ -79,6 +79,7 @@ public class AppDbContext : DbContext
             e.Ignore(x => x.UnitPriceLabel);
             e.Ignore(x => x.PackPriceLabel);
             e.Ignore(x => x.RackLabel);
+            e.Ignore(x => x.Shortage);
         });
 
         b.Entity<Batch>(e =>

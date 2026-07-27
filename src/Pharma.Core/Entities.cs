@@ -235,6 +235,8 @@ public class Product : BaseEntity
 
     /// <summary>Blank rather than a dangling "rack" when no location is recorded.</summary>
     public string RackLabel => string.IsNullOrWhiteSpace(RackLocation) ? "" : $"rack {RackLocation}";
+    /// <summary>How far under the reorder level current stock has fallen. Zero when not low.</summary>
+    public int Shortage => Math.Max(0, ReorderLevel - StockOnHand);
 }
 
 /// <summary>
