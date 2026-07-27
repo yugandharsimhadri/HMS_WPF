@@ -147,13 +147,19 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
     }
 
     [RelayCommand]
-    private void NewPatient()
+    private async Task NewPatientAsync()
     {
         SelectedPatient = null;
         PatientNo = "(assigned on save)";
         Name = Phone = Age = Address = Allergies = "";
         Gender = Gender.Male;
         History.Clear();
+
+        // The search box too, or the list stays filtered and the screen does not
+        // look cleared.
+        Search = "";
+        await FindAsync();
+
         Status = "Enter the patient's details and save.";
     }
 

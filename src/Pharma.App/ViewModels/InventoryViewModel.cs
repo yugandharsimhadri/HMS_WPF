@@ -137,14 +137,22 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
         foreach (var a in await pharmacy.GetAdjustmentsAsync(100)) Adjustments.Add(a);
     }
 
-    /// <summary>Empties the receiving form without touching what is on the shelf.</summary>
+    /// <summary>
+    /// Empties the receiving form and the search that drives it, without touching
+    /// what is on the shelf. Leaving the search box full kept the list filtered
+    /// and the medicine selected, so the screen did not look cleared.
+    /// </summary>
     [RelayCommand]
-    private void ClearReceive()
+    private async Task ClearReceiveAsync()
     {
         BatchNo = SupplierName = SupplierInvoiceNo = "";
         Packs = FreePacks = 0;
         PurchaseRate = Mrp = 0;
         ExpiryDate = DateTime.Today.AddYears(2);
+
+        SelectedProduct = null;
+        Search = "";
+        await FindAsync();
 
         UpdateIntakePreview();
         Status = "";

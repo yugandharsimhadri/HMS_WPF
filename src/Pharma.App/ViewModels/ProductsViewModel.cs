@@ -144,7 +144,7 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     }
 
     [RelayCommand]
-    private void NewProduct()
+    private async Task NewProductAsync()
     {
         SelectedProduct = null;
         Name = GenericName = Manufacturer = PackSize = RackLocation = "";
@@ -165,6 +165,13 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         DispensingUnit = DispensingUnit.Tablet;
 
         UpdatePackHint();
+
+        // Clearing the form while leaving the search box full left the list still
+        // filtered, so the screen did not look cleared at all. Empty the box and
+        // show the whole catalogue again.
+        Search = "";
+        await FindAsync();
+
         Status = "Enter the brand name and save. Add its stock on the Inventory screen.";
     }
 
