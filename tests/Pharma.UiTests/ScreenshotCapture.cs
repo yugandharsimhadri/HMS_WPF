@@ -51,6 +51,14 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length >= 2, "the family list");
         Settle();
         Capture("opd-booking");
+
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "opd-booking-annotated.png"),
+            new Note("OpdPatientSearch", "Name or phone. A whole family shares one number, so search by it."),
+            new Note("OpdFind", "Searches. If nobody matches, the new-patient form opens instead."),
+            new Note("OpdMatches", "Everyone on that number. Pick the child who is actually here — this is where siblings get mixed up."),
+            new Note("OpdBook", "Books the visit and allocates the next token for the day."),
+            new Note("OpdClearBooking", "Empties the form. Nothing is booked until Book visit is pressed."));
+
         app.Click("OpdCloseBooking");
 
         // ── Consultation ───────────────────────────────────────────────────
@@ -59,6 +67,19 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
 
         Settle();
         Capture("consultation");
+
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "consultation-annotated.png"),
+            new Note("ConsultationHeader", "Token, patient, age and doctor. Check you have the right child."),
+            new Note("RxComplaint", "Carried over from booking. Edit it freely."),
+            new Note("RxDiagnosis", "Printed in bold on the prescription."),
+            new Note("RxMedicine", "Type two letters. Pick from the list to link it to your stock, or keep typing for one you do not carry."),
+            new Note("RxMedicineHint", "Says whether it is in your pharmacy, out of stock, or not carried at all."),
+            new Note("RxMorning", "Morning dose. 0, ¼, ½, 1 or 2 — picked, not typed."),
+            new Note("RxDays", "Length of the course."),
+            new Note("RxQuantity", "Worked out for you, in individual tablets. Change it if you want."),
+            new Note("RxAdd", "Adds the medicine to the prescription below."),
+            new Note("ConsultationClose", "Leaves. Asks first if anything is unsaved. Esc does the same."));
+
         app.CloseConsultation();
 
         // ── Medicines ──────────────────────────────────────────────────────
@@ -78,6 +99,17 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         app.Grid("InventoryProductsGrid").Rows[0].Select();
         Settle();
         Capture("inventory");
+
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "inventory-annotated.png"),
+            new Note("InventorySearch", "Find the medicine you are receiving. Brand, drug, maker or rack."),
+            new Note("InventoryProductsGrid", "Click it. The heading then names it and says how much is on hand."),
+            new Note("StockBatchNo", "Printed on the pack. Required — it has to appear on the bill by law."),
+            new Note("StockExpiry", "The pack is good until the END of that month."),
+            new Note("StockQuantity", "How many PACKS arrived — strips, boxes or bottles. Not tablets."),
+            new Note("StockFreeQuantity", "Scheme quantity: the +1 in 10+1. Goes on the shelf, costs nothing."),
+            new Note("StockMrp", "The price printed on the pack. The counter prices everything from this."),
+            new Note("StockIntakePreview", "Reads back what you typed, in tablets. Check this before adding."),
+            new Note("StockAdd", "Adds to the shelf. It never replaces what is already there."));
 
         // ── Importing a supplier bill ──────────────────────────────────────
         app.Click("InventoryImport");
@@ -120,6 +152,23 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "the bill line");
         Settle();
         Capture("counter");
+
+        // The same screen with every control ringed and explained, so the guide
+        // does not have to describe where things are in prose.
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "counter-annotated.png"),
+            new Note("SaleSearch",
+                     "Type any part of the brand, drug, maker or rack. It filters as you type — no button, any case."),
+            new Note("SaleMatches",
+                     "What is on the shelf. Price per unit and how many left. Click the one you want."),
+            new Note("SaleQuantity", "How many. Nine tablets is 9 — never the number of strips."),
+            new Note("SaleQuantityUnit",
+                     "What that number counts. Tablets, or strips of 10. Remembered per medicine."),
+            new Note("SaleQuickStock",
+                     "The medicine is in the shop but the screen says none? Put it on the shelf without leaving the bill."),
+            new Note("SaleLinesGrid",
+                     "The bill. Only QTY can be changed; the price comes from the batch and cannot be edited."),
+            new Note("SaleNetTotal", "What the customer pays. GST is already inside the MRP."),
+            new Note("SaveAndPrint", "Saves the bill, deducts the stock, and opens the print preview."));
 
         // ── Adding stock from the counter ──────────────────────────────────
         app.Click("SaleQuickStock");

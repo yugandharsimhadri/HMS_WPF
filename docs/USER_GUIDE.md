@@ -34,8 +34,9 @@ dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
 10. [Patients](#10-patients)
 11. [Reports](#11-reports)
 12. [Printing](#12-printing)
-13. [What the system will and will not do](#13-what-the-system-will-and-will-not-do)
-14. [When something goes wrong](#14-when-something-goes-wrong)
+13. [Worked examples](#13-worked-examples)
+14. [What the system will and will not do](#14-what-the-system-will-and-will-not-do)
+15. [When something goes wrong](#15-when-something-goes-wrong)
 
 **[Common tasks, step by step](#common-tasks-step-by-step)** — the short version of
 everything above. Start here if you just want to get through a day.
@@ -45,7 +46,7 @@ everything above. Start here if you just want to get through a day.
 # Common tasks, step by step
 
 Each task below is complete on its own. Screen-by-screen detail follows in
-sections 1 to 14.
+sections 1 to 15.
 
 ## A. Set the clinic up — once, before anything else
 
@@ -422,6 +423,10 @@ Click **+ New visit**. The panel opens on the right, in three numbered steps.
 
 ![Booking a visit](images/opd-booking.png)
 
+Every control, ringed and explained:
+
+![Booking a visit, explained](images/opd-booking-annotated.png)
+
 ## Step 1 — find the patient
 
 | Control | What it does |
@@ -477,6 +482,10 @@ later click **Fee** on the tile.
 Click **Consult** on a tile.
 
 ![Consultation](images/consultation.png)
+
+Every control, ringed and explained:
+
+![The consultation, explained](images/consultation-annotated.png)
 
 The heading shows the token, the patient, their age and sex, and the doctor.
 
@@ -604,6 +613,10 @@ count. Nothing here changes what a medicine *is* — that is the Medicines scree
 
 ![Inventory](images/inventory.png)
 
+Every control, ringed and explained:
+
+![Inventory, explained](images/inventory-annotated.png)
+
 ## Finding the medicine (left)
 
 Type any part of the brand name, drug name, maker or rack and click **Search**,
@@ -730,9 +743,22 @@ unit(s) added to stock."*
 
 # 9. The pharmacy counter
 
-![Pharmacy counter](images/counter.png)
-
 Three steps per line: **find the medicine, set the quantity, add.**
+
+Every control, ringed and explained:
+
+![The pharmacy counter, explained](images/counter-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Search** | Any part of the brand, drug, maker or rack. Filters as you type, in any case |
+| 2 | **Results** | What is on the shelf: price per unit, how many left, which rack |
+| 3 | **How many** | The number. Nine tablets is `9` |
+| 4 | **of** | What that number counts — *tablets* or *strips of 10*. Remembered per medicine |
+| 5 | **Stock came in — add it** | Puts stock on the shelf without leaving the bill |
+| 6 | **Bill items** | Only QTY can be changed. The price comes from the batch |
+| 7 | **Net payable** | What the customer pays. GST is already inside the MRP |
+| 8 | **Save & print bill** | Saves, deducts the stock, opens the preview |
 
 ## Add medicine to the bill
 
@@ -928,7 +954,146 @@ it cannot be mistaken for the original.
 
 ---
 
-# 13. What the system will and will not do
+# 13. Worked examples
+
+Real situations, start to finish, with the numbers.
+
+---
+
+## Example 1 — Nine tablets out of a strip of ten
+
+**A mother wants only nine Paracetamol.** A strip holds ten and costs ₹30.
+
+| Step | What you do |
+|---|---|
+| 1 | **Pharmacy counter** → type `parac` |
+| 2 | Click **Paracetamol 500mg**. It says *"590 tablets in stock · ₹3.00 each"* |
+| 3 | **How many** `9`, **of** `tablets` |
+| 4 | **Add to bill** |
+
+**What you get**
+
+- Bill line: `0 × 10 TAB + 9 tablets`, amount **₹27.00**
+- Shelf: 590 → 581 tablets
+- The opened strip has one tablet left in it, and the next customer gets that first
+
+> **Why not ₹270?** Because the medicine says ten tablets per pack, so a tablet
+> costs ₹3.00, not ₹30.00. If it charged ₹270, that medicine has **Units in one
+> pack** set to 1 — see task N.
+
+---
+
+## Example 2 — Two whole strips
+
+Same medicine, but the customer wants two full strips.
+
+**How many** `2`, **of** `strips of 10` → 20 tablets, **₹60.00**.
+
+A full strip always costs exactly the MRP printed on it. Two strips is exactly
+twice that — never ₹59.90 or ₹60.10.
+
+---
+
+## Example 3 — The medicine is found but has no stock
+
+**A prescription asks for Cetirizine syrup. The counter shows it, greyed, with
+"out of stock" — but you can see the bottles on the shelf.**
+
+This is the commonest situation in a new system: the delivery arrived and nobody
+entered it.
+
+| Step | What you do |
+|---|---|
+| 1 | Click the medicine anyway. The summary reads *"Cetirizine 10mg · out of stock"* |
+| 2 | Click **Stock came in — add it** |
+| 3 | **Packs on the shelf** `5`, **MRP per pack** `85.00` |
+| 4 | Leave batch and expiry blank if you do not have them |
+| 5 | **Add to shelf** |
+
+**What you get**
+
+- Five bottles on the shelf, sellable immediately
+- A batch numbered `CTR-260727-1432` — allocated, not printed on the pack
+- A line in **Reports → Stock to reconcile** until the supplier bill arrives
+
+You are back on the same bill. Nothing was lost.
+
+---
+
+## Example 4 — The doctor prescribes something you do not stock
+
+**Dolo syrup, which the shop has never carried.**
+
+The doctor types the name and **does not** pick anything from the list. The hint
+reads *"Not in our pharmacy — it will be written on the prescription only"*.
+
+It is printed on the prescription and **never added to your medicine records**.
+At the counter, **Load prescription** names it: *"Not added: Dolo Syrup"*. Tell
+the parent to buy it outside.
+
+---
+
+## Example 5 — A course that spans two batches
+
+**Twenty tablets. The oldest batch holds seventeen.**
+
+You type `20`. The counter splits it and tells you:
+
+> *Paracetamol: 20 from 2 batches — 15 from PC1234, 5 from PC1180.*
+
+Two bill lines, because the batch number of what you actually hand over must be
+printed. The split falls at **fifteen, not seventeen**, so one whole strip is
+charged at the printed price and only five are loose — ₹116.65, the same as if
+one batch had covered it.
+
+On the printed bill both lines sit under one **Paracetamol** heading, so it does
+not read as two separate items.
+
+---
+
+## Example 6 — Nine tablets, but only six left
+
+You type `9`. Nothing is added, and it says:
+
+> *Only 6 tablets of Paracetamol 500mg left to sell.*
+
+Sell the six, or add stock. It never quietly sells you fewer than you asked for.
+
+---
+
+## Example 7 — A sealed pack that cannot be split
+
+**ORS sachets, sold as a box of ten, "Sell loose units" unticked.**
+
+You type `7` and it refuses:
+
+> *ORS Powder is not sold loose — it goes out in whole packs of 10. Enter 10 for
+> 1 pack.*
+
+Untick that box on any medicine that must leave the shop whole.
+
+---
+
+## Example 8 — A whole visit
+
+**Aarav, four years old, fever.**
+
+| Step | Screen | What happens |
+|---|---|---|
+| 1 | OPD → **+ New visit** | Booked, token 4 |
+| 2 | Tile → **Fee** | ₹300 taken, receipt printed |
+| 3 | Tile → **Consult** | Fever, viral fever, three medicines prescribed |
+| 4 | Counter → **Load prescription** | Paracetamol added; Cetirizine reported *no stock*; Dolo reported *not added* |
+| 5 | **Stock came in — add it** | Five bottles of Cetirizine on the shelf |
+| 6 | **Load prescription** again | Both now on the bill |
+| 7 | **Save & print bill** | 9 tablets + 1 bottle = **₹112.00** |
+
+The parent buys the Dolo syrup outside. Everything else is on one bill, with
+batch numbers and expiry printed on it.
+
+---
+
+# 14. What the system will and will not do
 
 Worth reading once. It is the difference between trusting a number and checking it.
 
@@ -977,7 +1142,7 @@ Worth reading once. It is the difference between trusting a number and checking 
 
 ---
 
-# 14. When something goes wrong
+# 15. When something goes wrong
 
 ## The application does not close on an error
 
