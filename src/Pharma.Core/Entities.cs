@@ -276,6 +276,29 @@ public class Batch : BaseEntity
     public string OnHand => PackMath.Describe(QtyOnHand, UnitsPerPack, Product?.PackSize, Product?.DispensingUnit.Name(QtyOnHand));
 
     public string Display => $"{BatchNo} · exp {ExpiryDate:MM'/'yy} · ₹{Mrp:0.00} · {OnHand} left";
+
+    /// <summary>
+    /// What can go back to the distributor. A broken strip cannot — so a batch
+    /// with 47 of a ten-strip is four returnable strips and seven to write off,
+    /// and the expiry report has to say so in those terms.
+    /// </summary>
+    public string Returnable
+    {
+        get
+        {
+            if (UnitsPerPack <= 1) return $"{QtyOnHand} sealed";
+
+            var sealed_ = QtyOnHand / UnitsPerPack;
+            var open = QtyOnHand % UnitsPerPack;
+
+            return open == 0
+                ? $"{sealed_} sealed"
+                : $"{sealed_} sealed + {open} loose to write off";
+        }
+    }
+
+    /// <summary>Days until it expires. Negative once it has.</summary>
+    public int DaysToExpiry => (int)(ExpiryDate.Date - DateTime.Today).TotalDays;
 }
 
 public class StockEntry : BaseEntity

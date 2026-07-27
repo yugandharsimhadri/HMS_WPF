@@ -31,6 +31,12 @@ public partial class ReportsViewModel(
     /// to the real bill, so the list is the reconciliation worklist.
     /// </summary>
     public ObservableCollection<Batch> ToReconcile { get; } = [];
+
+    /// <summary>
+    /// Tail ends of opened strips — less than one full pack left. They expire
+    /// where they sit unless someone pushes them.
+    /// </summary>
+    public ObservableCollection<Batch> PartPacks { get; } = [];
     public ObservableCollection<GstSlab> GstSummary { get; } = [];
     public ObservableCollection<H1RegisterEntry> H1Register { get; } = [];
 
@@ -82,6 +88,9 @@ public partial class ReportsViewModel(
 
         ToReconcile.Clear();
         foreach (var b in await pharmacy.GetProvisionalBatchesAsync()) ToReconcile.Add(b);
+
+        PartPacks.Clear();
+        foreach (var b in await pharmacy.GetPartPacksAsync()) PartPacks.Add(b);
 
         await using var db = await factory.CreateDbContextAsync();
         var from = Date.Date;

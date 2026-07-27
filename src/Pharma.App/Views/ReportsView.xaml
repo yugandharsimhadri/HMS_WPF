@@ -106,16 +106,24 @@
                 </TabItem>
 
                 <TabItem Header="Expiring soon">
-                    <DataGrid ItemsSource="{Binding Expiring}" Margin="0,10,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
-                            <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="130"/>
-                            <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=dd MMM yyyy}" Width="130"/>
-                            <DataGridTextColumn Header="QTY LEFT" Binding="{Binding QtyOnHand}" Width="100"/>
-                            <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="100"/>
-                            <DataGridTextColumn Header="SUPPLIER" Binding="{Binding SupplierName}" Width="200"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <DockPanel Margin="0,10,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                   TextWrapping="Wrap"
+                                   Text="Only sealed packs can go back to the distributor — an opened strip cannot. The returnable column separates the two."/>
+                        <DataGrid ItemsSource="{Binding Expiring}"
+                                  AutomationProperties.AutomationId="ExpiringGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
+                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="120"/>
+                                <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=dd MMM yyyy}" Width="120"/>
+                                <DataGridTextColumn Header="DAYS" Binding="{Binding DaysToExpiry}" Width="60"/>
+                                <DataGridTextColumn Header="QTY LEFT" Binding="{Binding QtyOnHand}" Width="90"/>
+                                <DataGridTextColumn Header="RETURNABLE" Binding="{Binding Returnable}" Width="210"/>
+                                <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
+                                <DataGridTextColumn Header="SUPPLIER" Binding="{Binding SupplierName}" Width="160"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
                 </TabItem>
 
                 <TabItem Header="Low stock">
@@ -128,6 +136,25 @@
                             <DataGridTextColumn Header="REORDER AT" Binding="{Binding ReorderLevel}" Width="110"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                </TabItem>
+
+                <TabItem Header="Part packs">
+                    <DockPanel Margin="0,10,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                   TextWrapping="Wrap"
+                                   Text="Opened strips with less than a full pack left. Nobody asks for exactly three, so these sit until they expire — sell them first, or write them off deliberately under Inventory → Correct the stock count."/>
+                        <DataGrid ItemsSource="{Binding PartPacks}"
+                                  AutomationProperties.AutomationId="PartPacksGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
+                                <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="130"/>
+                                <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=MMM yyyy}" Width="110"/>
+                                <DataGridTextColumn Header="LEFT" Binding="{Binding QtyOnHand}" Width="80"/>
+                                <DataGridTextColumn Header="OF A PACK OF" Binding="{Binding UnitsPerPack}" Width="120"/>
+                                <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
                 </TabItem>
 
                 <TabItem Header="Stock to reconcile">

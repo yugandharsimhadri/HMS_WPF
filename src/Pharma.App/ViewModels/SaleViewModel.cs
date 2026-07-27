@@ -425,6 +425,30 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
         Recalculate();
 
+        // Nearest expiry goes first, which is right — but handing over something
+        // with a fortnight left without saying so is how a parent comes back.
+        var soonest = allocations.Min(a => a.Batch.DaysToExpiry);
+
+        if (soonest <= 30)
+        {
+            var batch = allocations.First(a => a.Batch.DaysToExpiry == soonest).Batch;
+
+            Warn($"{product.Name} batch {batch.BatchNo} expires {batch.ExpiryDate:MMM yyyy} — " +
+                 $"{soonest} day(s) away. It is still on the bill; tell the customer.");
+        }
+
+        // Two prices for one medicine on a bill looks like a mistake unless the
+        // operator knows before the customer asks.
+        if (allocations.Count > 1)
+        {
+            var prices = allocations.Select(a => a.Batch.Mrp).Distinct().Count();
+
+            AppLog.Info(
+                $"Counter: {product.Name} split across {allocations.Count} batches " +
+                $"[{string.Join(", ", allocations.Select(a => $"{a.Batch.BatchNo}×{a.Units}"))}]" +
+                (prices > 1 ? " at different prices." : "."));
+        }
+
         Status = product.Schedule is DrugSchedule.H1
             ? $"{product.Name} is Schedule H1 — record the prescriber's name on this bill."
             : allocations.Count > 1

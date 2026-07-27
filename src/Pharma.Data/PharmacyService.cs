@@ -424,6 +424,29 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
     }
 
     /// <summary>
+    /// Batches holding less than one full pack — the tail ends of opened strips.
+    ///
+    /// They sit there until they expire unless someone happens to want exactly
+    /// that many, so they are worth pushing first or writing off deliberately
+    /// rather than quietly.
+    /// </summary>
+    public async Task<List<Batch>> GetPartPacksAsync()
+    {
+        using var log = AppLog.Enter(nameof(GetPartPacksAsync));
+
+        await using var db = await factory.CreateDbContextAsync();
+
+        var batches = await db.Batches
+            .Include(b => b.Product)
+            .Where(b => !b.IsDeleted && b.QtyOnHand > 0 && b.UnitsPerPack > 1 && b.QtyOnHand < b.UnitsPerPack)
+            .OrderBy(b => b.ExpiryDate)
+            .ToListAsync();
+
+        log.Ok($"{batches.Count} part pack(s)");
+        return batches;
+    }
+
+    /// <summary>
     /// Everything put on the shelf at the counter and not yet matched to a
     /// supplier bill. This is the list to work through when reconciling.
     /// </summary>

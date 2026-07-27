@@ -57,7 +57,15 @@ public static partial class PackMath
         var packs = quantityUnits / unitsPerPack;
         var loose = quantityUnits % unitsPerPack;
 
-        return Round(packs * packMrp + loose * UnitPrice(packMrp, unitsPerPack));
+        var loosePrice = Round(loose * UnitPrice(packMrp, unitsPerPack));
+
+        // The unit price is rounded to the paisa, and rounding up can make the
+        // remainder dearer than the pack it came out of: 17 of an 18-pack at
+        // ₹1.00 came to ₹1.02. Nobody may be charged more for part of something
+        // than for all of it, so the remainder is capped at the pack price.
+        if (loosePrice > packMrp) loosePrice = packMrp;
+
+        return Round(packs * packMrp + loosePrice);
     }
 
     public static decimal UnitPrice(decimal packMrp, int unitsPerPack)
