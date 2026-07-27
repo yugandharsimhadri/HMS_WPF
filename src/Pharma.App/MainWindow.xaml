@@ -5,6 +5,7 @@
         xmlns:vm="clr-namespace:Pharma.App.ViewModels"
         xmlns:views="clr-namespace:Pharma.App.Views"
         Title="Twinkle Children's Hospital — OPD &amp; Pharmacy"
+        Icon="twinkle.ico"
         Height="820" Width="1360" WindowStartupLocation="Manual"
         Background="{StaticResource Bg}">
 

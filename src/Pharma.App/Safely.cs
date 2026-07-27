@@ -39,6 +39,30 @@ public static class Safely
         }
     }
 
+    /// <summary>The same guard for something that does not await.</summary>
+    public static void Run(Action action, string what, Action<string>? report = null)
+    {
+        using var log = AppLog.Enter(what);
+
+        try
+        {
+            action();
+            log.Ok();
+        }
+        catch (Exception ex)
+        {
+            var message = $"{what} could not be completed. {Explain(ex)}";
+
+            log.Skip($"failed: {ex.GetType().Name}: {ex.Message}");
+            AppLog.Error($"{what} failed.", ex);
+            report?.Invoke(message);
+
+            MessageBox.Show(
+                $"{message}\n\nNothing was changed. Details were written to:\n{AppLog.CurrentFile}",
+                App.ProductName, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
     /// <summary>Turns the usual failures into something worth reading.</summary>
     public static string Explain(Exception ex) => ex switch
     {

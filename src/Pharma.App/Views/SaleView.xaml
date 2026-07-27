@@ -19,7 +19,7 @@
                     <!-- One wide search box. It filters as you type; no button, and
                          no batch to choose — nearest expiry is picked for you. -->
                     <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
-                             FontSize="15" Padding="11,9" Margin="0,0,0,8"
+                             Margin="0,0,0,8"
                              ToolTip="Search by brand, drug, maker or rack"
                              AutomationProperties.AutomationId="SaleSearch">
                         <TextBox.InputBindings>
@@ -97,7 +97,7 @@
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="How many" Style="{StaticResource Label}"/>
                             <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
-                                     FontSize="15" Margin="0"
+                                     Margin="0"
                                      AutomationProperties.AutomationId="SaleQuantity">
                                 <TextBox.InputBindings>
                                     <KeyBinding Key="Enter" Command="{Binding AddLineCommand}"/>
@@ -111,12 +111,12 @@
                             <TextBlock Text="of" Style="{StaticResource Label}"/>
                             <ComboBox ItemsSource="{Binding QuantityUnits}"
                                       SelectedItem="{Binding QuantityUnit, Mode=TwoWay}"
-                                      Margin="0" Height="38" VerticalContentAlignment="Center"
+                                      Margin="0" VerticalContentAlignment="Center"
                                       AutomationProperties.AutomationId="SaleQuantityUnit"/>
                         </StackPanel>
 
                         <Button Grid.Column="6" Content="Add to bill" Style="{StaticResource BtnPrimary}"
-                                MinWidth="120" Height="38" VerticalAlignment="Bottom"
+                                MinWidth="120" VerticalAlignment="Bottom"
                                 Command="{Binding AddLineCommand}"
                                 AutomationProperties.AutomationId="SaleAddLine"/>
                     </Grid>
@@ -237,7 +237,7 @@
                     <TextBlock Text="Payment" Style="{StaticResource Label}"/>
                     <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding PaymentMode, Mode=TwoWay}"/>
 
-                    <Button Content="Save &amp; print bill" Style="{StaticResource BtnPrimary}" Height="44"
+                    <Button Content="Save &amp; print bill" Style="{StaticResource BtnPrimaryLarge}"
                             Command="{Binding SaveAndPrintCommand}"
                             AutomationProperties.AutomationId="SaveAndPrint"/>
                     <Button Content="Save without printing" Style="{StaticResource BtnGhost}" Margin="0,8,0,0"

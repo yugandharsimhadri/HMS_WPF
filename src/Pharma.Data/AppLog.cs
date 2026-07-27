@@ -93,7 +93,38 @@ public static class AppLog
         }
     }
 
-    public static string CurrentFile => Path.Combine(LogDirectory, $"twinkle-{DateTime.Now:yyyyMMdd}.log");
+    /// <summary>
+    /// One file per day, rolled when it gets too big to open: twinkle-20260727.log,
+    /// then -2, -3 and so on. A busy counter writes a few MB a day with tracing on,
+    /// and the one time anyone needs the log is the one time it must not be a
+    /// gigabyte that Notepad refuses.
+    /// </summary>
+    public static string CurrentFile
+    {
+        get
+        {
+            var today = Path.Combine(LogDirectory, $"twinkle-{DateTime.Now:yyyyMMdd}.log");
+            var limit = Math.Max(1, AppConfig.Current.LogFileMaxMb) * 1024L * 1024L;
+
+            try
+            {
+                if (!File.Exists(today) || new FileInfo(today).Length < limit) return today;
+
+                for (var part = 2; part < 1000; part++)
+                {
+                    var rolled = Path.Combine(LogDirectory, $"twinkle-{DateTime.Now:yyyyMMdd}-{part}.log");
+
+                    if (!File.Exists(rolled) || new FileInfo(rolled).Length < limit) return rolled;
+                }
+
+                return today;
+            }
+            catch (IOException)
+            {
+                return today;
+            }
+        }
+    }
 
     public static void Info(string message) => Write("INF", message, null);
     public static void Warn(string message) => Write("WRN", message, null);

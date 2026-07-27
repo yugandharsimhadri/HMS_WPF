@@ -35,6 +35,61 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
     public Array QueueLayouts => Enum.GetValues<QueueLayout>();
     [ObservableProperty] private string _databasePath = DbBootstrapper.DatabasePath;
     [ObservableProperty] private string _logPath = AppLog.CurrentFile;
+    [ObservableProperty] private string _backupPath = DbBootstrapper.BackupDirectory;
+    [ObservableProperty] private string _lastBackup = "";
+
+    /// <summary>
+    /// When the database was last copied, in words. A clinic that cannot see
+    /// this has no idea whether it is one day or one year since anything was
+    /// safe, which is the same as having no backups.
+    /// </summary>
+    private void RefreshLastBackup()
+    {
+        var last = DbBootstrapper.LastBackup;
+
+        if (last is null)
+        {
+            LastBackup = "Never backed up. Take one now.";
+            return;
+        }
+
+        var age = (int)(DateTime.Now - last.LastWriteTime).TotalDays;
+
+        var when = age switch
+        {
+            <= 0 => "today",
+            1 => "yesterday",
+            _ => $"{age} days ago"
+        };
+
+        LastBackup = $"Last backup {when} — {last.LastWriteTime:dd MMM yyyy HH:mm} " +
+                     $"({last.Length / 1024} KB)" +
+                     (age >= 7 ? "  ⚠ that is a while ago." : "");
+    }
+
+    /// <summary>Copies the database now, whatever was taken automatically today.</summary>
+    [RelayCommand]
+    private async Task BackUpNowAsync()
+    {
+        await Safely.RunAsync(async () =>
+        {
+            var file = await Task.Run(DbBootstrapper.BackupNow);
+
+            RefreshLastBackup();
+            Status = $"Backed up to {file.FullName}";
+        }, "Backing up the database", m => Status = m);
+    }
+
+    /// <summary>Opens the backup folder, so a copy can be put on a pen drive.</summary>
+    [RelayCommand]
+    private void OpenBackupFolder()
+    {
+        Safely.Run(() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = DbBootstrapper.BackupDirectory,
+            UseShellExecute = true
+        }), "Opening the backup folder", m => Status = m);
+    }
 
     // Doctor form
     [ObservableProperty] private Doctor? _selectedDoctor;
@@ -57,6 +112,8 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
         PharmacistName = profile.PharmacistName;
         BillFooter = profile.BillFooter;
         QueueLayout = profile.QueueLayout;
+
+        RefreshLastBackup();
 
         await LoadDoctorsAsync();
     }

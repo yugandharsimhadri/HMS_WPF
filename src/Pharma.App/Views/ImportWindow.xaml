@@ -58,11 +58,11 @@
         <Border DockPanel.Dock="Bottom" Margin="0,12,0,0">
             <DockPanel>
                 <Button DockPanel.Dock="Right" Content="Import" Style="{StaticResource BtnPrimary}"
-                        MinWidth="140" Height="40" IsEnabled="{Binding CanImport}"
+                        MinWidth="140" IsEnabled="{Binding CanImport}"
                         Command="{Binding ImportCommand}"
                         AutomationProperties.AutomationId="ImportCommit"/>
                 <Button DockPanel.Dock="Right" Content="Close" Style="{StaticResource BtnGhost}"
-                        Margin="0,0,8,0" Height="40" Click="Close_Click"
+                        Margin="0,0,8,0" Click="Close_Click"
                         AutomationProperties.AutomationId="ImportClose"/>
                 <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" TextWrapping="Wrap"
                            VerticalAlignment="Center" Margin="0,0,12,0"

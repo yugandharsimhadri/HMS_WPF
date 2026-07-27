@@ -237,6 +237,17 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         }
     }
 
+    /// <summary>
+    /// Empties the booking form without closing it. Nothing is booked until
+    /// Book visit is pressed, so this loses only what was typed.
+    /// </summary>
+    [RelayCommand]
+    private void ClearBooking()
+    {
+        ResetBookingPanel();
+        Status = "";
+    }
+
     private void ResetBookingPanel()
     {
         AddingPatient = false;

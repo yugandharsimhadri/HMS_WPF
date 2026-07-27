@@ -156,6 +156,10 @@
                     <Button Content="Save patient" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
                             Command="{Binding SavePatientCommand}"
                             AutomationProperties.AutomationId="PatientSave"/>
+                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,0,8,0" MinWidth="80"
+                            Command="{Binding NewPatientCommand}"
+                            ToolTip="Empties the form. Nothing already saved is changed."
+                            AutomationProperties.AutomationId="PatientClear"/>
                     <Button Content="Remove" Style="{StaticResource BtnDanger}"
                             Command="{Binding DeletePatientCommand}"
                             AutomationProperties.AutomationId="PatientDelete"/>

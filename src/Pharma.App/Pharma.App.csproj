@@ -8,6 +8,14 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>TwinkleHMS</AssemblyName>
     <RootNamespace>Pharma.App</RootNamespace>
+
+    <!-- Regenerate it with the IconGen tool under tools/IconGen. -->
+    <ApplicationIcon>twinkle.ico</ApplicationIcon>
+
+    <Product>Twinkle Children's Hospital</Product>
+    <Company>Twinkle Children's Hospital</Company>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,8 +24,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Sits beside the exe so a clinic can change paths without a rebuild. -->
+    <!-- Sits beside the exe so a clinic can change paths without a rebuild.
+         PreserveNewest, not Always: a path edited on the clinic PC survives the
+         next build instead of being silently put back. -->
     <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- The window icon, as well as the one on the exe. -->
+    <Resource Include="twinkle.ico" />
   </ItemGroup>
 
   <ItemGroup>

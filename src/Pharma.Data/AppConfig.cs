@@ -8,14 +8,24 @@ public class AppSettings
     /// <summary>Where the daily log files are written.</summary>
     public string? LogDirectory { get; set; }
 
-    /// <summary>Full path to the database file. Null uses the ProgramData default.</summary>
+    /// <summary>Full path to the database file. Null uses the default under C:\HMS\DB.</summary>
     public string? DatabasePath { get; set; }
+
+    /// <summary>Where daily database backups are written.</summary>
+    public string? BackupDirectory { get; set; }
 
     /// <summary>Daily backups to keep before the oldest is deleted.</summary>
     public int BackupsToKeep { get; set; } = 14;
 
     /// <summary>Days of log files to keep.</summary>
     public int LogDaysToKeep { get; set; } = 30;
+
+    /// <summary>
+    /// A log file is rolled once it passes this, and the day carries on in
+    /// twinkle-20260727-2.log. A single unbounded file is unopenable by the time
+    /// anyone needs to read it.
+    /// </summary>
+    public int LogFileMaxMb { get; set; } = 10;
 
     /// <summary>
     /// Writes a line on entry to and exit from every service and command, with

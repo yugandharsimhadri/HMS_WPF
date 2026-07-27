@@ -27,15 +27,36 @@ public static class DbBootstrapper
                 return overridden;
             }
 
-            var dir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "TwinkleHMS");
+            // C:\HMS keeps the database, its backups and the logs together, where
+            // a clinic can find them, copy them to a pen drive and hand them to
+            // whoever is helping. ProgramData is hidden and nobody goes there.
+            var dir = DefaultRoot("DB");
             Directory.CreateDirectory(dir);
 
             var path = Path.Combine(dir, "twinkle.db");
             MoveLegacyDatabase(path);
             return path;
         }
+    }
+
+    /// <summary>Where backups are written. Beside the database unless configured.</summary>
+    public static string BackupDirectory
+    {
+        get
+        {
+            var configured = AppConfig.Current.BackupDirectory;
+
+            var dir = string.IsNullOrWhiteSpace(configured) ? DefaultRoot("DBBackup") : configured;
+            Directory.CreateDirectory(dir);
+
+            return dir;
+        }
+    }
+
+    private static string DefaultRoot(string leaf)
+    {
+        var root = Path.Combine(Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\", "HMS");
+        return Path.Combine(root, leaf);
     }
 
     /// <summary>
@@ -95,28 +116,73 @@ public static class DbBootstrapper
         await Import.ImportProfileSeeder.SeedAsync(db);
     }
 
-    private static void BackupOnce()
+    /// <summary>The newest backup on disk, or null if there has never been one.</summary>
+    public static FileInfo? LastBackup
     {
-        if (!File.Exists(DatabasePath)) return;
+        get
+        {
+            try
+            {
+                return new DirectoryInfo(BackupDirectory)
+                    .GetFiles("twinkle-*.db")
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .FirstOrDefault();
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+        }
+    }
 
-        var backupDir = Path.Combine(Path.GetDirectoryName(DatabasePath)!, "backups");
-        Directory.CreateDirectory(backupDir);
+    /// <summary>
+    /// Copies the database now, whatever has already been taken today. This is
+    /// the button a clinic presses before closing up, and before anything they
+    /// are nervous about.
+    /// </summary>
+    public static FileInfo BackupNow()
+    {
+        if (!File.Exists(DatabasePath))
+            throw new InvalidOperationException("There is no database to back up yet.");
 
-        var target = Path.Combine(backupDir, $"twinkle-{DateTime.Now:yyyyMMdd}.db");
-        if (File.Exists(target)) return;   // one backup per day is enough
+        var target = Path.Combine(BackupDirectory, $"twinkle-{DateTime.Now:yyyyMMdd-HHmmss}.db");
 
+        File.Copy(DatabasePath, target, overwrite: true);
+        Prune();
+
+        AppLog.Info($"Backup taken: {target}");
+        return new FileInfo(target);
+    }
+
+    private static void Prune()
+    {
         try
         {
-            File.Copy(DatabasePath, target);
-
-            // Keep the last 14 daily backups.
-            foreach (var stale in new DirectoryInfo(backupDir)
+            foreach (var stale in new DirectoryInfo(BackupDirectory)
                          .GetFiles("twinkle-*.db")
-                         .OrderByDescending(f => f.Name)
+                         .OrderByDescending(f => f.LastWriteTime)
                          .Skip(Math.Max(1, AppConfig.Current.BackupsToKeep)))
             {
                 stale.Delete();
             }
+        }
+        catch (IOException)
+        {
+            // A backup that could not be pruned is still a backup.
+        }
+    }
+
+    private static void BackupOnce()
+    {
+        if (!File.Exists(DatabasePath)) return;
+
+        var target = Path.Combine(BackupDirectory, $"twinkle-{DateTime.Now:yyyyMMdd}.db");
+        if (File.Exists(target)) return;   // one automatic backup per day is enough
+
+        try
+        {
+            File.Copy(DatabasePath, target);
+            Prune();
         }
         catch (IOException)
         {
