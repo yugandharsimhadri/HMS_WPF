@@ -68,6 +68,11 @@ public class FeeInkConverter : IValueConverter
         => value is true
             ? new SolidColorBrush(Color.FromRgb(0x0B, 0x5A, 0x54))
             : new SolidColorBrush(Color.FromRgb(0x8A, 0x53, 0x0B));
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 /// <summary>Shows a "no records" placeholder when a report's row count is zero.</summary>
 public class ZeroToVisibilityConverter : IValueConverter
 {

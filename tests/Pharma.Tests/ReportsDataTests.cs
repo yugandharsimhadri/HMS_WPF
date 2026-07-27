@@ -25,9 +25,23 @@ public class ReportsDataTests : IDisposable
         _pharmacy = new PharmacyService(factory);
     }
 
+    /// <summary>
+    /// A distinct medicine each time. Brand, maker and pack are unique in the
+    /// catalogue, so a test wanting three products has to ask for three
+    /// different ones — the same name three times is a duplicate and refused.
+    /// </summary>
+    private int _made;
+
     private async Task<Product> GivenProductAsync(decimal gstRate = 12m, DrugSchedule schedule = DrugSchedule.None, int reorderLevel = 0)
     {
-        var product = new Product { Name = "Test Drug 500mg", GstRate = gstRate, Schedule = schedule, ReorderLevel = reorderLevel };
+        var product = new Product
+        {
+            Name = $"Test Drug {++_made}",
+            GstRate = gstRate,
+            Schedule = schedule,
+            ReorderLevel = reorderLevel
+        };
+
         await _pharmacy.SaveProductAsync(product);
         return product;
     }

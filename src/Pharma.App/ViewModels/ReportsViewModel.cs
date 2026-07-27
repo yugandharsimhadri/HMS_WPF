@@ -28,7 +28,6 @@ public partial class ReportsViewModel(
     OpdService opd,
     SettingsService settings,
     IDbContextFactory<AppDbContext> factory) : ObservableObject, IPage
-    SettingsService settings) : ObservableObject, IPage
 {
     public string Title => "Reports";
     public string Subtitle => $"{Sales.Count} bill(s) on {Date:ddd, dd MMM} · ₹{TotalCollected:0.00}";
@@ -215,9 +214,6 @@ public partial class ReportsViewModel(
         PartPacks.Clear();
         foreach (var b in await pharmacy.GetPartPacksAsync()) PartPacks.Add(b);
 
-        await using var db = await factory.CreateDbContextAsync();
-        var from = Date.Date;
-        var to = from.AddDays(1);
         NotifyExportCanExecute();
     }
 
@@ -297,6 +293,8 @@ public partial class ReportsViewModel(
         var shop = await settings.GetAsync();
         PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop, isReprint: true),
                              $"Receipt {visit.FeeReceiptNo} (duplicate)");
+    }
+
     // ── Export ─────────────────────────────────────────────────────────────
 
     private (ReportKind Kind, bool HasData) CurrentReport()

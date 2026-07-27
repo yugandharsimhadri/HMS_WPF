@@ -69,7 +69,7 @@ public class StockRegisterTests : IDisposable
         var product = await GivenProductAsync("Cough Syrup");
         await GivenStockAsync(product, "B1", 10, 60m);
         var batch = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
-        await _pharmacy.AdjustStockAsync(batch.Id, 0);
+        await _pharmacy.AdjustStockAsync(batch.Id, 0, AdjustmentReason.Recount, "Sold down to nothing.");
 
         var register = await _pharmacy.GetAllBatchesAsync(includeZeroStock: false);
 
@@ -82,7 +82,7 @@ public class StockRegisterTests : IDisposable
         var product = await GivenProductAsync("Cough Syrup");
         await GivenStockAsync(product, "B1", 10, 60m);
         var batch = (await _pharmacy.GetSellableBatchesAsync(product.Id))[0];
-        await _pharmacy.AdjustStockAsync(batch.Id, 0);
+        await _pharmacy.AdjustStockAsync(batch.Id, 0, AdjustmentReason.Recount, "Sold down to nothing.");
 
         var register = await _pharmacy.GetAllBatchesAsync(includeZeroStock: true);
 

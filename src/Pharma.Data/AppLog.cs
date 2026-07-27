@@ -101,6 +101,7 @@ public static class AppLog
     /// </summary>
     private static string? _currentFile;
     private static string _currentDay = "";
+    private static string _currentDirectory = "";
     private static int _sinceSizeCheck;
 
     public static string CurrentFile
@@ -108,18 +109,29 @@ public static class AppLog
         get
         {
             var day = DateTime.Now.ToString("yyyyMMdd");
+            var directory = LogDirectory;
 
             // Cached. Working this out meant a File.Exists and a FileInfo.Length
             // on every single line written, and with tracing on that is several
             // file system calls per database call. The size is re-checked
             // periodically instead, which is soon enough for a 10 MB limit.
-            if (_currentFile is not null && day == _currentDay && ++_sinceSizeCheck < 200)
+            //
+            // The directory is part of the key: caching on the day alone kept
+            // writing to the previous folder after the override moved, which in
+            // tests meant one class's lines landing in another's file.
+            if (_currentFile is not null
+                && day == _currentDay
+                && directory == _currentDirectory
+                && ++_sinceSizeCheck < 200)
+            {
                 return _currentFile;
+            }
 
             _currentDay = day;
+            _currentDirectory = directory;
             _sinceSizeCheck = 0;
 
-            var today = Path.Combine(LogDirectory, $"twinkle-{day}.log");
+            var today = Path.Combine(directory, $"twinkle-{day}.log");
             var limit = Math.Max(1, AppConfig.Current.LogFileMaxMb) * 1024L * 1024L;
 
             try
@@ -129,7 +141,7 @@ public static class AppLog
 
                 for (var part = 2; part < 1000; part++)
                 {
-                    var rolled = Path.Combine(LogDirectory, $"twinkle-{day}-{part}.log");
+                    var rolled = Path.Combine(directory, $"twinkle-{day}-{part}.log");
 
                     if (!File.Exists(rolled) || new FileInfo(rolled).Length < limit)
                         return _currentFile = rolled;
