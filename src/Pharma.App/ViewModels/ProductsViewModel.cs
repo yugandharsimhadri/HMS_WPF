@@ -172,7 +172,41 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
             return;
         }
 
+        // Caught inside the guarded block and dealt with after it, because a
+        // duplicate is not a failure — it is a wrong turn worth offering a way out of.
+        DuplicateMedicineException? duplicate = null;
+
         await Safely.RunAsync(async () =>
+        {
+            try
+            {
+                await SaveTheMedicineAsync();
+            }
+            catch (DuplicateMedicineException ex)
+            {
+                duplicate = ex;
+            }
+        }, "Saving the medicine", m => Status = m);
+
+        if (duplicate is null) return;
+
+        // Nobody adds a duplicate on purpose — they could not find the first one.
+        // So offer to open it rather than just refusing.
+        Status = duplicate.Message;
+
+        var answer = MessageBox.Show(
+            $"{duplicate.Message}\n\nOpen the one that is already there?",
+            "Medicines", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+        if (answer != MessageBoxResult.Yes) return;
+
+        Search = duplicate.Existing.Name;
+        await FindAsync();
+        SelectedProduct = Products.FirstOrDefault(p => p.Id == duplicate.Existing.Id);
+    }
+
+    private async Task SaveTheMedicineAsync()
+    {
         {
             var product = SelectedProduct ?? new Product();
 
@@ -202,7 +236,7 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
             Search = product.Name;
             await FindAsync();
             SelectedProduct = Products.FirstOrDefault(p => p.Id == product.Id);
-        }, "Saving the medicine", m => Status = m);
+        }
     }
 
     /// <summary>

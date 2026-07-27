@@ -44,18 +44,43 @@ public static class BillPrinter
             ? Row(true, "MEDICINE", "BATCH", "EXPIRY", "QTY", "MRP", "GST%", "AMOUNT")
             : Row(true, "MEDICINE", "BATCH", "EXPIRY", "QTY", "MRP", "AMOUNT"));
 
-        foreach (var item in sale.Items)
+        // One heading per medicine, its batches beneath it. A course that spans
+        // two batches is two lines at two prices, and printed flat it reads like
+        // a billing mistake to the parent holding it.
+        foreach (var medicine in sale.Items.GroupBy(i => i.ProductName))
         {
-            // Quoted separator: a bare "/" is replaced by the machine's date
-            // separator, which made the printed expiry differ between PCs.
-            var expiry = item.ExpiryDate.ToString("MM'/'yy");
-            var qty = item.UnitsPerPack > 1 ? item.QuantityDescription : item.Quantity.ToString();
+            var split = medicine.Count() > 1;
 
-            itemGroup.Rows.Add(sale.IsTaxInvoice
-                ? Row(false, item.ProductName, item.BatchNo, expiry, qty,
-                      item.Mrp.ToString("0.00"), item.GstRate.ToString("0.#"), item.LineTotal.ToString("0.00"))
-                : Row(false, item.ProductName, item.BatchNo, expiry, qty,
-                      item.Mrp.ToString("0.00"), item.LineTotal.ToString("0.00")));
+            if (split)
+            {
+                var total = medicine.Sum(i => i.LineTotal).ToString("0.00");
+                var quantity = medicine.Sum(i => i.Quantity);
+                var unit = medicine.First();
+
+                itemGroup.Rows.Add(sale.IsTaxInvoice
+                    ? Row(false, medicine.Key, "", "",
+                          PackMath.Describe(quantity, unit.UnitsPerPack, unit.PackLabel), "", "", total)
+                    : Row(false, medicine.Key, "", "",
+                          PackMath.Describe(quantity, unit.UnitsPerPack, unit.PackLabel), "", total));
+            }
+
+            foreach (var item in medicine)
+            {
+                // Quoted separator: a bare "/" is replaced by the machine's date
+                // separator, which made the printed expiry differ between PCs.
+                var expiry = item.ExpiryDate.ToString("MM'/'yy");
+                var qty = item.UnitsPerPack > 1 ? item.QuantityDescription : item.Quantity.ToString();
+
+                // Indented under the heading when this medicine came from more
+                // than one batch, so the batches read as detail, not as extra items.
+                var name = split ? $"    from batch" : item.ProductName;
+
+                itemGroup.Rows.Add(sale.IsTaxInvoice
+                    ? Row(false, name, item.BatchNo, expiry, qty,
+                          item.Mrp.ToString("0.00"), item.GstRate.ToString("0.#"), item.LineTotal.ToString("0.00"))
+                    : Row(false, name, item.BatchNo, expiry, qty,
+                          item.Mrp.ToString("0.00"), item.LineTotal.ToString("0.00")));
+            }
         }
 
         items.RowGroups.Add(itemGroup);

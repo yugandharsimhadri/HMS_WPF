@@ -125,7 +125,18 @@ public static class DbBootstrapper
             });
         }
 
-        if (!await db.Products.AnyAsync()) db.Products.AddRange(StarterCatalogue());
+        if (!await db.Products.AnyAsync())
+        {
+            var catalogue = StarterCatalogue();
+
+            // The catalogue is keyed on brand, maker and pack, and a unique index
+            // enforces it. Seeding is a way into the catalogue like any other, so
+            // it sets the key — without it all six collide on an empty one and
+            // the application cannot open its own database.
+            foreach (var product in catalogue) product.SearchKey = product.BuildKey();
+
+            db.Products.AddRange(catalogue);
+        }
 
         await db.SaveChangesAsync();
     }

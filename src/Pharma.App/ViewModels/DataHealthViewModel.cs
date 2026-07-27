@@ -24,6 +24,7 @@ public partial class HealthRow(HealthFinding finding) : ObservableObject
         : "";
 
     public bool CanFix => Finding.CanRepairAutomatically;
+    public bool IsDuplicate => Finding.Problem == HealthProblem.Duplicate;
 
     private static string Describe(HealthProblem problem) => problem switch
     {
@@ -70,6 +71,39 @@ public partial class DataHealthViewModel(DataHealthService health) : ObservableO
 
             Status = "";
         }, "Checking the data", m => Status = m);
+
+        Busy = false;
+    }
+
+    /// <summary>
+    /// Folds a duplicate into the record that holds the most stock. Asked first,
+    /// because it moves batches and history and cannot be undone from here.
+    /// </summary>
+    [RelayCommand]
+    private async Task MergeAsync(HealthRow? row)
+    {
+        if (row is null || row.Finding.Problem != HealthProblem.Duplicate) return;
+
+        var answer = System.Windows.MessageBox.Show(
+            $"Fold this copy of {row.Medicine} into the one it duplicates?\n\n" +
+            $"Its batches, purchases, sales and prescriptions all move across, and " +
+            $"the empty record is retired.\n\nThis cannot be undone from here.",
+            "Merge duplicate", System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question);
+
+        if (answer != System.Windows.MessageBoxResult.Yes) return;
+
+        Busy = true;
+
+        await Safely.RunAsync(async () =>
+        {
+            var survivorId = await health.SurvivorForAsync(row.Finding.ProductId)
+                             ?? throw new InvalidOperationException(
+                                 "The medicine this duplicates could not be found.");
+
+            Status = await health.MergeAsync(survivorId, row.Finding.ProductId, Environment.UserName);
+            await ScanAsync();
+        }, "Merging the duplicate", m => Status = m);
 
         Busy = false;
     }

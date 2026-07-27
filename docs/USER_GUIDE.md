@@ -145,18 +145,33 @@ twice.
 ## G. Sell to someone who walks in
 
 1. Click **Pharmacy counter**.
-2. Type part of the medicine name and press Enter.
+2. Type part of the medicine name. It filters as you type, in any case.
 3. **Click the medicine** in the results.
-4. Enter **Qty (units)** — individual tablets, not strips.
+4. Enter **How many**, and check the unit beside it says what you mean —
+   *tablets* or *strips of 10*.
 5. Click **Add to bill**. Repeat for each medicine.
 6. Leave the customer as **Cash**, or type their name.
 7. Choose **Payment**, then **Save & print bill**.
 
 ## H. Sell part of a strip
 
-Exactly as task G — just enter the number of **tablets**. Five out of a strip of
-ten is `5`. The **PACKS** column shows what to hand over, and the price is
-proportional. A full strip always costs exactly the MRP printed on it.
+Exactly as task G. Nine tablets out of a strip of ten is **`9`** with the unit
+on **tablets** — the bill line then reads `0 × 10 TAB + 9 tablets` so you can
+see what to hand over.
+
+The price is proportional: a strip of ten at ₹120 makes each tablet ₹12, so nine
+is ₹108. **A full strip always costs exactly the MRP printed on it** — the
+arithmetic never drifts by a few paise.
+
+Switch the unit to **strips of 10** and type `2` when someone wants whole
+strips; it becomes 20 tablets.
+
+> ### If the unit only offers "units"
+>
+> That medicine has **Units in one pack** set to 1, so the software believes one
+> strip *is* one tablet — and nine tablets will be charged as nine strips.
+> **Settings → Check data health** finds every medicine in that state and fixes
+> them together. See task N.
 
 ## I. Dispense what a doctor prescribed
 
@@ -210,6 +225,43 @@ search the bill number or customer name across all dates, then **Reprint**.
 
 It appears under **Reports → Stock to reconcile** until you match it to the
 supplier bill.
+
+## N. Put the medicine records right
+
+Do this **once**, before you rely on the counter. It is the difference between
+nine tablets costing ₹108 and costing ₹1,080.
+
+1. Click **Settings**, then **Check data health**.
+2. Read the list. Each row says what is wrong, what it will become, and what
+   happens to the stock figure.
+3. Leave the ticks as they are and click **Put the ticked ones right**.
+
+| What it finds | What it means |
+|---|---|
+| **Pack size disagrees** | The pack says 15 but the medicine says 1 per pack, so the counter sells whole strips to anyone asking for tablets. Fixing it re-counts 59 strips as 885 tablets — the same packs on the shelf |
+| **Old stock at a different pack size** | Stock received before the medicine was corrected. Re-counted to match |
+| **Sold-as not set** | Quantities read "units" instead of tablets. Taken from what is printed on the pack |
+| **Duplicate — fix by hand** | The same medicine twice. Press **Merge…** on the row |
+
+Every re-count writes a line in **Inventory → Recent corrections**, so nothing
+changes quietly.
+
+> ### Before you tick a re-count, check one thing
+>
+> *"59 → 885"* is right **only if the 59 means 59 strips**. If it means 59 loose
+> tablets, untick that row — it would multiply your stock by fifteen.
+
+## O. Merge a medicine that appears twice
+
+1. **Settings → Check data health**.
+2. Find the row marked **Duplicate** and click **Merge…**.
+3. Confirm.
+
+Its batches, purchases, sales and prescriptions all move to the record holding
+the most stock, and the empty one is retired. Nothing is deleted.
+
+You will not be able to create a new duplicate — the same brand, maker and pack
+is refused, and you are offered the existing one instead.
 
 ---
 
@@ -909,7 +961,7 @@ Worth reading once. It is the difference between trusting a number and checking 
 | **Part payment, or paying later** | Not supported, on purpose. A bill is paid in full when it is saved |
 | **Purchases balanced against sales** | Will **not** tie out while anything sits in **Reports → Stock to reconcile**. That list is the gap, and it is deliberate |
 | **The rate paid on counter-added stock** | Defaults to zero, so anything added that way looks like pure margin until you fill the real rate in |
-| **Editing MRP or Disc % on a bill line** | Allowed, and **not recorded anywhere**. Whoever is at the counter can change a price and nothing will show it later |
+| **No discounts** | The counter charges MRP. There is no discount box, by choice |
 | **A batch that expires next week** | Sold first, correctly, but you are not warned at the till. Watch **Expiring soon** |
 | **Two people billing at once** | One PC, one till. This is not built for two counters on the same data |
 | **Changing units per pack after stock exists** | Offered as a re-count, and you should accept it. Declining leaves the shelf being sold by the pack |
@@ -918,10 +970,10 @@ Worth reading once. It is the difference between trusting a number and checking 
 
 > ### The one number to sanity-check daily
 >
-> **Reports → the totals along the top.** If the day's takings in the drawer do
-> not match pharmacy sales plus fees collected, the difference is almost always
-> a bill line whose MRP or discount was edited. That is the one thing the system
-> does not record for you.
+> **Reports → the totals along the top.** The day's takings in the drawer should
+> match pharmacy sales plus fees collected. A bill line can no longer be
+> repriced, so a difference means cash was taken out or a bill was not saved —
+> both worth finding on the day rather than at month end.
 
 ---
 

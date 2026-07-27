@@ -248,6 +248,101 @@ public class DataHealthService(IDbContextFactory<AppDbContext> factory, Pharmacy
         return repaired;
     }
 
+    /// <summary>
+    /// Which record a duplicate should be folded into — the one of its group
+    /// holding the most stock, so the least has to move.
+    /// </summary>
+    public async Task<Guid?> SurvivorForAsync(Guid duplicateId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+
+        var duplicate = await db.Products.Include(p => p.Batches)
+                                         .FirstOrDefaultAsync(p => p.Id == duplicateId);
+        if (duplicate is null) return null;
+
+        var key = Key(duplicate);
+
+        var group = await db.Products.Include(p => p.Batches)
+                                     .Where(p => !p.IsDeleted && p.Id != duplicateId)
+                                     .ToListAsync();
+
+        return group.Where(p => Key(p) == key)
+                    .OrderByDescending(p => p.StockOnHand)
+                    .FirstOrDefault()?.Id;
+    }
+
+    /// <summary>
+    /// Folds one medicine record into another: batches, purchase lines, sold
+    /// lines, prescriptions, corrections and vendor codes all move across, and
+    /// the emptied record is retired.
+    ///
+    /// Everything is moved rather than deleted. A duplicate usually holds real
+    /// stock and real history, and losing either is worse than the duplicate.
+    /// </summary>
+    public async Task<string> MergeAsync(Guid survivorId, Guid duplicateId, string? by = null)
+    {
+        using var log = AppLog.Enter(nameof(MergeAsync), $"keep={survivorId} fold={duplicateId} by={by}");
+
+        if (survivorId == duplicateId)
+            throw new InvalidOperationException("A medicine cannot be merged into itself.");
+
+        await using var db = await factory.CreateDbContextAsync();
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        var survivor = await db.Products.Include(p => p.Batches).FirstOrDefaultAsync(p => p.Id == survivorId)
+                       ?? throw new InvalidOperationException("The medicine to keep no longer exists.");
+
+        var duplicate = await db.Products.Include(p => p.Batches).FirstOrDefaultAsync(p => p.Id == duplicateId)
+                        ?? throw new InvalidOperationException("The duplicate no longer exists.");
+
+        var moved = duplicate.Batches.Count(b => !b.IsDeleted);
+        var stock = duplicate.Batches.Where(b => !b.IsDeleted).Sum(b => b.QtyOnHand);
+
+        foreach (var batch in await db.Batches.Where(b => b.ProductId == duplicateId).ToListAsync())
+            batch.ProductId = survivorId;
+
+        foreach (var item in await db.StockEntryItems.Where(i => i.ProductId == duplicateId).ToListAsync())
+            item.ProductId = survivorId;
+
+        foreach (var item in await db.SaleItems.Where(i => i.ProductId == duplicateId).ToListAsync())
+            item.ProductId = survivorId;
+
+        foreach (var item in await db.PrescriptionItems.Where(i => i.ProductId == duplicateId).ToListAsync())
+            item.ProductId = survivorId;
+
+        foreach (var item in await db.StockAdjustments.Where(a => a.ProductId == duplicateId).ToListAsync())
+            item.ProductId = survivorId;
+
+        // A vendor code can only point at one medicine, so drop any that would
+        // collide with one the survivor already has.
+        var survivorCodes = await db.VendorProductCodes
+            .Where(c => c.ProductId == survivorId)
+            .Select(c => c.VendorProfile + "|" + c.Code)
+            .ToListAsync();
+
+        foreach (var code in await db.VendorProductCodes.Where(c => c.ProductId == duplicateId).ToListAsync())
+        {
+            if (survivorCodes.Contains(code.VendorProfile + "|" + code.Code)) db.VendorProductCodes.Remove(code);
+            else code.ProductId = survivorId;
+        }
+
+        // Retired, not destroyed, and its key freed so the name can be reused.
+        duplicate.IsDeleted = true;
+        duplicate.IsActive = false;
+        duplicate.SearchKey = $"merged:{duplicate.Id}";
+
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        var summary = $"{duplicate.Name} folded into {survivor.Name}: " +
+                      $"{moved} batch(es), {stock} unit(s) moved across.";
+
+        AppLog.Info($"Merged {duplicate.Id} into {survivor.Id}. {summary} (by {by ?? "unknown"})");
+
+        log.Ok(summary);
+        return summary;
+    }
+
     private async Task SetUnitAsync(Guid productId, DispensingUnit unit)
     {
         await using var db = await factory.CreateDbContextAsync();

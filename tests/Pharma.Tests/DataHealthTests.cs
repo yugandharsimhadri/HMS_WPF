@@ -145,11 +145,23 @@ public class DataHealthTests : IDisposable
             Name = "Cetirizine 10mg", Manufacturer = "Generic", PackSize = "10 TAB", UnitsPerPack = 10
         });
 
-        // Same medicine keyed again — different spacing and case, as it happens.
-        await _pharmacy.SaveProductAsync(new Product
+        // The same medicine again, as it exists in a database written before the
+        // unique key — parked under its own id by the migration, the way a shop
+        // that already had duplicates will find them.
+        var factory = _provider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+
+        await using (var db = await factory.CreateDbContextAsync())
         {
-            Name = "cetirizine  10MG", Manufacturer = "generic", PackSize = "10 tab", UnitsPerPack = 10
-        });
+            var parked = new Product
+            {
+                Name = "cetirizine  10MG", Manufacturer = "generic", PackSize = "10 tab", UnitsPerPack = 10
+            };
+
+            parked.SearchKey = $"{parked.BuildKey()}|dup:{parked.Id}";
+
+            db.Products.Add(parked);
+            await db.SaveChangesAsync();
+        }
 
         var duplicate = Assert.Single((await _health.ScanAsync())
             .Where(f => f.Problem == HealthProblem.Duplicate));

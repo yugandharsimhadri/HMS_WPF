@@ -23,6 +23,12 @@ public class SaleLine
     public DrugSchedule Schedule { get; set; }
 }
 
+/// <summary>Raised when a medicine already exists, carrying the one that does.</summary>
+public class DuplicateMedicineException(Product existing, string message) : InvalidOperationException(message)
+{
+    public Product Existing { get; } = existing;
+}
+
 /// <summary>What re-counting a medicine's existing batches would do.</summary>
 public class RepackPreview
 {
@@ -75,9 +81,28 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
         await using var db = await factory.CreateDbContextAsync();
 
+        // Say it in words rather than letting the unique index throw at the user.
+        var key = product.BuildKey();
+
+        var clash = await db.Products
+            .FirstOrDefaultAsync(p => !p.IsDeleted && p.SearchKey == key && p.Id != product.Id);
+
+        if (clash is not null)
+        {
+            log.Skip($"duplicate of {clash.Id}");
+
+            throw new DuplicateMedicineException(clash,
+                $"{clash.Name} ({clash.Manufacturer ?? "no maker"}, {clash.PackSize ?? "no pack"}) " +
+                $"is already in the catalogue. Open that one instead of adding it again — " +
+                $"two records split the stock and both appear at the counter.");
+        }
+
+        product.SearchKey = key;
+
         if (product.Id != Guid.Empty && await db.Products.AnyAsync(p => p.Id == product.Id))
         {
             var existing = await db.Products.FirstAsync(p => p.Id == product.Id);
+            existing.SearchKey = key;
             existing.Name = product.Name;
             existing.GenericName = product.GenericName;
             existing.Manufacturer = product.Manufacturer;

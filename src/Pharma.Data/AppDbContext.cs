@@ -66,6 +66,14 @@ public class AppDbContext : DbContext
         b.Entity<Product>(e =>
         {
             e.HasIndex(x => x.Name);
+
+            // The same medicine twice splits its stock and shows up twice at the
+            // counter. A filtered unique index so a removed record does not block
+            // the name being used again.
+            e.HasIndex(x => x.SearchKey)
+             .IsUnique()
+             .HasFilter("\"IsDeleted\" = 0");
+
             e.Ignore(x => x.StockOnHand);
             e.Ignore(x => x.PackDescription);
             e.Ignore(x => x.UnitPriceLabel);

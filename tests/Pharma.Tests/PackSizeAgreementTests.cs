@@ -47,6 +47,19 @@ public class PackSizeAgreementTests
     }
 
     /// <summary>
+    /// The starter catalogue goes in under a unique index. Two medicines sharing
+    /// a key would stop a fresh installation opening its own database.
+    /// </summary>
+    [Fact]
+    public void No_two_seeded_medicines_share_a_key()
+    {
+        var keys = DbBootstrapper.StarterCatalogue().Select(p => p.BuildKey()).ToList();
+
+        Assert.Equal(keys.Count, keys.Distinct().Count());
+        Assert.DoesNotContain(keys, k => k.StartsWith('|'));
+    }
+
+    /// <summary>
     /// Editing an existing medicine used to keep only some of the fields. The
     /// four it dropped included units-per-pack, so a shop that spotted the
     /// problem and corrected it saw the form accept the change and the counter

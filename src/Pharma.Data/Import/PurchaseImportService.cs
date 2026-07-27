@@ -216,6 +216,11 @@ public class PurchaseImportService(IDbContextFactory<AppDbContext> factory, Phar
                     AllowLooseSale = line.UnitsPerPack > 1
                 };
 
+                // The catalogue is keyed on brand, maker and pack. Importing is a
+                // way into the catalogue like any other, so it sets the key too —
+                // without it every imported medicine collides on an empty key.
+                product.SearchKey = product.BuildKey();
+
                 db.Products.Add(product);
                 line.Product = product;
                 createdByKey[key] = product;

@@ -180,6 +180,26 @@ public class Product : BaseEntity
     public int ReorderLevel { get; set; }
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Brand, maker and pack, normalised — trimmed, case-folded, whitespace
+    /// collapsed. A unique index sits on this, so "Cetirizine 10mg" and
+    /// "cetirizine  10MG" from the same maker cannot both exist. Kept as a
+    /// stored column because a database constraint is a guarantee and a check in
+    /// the screen is only a suggestion.
+    /// </summary>
+    public string SearchKey { get; set; } = "";
+
+    public static string KeyFor(string? name, string? manufacturer, string? packSize)
+    {
+        static string Norm(string? value) =>
+            string.Join(' ', (value ?? "").Trim().ToLowerInvariant()
+                                          .Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+        return $"{Norm(name)}|{Norm(manufacturer)}|{Norm(packSize)}";
+    }
+
+    public string BuildKey() => KeyFor(Name, Manufacturer, PackSize);
+
     public ICollection<Batch> Batches { get; set; } = [];
 
     public int StockOnHand => Batches.Where(b => !b.IsDeleted).Sum(b => b.QtyOnHand);

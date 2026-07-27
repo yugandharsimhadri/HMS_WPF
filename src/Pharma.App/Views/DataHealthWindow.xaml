@@ -47,6 +47,19 @@
                     <DataGridTextColumn Header="NOW" Binding="{Binding Now}" Width="220" IsReadOnly="True"/>
                     <DataGridTextColumn Header="AFTER" Binding="{Binding After}" Width="150" IsReadOnly="True"/>
                     <DataGridTextColumn Header="STOCK" Binding="{Binding StockChange}" Width="110" IsReadOnly="True"/>
+
+                    <DataGridTemplateColumn Header="" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Merge…" Style="{StaticResource BtnGhost}" Padding="8,2"
+                                        Visibility="{Binding IsDuplicate, Converter={StaticResource BoolToVisible}}"
+                                        Command="{Binding DataContext.MergeCommand,
+                                                  RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        AutomationProperties.AutomationId="HealthMerge"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
 
                 <DataGrid.RowDetailsTemplate>
