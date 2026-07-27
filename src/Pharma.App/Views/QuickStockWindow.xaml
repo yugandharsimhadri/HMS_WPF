@@ -4,6 +4,7 @@
         xmlns:local="clr-namespace:Pharma.App"
         Title="Add stock" Width="520" SizeToContent="Height" MaxHeight="700"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        FontFamily="{StaticResource UiFont}"
         Background="{DynamicResource Bg}">
 
     <DockPanel Margin="18">
@@ -93,7 +94,7 @@
 
                 <Border Background="{DynamicResource WarnFill}" BorderBrush="{DynamicResource WarnStroke}" BorderThickness="1"
                         CornerRadius="6" Padding="10,8" Margin="0,14,0,0">
-                    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource WarnInk}" FontSize="12"
+                    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource WarnInk}" FontSize="{StaticResource FontLabel}"
                                Text="This goes on the shelf now so the patient can be served. It has no supplier bill behind it, so it is listed under Reports → Stock to reconcile until the bill arrives. Leave the batch number blank and one is allocated for you."/>
                 </Border>
 

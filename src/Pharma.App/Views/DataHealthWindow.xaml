@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Data health check" Height="620" Width="1080"
         WindowStartupLocation="CenterOwner"
+        FontFamily="{StaticResource UiFont}"
         Background="{DynamicResource Bg}">
 
     <DockPanel Margin="18">

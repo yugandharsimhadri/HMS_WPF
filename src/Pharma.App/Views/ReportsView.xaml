@@ -16,23 +16,23 @@
                 <UniformGrid Rows="1" Columns="5">
                     <StackPanel>
                         <TextBlock Text="PHARMACY SALES" Style="{StaticResource Label}"/>
-                        <TextBlock Text="{Binding TotalCollected, StringFormat='₹{0:N2}'}" FontSize="19" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding TotalCollected, StringFormat='₹{0:N2}'}" FontSize="{StaticResource FontFigure}" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="CASH" Style="{StaticResource Label}"/>
-                        <TextBlock Text="{Binding CashTotal, StringFormat='₹{0:N2}'}" FontSize="19" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding CashTotal, StringFormat='₹{0:N2}'}" FontSize="{StaticResource FontFigure}" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="UPI" Style="{StaticResource Label}"/>
-                        <TextBlock Text="{Binding UpiTotal, StringFormat='₹{0:N2}'}" FontSize="19" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding UpiTotal, StringFormat='₹{0:N2}'}" FontSize="{StaticResource FontFigure}" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="CONSULTATION FEES" Style="{StaticResource Label}"/>
-                        <TextBlock Text="{Binding ConsultationTotal, StringFormat='₹{0:N2}'}" FontSize="19" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding ConsultationTotal, StringFormat='₹{0:N2}'}" FontSize="{StaticResource FontFigure}" FontWeight="Bold"/>
                     </StackPanel>
                     <StackPanel>
                         <TextBlock Text="OPD VISITS" Style="{StaticResource Label}"/>
-                        <TextBlock Text="{Binding VisitCount}" FontSize="19" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding VisitCount}" FontSize="{StaticResource FontFigure}" FontWeight="Bold"/>
                     </StackPanel>
                 </UniformGrid>
             </DockPanel>
@@ -115,7 +115,7 @@
                                         <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
-                                <TextBlock Text="No records found for the selected date." Style="{StaticResource Muted}" FontSize="14"
+                                <TextBlock Text="No records found for the selected date." Style="{StaticResource Muted}" FontSize="{StaticResource FontSubheading}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Visibility="{Binding Sales.Count, Converter={StaticResource ZeroVis}}"/>
                             </Grid>
@@ -153,7 +153,7 @@
                                         <DataGridTextColumn Header="INVOICE VALUE" Binding="{Binding Total, StringFormat=N2}" Width="*"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
-                                <TextBlock Text="No records found for the selected date range." Style="{StaticResource Muted}" FontSize="14"
+                                <TextBlock Text="No records found for the selected date range." Style="{StaticResource Muted}" FontSize="{StaticResource FontSubheading}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Visibility="{Binding GstSummary.Count, Converter={StaticResource ZeroVis}}"/>
                             </Grid>
@@ -185,7 +185,7 @@
                                         <DataGridCheckBoxColumn Header="PAID" Binding="{Binding FeePaid}" Width="60"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
-                                <TextBlock Text="No records found for the selected date." Style="{StaticResource Muted}" FontSize="14"
+                                <TextBlock Text="No records found for the selected date." Style="{StaticResource Muted}" FontSize="{StaticResource FontSubheading}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Visibility="{Binding Visits.Count, Converter={StaticResource ZeroVis}}"/>
                             </Grid>
@@ -225,7 +225,7 @@
                                         <DataGridTextColumn Header="DAYS REMAINING" Binding="{Binding DaysRemaining}" Width="130"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
-                                <TextBlock Text="No medicines are expiring in the selected window." Style="{StaticResource Muted}" FontSize="14"
+                                <TextBlock Text="No medicines are expiring in the selected window." Style="{StaticResource Muted}" FontSize="{StaticResource FontSubheading}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Visibility="{Binding Expiring.Count, Converter={StaticResource ZeroVis}}"/>
                             </Grid>
@@ -285,7 +285,7 @@
                                     <DataGridTextColumn Header="SHORTAGE" Binding="{Binding Shortage}" Width="100"/>
                                 </DataGrid.Columns>
                             </DataGrid>
-                            <TextBlock Text="No medicines are below their reorder level." Style="{StaticResource Muted}" FontSize="14"
+                            <TextBlock Text="No medicines are below their reorder level." Style="{StaticResource Muted}" FontSize="{StaticResource FontSubheading}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
                                        Visibility="{Binding LowStock.Count, Converter={StaticResource ZeroVis}}"/>
                         </Grid>
@@ -332,7 +332,7 @@
                                         <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
-                                <TextBlock Text="No stock found for the current filters." Style="{StaticResource Muted}" FontSize="14"
+                                <TextBlock Text="No stock found for the current filters." Style="{StaticResource Muted}" FontSize="{StaticResource FontSubheading}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Visibility="{Binding StockRegister.Count, Converter={StaticResource ZeroVis}}"/>
                             </Grid>
@@ -370,7 +370,7 @@
                                         <DataGridTextColumn Header="PRESCRIBER" Binding="{Binding DoctorName}" Width="180"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
-                                <TextBlock Text="No records found for the selected date range." Style="{StaticResource Muted}" FontSize="14"
+                                <TextBlock Text="No records found for the selected date range." Style="{StaticResource Muted}" FontSize="{StaticResource FontSubheading}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Visibility="{Binding H1Register.Count, Converter={StaticResource ZeroVis}}"/>
                             </Grid>

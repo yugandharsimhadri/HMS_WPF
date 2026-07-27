@@ -82,7 +82,7 @@
                                 CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
                                 Visibility="{Binding PackWarning, Converter={StaticResource TextToVisible}}">
                             <TextBlock Text="{Binding PackWarning}" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource WarnInk}" FontSize="12"
+                                       Foreground="{DynamicResource WarnInk}" FontSize="{StaticResource FontLabel}"
                                        AutomationProperties.AutomationId="InventoryPackWarning"/>
                         </Border>
 

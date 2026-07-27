@@ -40,13 +40,13 @@
                                     <StackPanel DockPanel.Dock="Left" Width="290">
                                         <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
                                                    TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Text="{Binding GenericName}" FontSize="11" Opacity="0.7"
+                                        <TextBlock Text="{Binding GenericName}" FontSize="{StaticResource FontSmall}" Opacity="0.7"
                                                    TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
 
                                     <StackPanel DockPanel.Dock="Left" Width="120">
                                         <TextBlock Text="{Binding PackSize}" Opacity="0.75"/>
-                                        <TextBlock Text="{Binding Manufacturer}" FontSize="11" Opacity="0.6"
+                                        <TextBlock Text="{Binding Manufacturer}" FontSize="{StaticResource FontSmall}" Opacity="0.6"
                                                    TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
 
@@ -54,13 +54,13 @@
                                         <TextBlock Text="{Binding StockOnHand, StringFormat='{}{0} left'}"
                                                    FontWeight="SemiBold" TextAlignment="Right"/>
                                         <TextBlock Text="{Binding RackLabel}"
-                                                   FontSize="11" Opacity="0.6" TextAlignment="Right"/>
+                                                   FontSize="{StaticResource FontSmall}" Opacity="0.6" TextAlignment="Right"/>
                                     </StackPanel>
 
                                     <StackPanel DockPanel.Dock="Right" Width="100">
                                         <TextBlock Text="{Binding UnitPriceLabel}" FontWeight="SemiBold"
                                                    TextAlignment="Right"/>
-                                        <TextBlock Text="{Binding PackPriceLabel}" FontSize="11" Opacity="0.6"
+                                        <TextBlock Text="{Binding PackPriceLabel}" FontSize="{StaticResource FontSmall}" Opacity="0.6"
                                                    TextAlignment="Right"/>
                                     </StackPanel>
                                 </DockPanel>
@@ -228,9 +228,9 @@
                     <Border Background="#0F766E" CornerRadius="6" Padding="14,10" Margin="0,10,0,14">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Left" Text="NET PAYABLE" Foreground="{DynamicResource NavInkBright}"
-                                       FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                       FontSize="{StaticResource FontSmall}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Net, StringFormat='₹{0:N2}'}" Foreground="White"
-                                       FontSize="22" FontWeight="Bold" HorizontalAlignment="Right"
+                                       FontSize="{StaticResource FontHeading}" FontWeight="Bold" HorizontalAlignment="Right"
                                        AutomationProperties.AutomationId="SaleNetTotal"/>
                         </DockPanel>
                     </Border>

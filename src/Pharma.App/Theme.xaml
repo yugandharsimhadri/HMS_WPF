@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:Pharma.App">
+                    xmlns:local="clr-namespace:Pharma.App"
+                    xmlns:system="clr-namespace:System;assembly=System.Runtime">
 
     <local:FeeBrushConverter x:Key="FeeBrush"/>
     <local:FeeInkConverter x:Key="FeeInk"/>
@@ -15,6 +16,27 @@
          startup and swapped when the theme changes. -->
 
     <CornerRadius x:Key="FieldRadius">6</CornerRadius>
+
+    <!--
+        One typeface, named once. Nothing declared a font before, so the
+        application took whatever the machine happened to give it and looked
+        different from one PC to the next. The fallbacks matter: Segoe UI
+        Variable is Windows 11, Segoe UI is older Windows, and the last two keep
+        rupee signs and the ✕ on a remove button from turning into boxes.
+    -->
+    <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, Nirmala UI, Segoe UI Symbol</FontFamily>
+
+    <!--
+        And one scale. There were twelve sizes in use, including 10.5, 11.5,
+        12.5 and 13.5 — differences nobody can see on purpose but which make the
+        screen feel unsettled. Five steps, each with a job.
+    -->
+    <system:Double x:Key="FontHeading">21</system:Double>
+    <system:Double x:Key="FontFigure">20</system:Double>
+    <system:Double x:Key="FontSubheading">14</system:Double>
+    <system:Double x:Key="FontBody">13</system:Double>
+    <system:Double x:Key="FontLabel">12</system:Double>
+    <system:Double x:Key="FontSmall">11</system:Double>
 
     <!-- Typography -->
     <Style x:Key="H1" TargetType="TextBlock">

@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Print preview" Height="820" Width="720"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource Bg}">
+        FontFamily="{StaticResource UiFont}"
+        Background="{DynamicResource Bg}">
 
     <DockPanel>
         <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="{StaticResource Border}"
