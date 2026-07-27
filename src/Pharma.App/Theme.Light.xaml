@@ -1,0 +1,73 @@
+<!--
+    The light palette. Every key here also exists in Theme.Dark.xaml, and the
+    two are swapped at runtime, so anything that wants to follow the theme must
+    reference these by DynamicResource rather than StaticResource.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="Bg"          Color="#F4F6F8"/>
+    <SolidColorBrush x:Key="Surface"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Border"      Color="#DCE1E7"/>
+    <SolidColorBrush x:Key="Ink"         Color="#1B2733"/>
+    <SolidColorBrush x:Key="InkMuted"    Color="#61707E"/>
+    <SolidColorBrush x:Key="Accent"      Color="#0F766E"/>
+    <SolidColorBrush x:Key="AccentDark"  Color="#0B5A54"/>
+    <SolidColorBrush x:Key="Danger"      Color="#B42318"/>
+    <SolidColorBrush x:Key="Warn"        Color="#B54708"/>
+    <SolidColorBrush x:Key="NavBg"       Color="#12303A"/>
+
+    <!-- Quieter surfaces: a completed tile, a token badge, a warning band. -->
+    <SolidColorBrush x:Key="SurfaceMuted" Color="#FAFBFC"/>
+    <SolidColorBrush x:Key="BadgeFill"    Color="#EDF0F2"/>
+    <SolidColorBrush x:Key="AccentSoft"   Color="#E4EFED"/>
+    <SolidColorBrush x:Key="WarnFill"     Color="#FFF4E5"/>
+    <SolidColorBrush x:Key="WarnStroke"   Color="#F5B742"/>
+    <SolidColorBrush x:Key="WarnInk"      Color="#7A4B00"/>
+    <SolidColorBrush x:Key="NavInk"       Color="#D6E2E6"/>
+    <SolidColorBrush x:Key="NavInkBright" Color="#BFE3DF"/>
+    <SolidColorBrush x:Key="NavInkFaint"  Color="#7FA3AA"/>
+    <SolidColorBrush x:Key="NavInkFaded"  Color="#6E8F96"/>
+
+    <!-- Interaction: a row under the pointer, a pressed button, a grid header. -->
+    <SolidColorBrush x:Key="HoverFill"   Color="#EDF3F2"/>
+    <SolidColorBrush x:Key="PressedFill" Color="#EDF2F5"/>
+    <SolidColorBrush x:Key="HeaderFill"  Color="#EEF2F5"/>
+    <SolidColorBrush x:Key="ArrowInk"    Color="#A9B4BE"/>
+
+    <!--
+        Input chrome. Fields read as slightly recessed: the fill is darker at the
+        top and the border is darker at the top too, which is what the eye reads
+        as an inset surface. Buttons do the opposite (light at the top) so they
+        read as raised. Same corner radius on both keeps the set coherent.
+    -->
+    <LinearGradientBrush x:Key="InputFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F2F5F8" Offset="0"/>
+        <GradientStop Color="#FCFDFD" Offset="0.45"/>
+        <GradientStop Color="#FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="InputStroke" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#BAC5CF" Offset="0"/>
+        <GradientStop Color="#D6DDE4" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="InputStrokeHover" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#9FAEBB" Offset="0"/>
+        <GradientStop Color="#C2CCD5" Offset="1"/>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="InputStrokeFocus" Color="#0F766E"/>
+    <SolidColorBrush x:Key="InputFillDisabled" Color="#F1F3F5"/>
+
+    <LinearGradientBrush x:Key="AccentFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#17968C" Offset="0"/>
+        <GradientStop Color="#0F766E" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="GhostFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFFFFF" Offset="0"/>
+        <GradientStop Color="#F1F4F7" Offset="1"/>
+    </LinearGradientBrush>
+
+</ResourceDictionary>

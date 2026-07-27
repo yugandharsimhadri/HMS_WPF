@@ -1,6 +1,7 @@
 <UserControl x:Class="Pharma.App.Views.SaleView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App">
 
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
@@ -98,7 +99,7 @@
                             <TextBlock Text="How many" Style="{StaticResource Label}"/>
                             <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0"
-                                     AutomationProperties.AutomationId="SaleQuantity">
+                                     local:NumericInput.Mode="Whole" AutomationProperties.AutomationId="SaleQuantity">
                                 <TextBox.InputBindings>
                                     <KeyBinding Key="Enter" Command="{Binding AddLineCommand}"/>
                                 </TextBox.InputBindings>
@@ -146,7 +147,7 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="✕" ToolTip="Remove line" BorderThickness="0"
-                                                Background="Transparent" Foreground="#B42318" Cursor="Hand"
+                                                Background="Transparent" Foreground="{DynamicResource Danger}" Cursor="Hand"
                                                 Command="{Binding DataContext.RemoveLineCommand,
                                                           RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"/>
@@ -189,7 +190,7 @@
                             Command="{Binding LoadPrescriptionCommand}" Margin="0,0,0,14"
                             AutomationProperties.AutomationId="SaleLoadPrescription"/>
 
-                    <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,12"/>
+                    <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,12"/>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -226,7 +227,7 @@
 
                     <Border Background="#0F766E" CornerRadius="6" Padding="14,10" Margin="0,10,0,14">
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Left" Text="NET PAYABLE" Foreground="#BFE3DF"
+                            <TextBlock DockPanel.Dock="Left" Text="NET PAYABLE" Foreground="{DynamicResource NavInkBright}"
                                        FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding Net, StringFormat='₹{0:N2}'}" Foreground="White"
                                        FontSize="22" FontWeight="Bold" HorizontalAlignment="Right"

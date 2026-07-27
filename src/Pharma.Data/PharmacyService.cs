@@ -274,6 +274,22 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
         foreach (var item in received)
         {
+            // A minus anywhere on a goods-inward line is a delivery that takes
+            // stock away or a price that pays the shop to sell. Refuse the whole
+            // entry rather than receive part of it — the transaction is undone.
+            //
+            // A positive quantity with a negative free quantity used to pass the
+            // "nothing on this line" check below and drain the shelf.
+            if (item.Quantity < 0 || item.FreeQuantity < 0)
+                throw new InvalidOperationException(
+                    $"{item.BatchNo}: quantities cannot be negative " +
+                    $"({item.Quantity} received, {item.FreeQuantity} free).");
+
+            if (item.Mrp < 0 || item.PurchaseRate < 0)
+                throw new InvalidOperationException(
+                    $"{item.BatchNo}: prices cannot be negative " +
+                    $"(MRP {item.Mrp:0.00}, rate {item.PurchaseRate:0.00}).");
+
             if (item.Quantity <= 0 && item.FreeQuantity <= 0)
             {
                 AppLog.Warn($"  {entry.EntryNo}: skipped {item.BatchNo} — no quantity on the line.");
@@ -422,6 +438,9 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
         if (packs <= 0) throw new InvalidOperationException("Enter how many packs are on the shelf.");
         if (mrp <= 0) throw new InvalidOperationException("Enter the MRP printed on the pack — nothing can be sold without it.");
+
+        if (purchaseRate < 0)
+            throw new InvalidOperationException("The rate paid cannot be negative. Leave it at zero if you do not know it.");
 
         await using var db = await factory.CreateDbContextAsync();
         await using var tx = await db.Database.BeginTransactionAsync();
@@ -668,6 +687,18 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
             if (line.Quantity <= 0)
                 throw new InvalidOperationException($"Quantity must be at least 1 for {line.ProductName}.");
+
+            // A negative price hands money over with the medicine; a negative
+            // discount is a surcharge nobody agreed to. Neither reaches a bill.
+            if (line.Mrp < 0)
+                throw new InvalidOperationException($"The price of {line.ProductName} cannot be negative.");
+
+            if (line.DiscountPercent < 0 || line.DiscountPercent > 100)
+                throw new InvalidOperationException(
+                    $"The discount on {line.ProductName} must be between 0 and 100 percent.");
+
+            if (line.GstRate < 0)
+                throw new InvalidOperationException($"The GST rate on {line.ProductName} cannot be negative.");
 
             if (batch.QtyOnHand < line.Quantity)
                 throw new InvalidOperationException(

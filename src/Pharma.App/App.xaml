@@ -4,6 +4,9 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <!-- The palette comes first so the styles after it can use its
+                     keys. AppTheme swaps this one entry to change the theme. -->
+                <ResourceDictionary Source="Theme.Light.xaml"/>
                 <ResourceDictionary Source="Theme.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

@@ -1,0 +1,70 @@
+<!--
+    The dark palette. Same keys as Theme.Light.xaml, swapped at runtime.
+
+    Not an inversion: the surfaces are warm-neutral rather than black, the ink
+    stops short of white, and the teal is lifted so it still reads as the
+    clinic's colour against a dark ground instead of going muddy.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <SolidColorBrush x:Key="Bg"          Color="#12171C"/>
+    <SolidColorBrush x:Key="Surface"     Color="#1B222A"/>
+    <SolidColorBrush x:Key="Border"      Color="#2E3841"/>
+    <SolidColorBrush x:Key="Ink"         Color="#E4EAEF"/>
+    <SolidColorBrush x:Key="InkMuted"    Color="#93A2B0"/>
+    <SolidColorBrush x:Key="Accent"      Color="#2AA79B"/>
+    <SolidColorBrush x:Key="AccentDark"  Color="#17847A"/>
+    <SolidColorBrush x:Key="Danger"      Color="#E4756A"/>
+    <SolidColorBrush x:Key="Warn"        Color="#E0A15C"/>
+    <SolidColorBrush x:Key="NavBg"       Color="#0D1418"/>
+
+    <SolidColorBrush x:Key="SurfaceMuted" Color="#171E24"/>
+    <SolidColorBrush x:Key="BadgeFill"    Color="#28323B"/>
+    <SolidColorBrush x:Key="AccentSoft"   Color="#1C3A38"/>
+    <SolidColorBrush x:Key="WarnFill"     Color="#33281A"/>
+    <SolidColorBrush x:Key="WarnStroke"   Color="#8A6428"/>
+    <SolidColorBrush x:Key="WarnInk"      Color="#EBC282"/>
+    <SolidColorBrush x:Key="NavInk"       Color="#C3D2D8"/>
+    <SolidColorBrush x:Key="NavInkBright" Color="#8FD3CC"/>
+    <SolidColorBrush x:Key="NavInkFaint"  Color="#6C8A92"/>
+    <SolidColorBrush x:Key="NavInkFaded"  Color="#5C7A82"/>
+
+    <!-- Interaction: a row under the pointer, a pressed button, a grid header. -->
+    <SolidColorBrush x:Key="HoverFill"   Color="#223038"/>
+    <SolidColorBrush x:Key="PressedFill" Color="#202A32"/>
+    <SolidColorBrush x:Key="HeaderFill"  Color="#232E36"/>
+    <SolidColorBrush x:Key="ArrowInk"    Color="#7B8B97"/>
+
+    <!-- Inset and raised still read the same way, just darker: fields sink,
+         buttons lift. -->
+    <LinearGradientBrush x:Key="InputFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#151B21" Offset="0"/>
+        <GradientStop Color="#1A222A" Offset="0.45"/>
+        <GradientStop Color="#1E272F" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="InputStroke" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#3A4650" Offset="0"/>
+        <GradientStop Color="#2C363E" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="InputStrokeHover" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#4E5D68" Offset="0"/>
+        <GradientStop Color="#3B4750" Offset="1"/>
+    </LinearGradientBrush>
+
+    <SolidColorBrush x:Key="InputStrokeFocus" Color="#2AA79B"/>
+    <SolidColorBrush x:Key="InputFillDisabled" Color="#1A1F24"/>
+
+    <LinearGradientBrush x:Key="AccentFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#2FB8AA" Offset="0"/>
+        <GradientStop Color="#1E8F84" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="GhostFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#242D36" Offset="0"/>
+        <GradientStop Color="#1C242B" Offset="1"/>
+    </LinearGradientBrush>
+
+</ResourceDictionary>

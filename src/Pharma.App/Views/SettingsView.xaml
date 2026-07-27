@@ -68,6 +68,11 @@
                           ToolTip="Tiles read at a glance; rows fit more people on screen"
                           AutomationProperties.AutomationId="QueueLayout"/>
 
+                <TextBlock Text="Appearance" Style="{StaticResource Label}"/>
+                <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme, Mode=TwoWay}"
+                          ToolTip="Applies straight away. Save to keep it for next time."
+                          AutomationProperties.AutomationId="AppThemeChoice"/>
+
                 <TextBlock Text="Bill footer" Style="{StaticResource Label}"/>
                 <TextBox Text="{Binding BillFooter, UpdateSourceTrigger=PropertyChanged}"
                          AcceptsReturn="True" Height="50" TextWrapping="Wrap"/>
@@ -85,7 +90,7 @@
                 <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap"
                            AutomationProperties.AutomationId="SettingsStatus"/>
 
-                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,16,0,12"/>
+                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,16,0,12"/>
 
                 <TextBlock Text="Data health" Style="{StaticResource Label}"/>
                 <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
@@ -95,7 +100,7 @@
                         Command="{Binding CheckDataHealthCommand}"
                         AutomationProperties.AutomationId="CheckDataHealth"/>
 
-                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
+                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
 
                 <TextBlock Text="Backup" Style="{StaticResource Label}"/>
                 <TextBlock Text="{Binding BackupPath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
@@ -113,7 +118,7 @@
                             AutomationProperties.AutomationId="OpenBackupFolder"/>
                 </StackPanel>
 
-                <Border BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
+                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
                 <TextBlock Text="Database file" Style="{StaticResource Label}"/>
                 <TextBlock Text="{Binding DatabasePath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
                            Margin="0,0,0,10"/>
@@ -135,7 +140,7 @@
 
                 <ListBox ItemsSource="{Binding Doctors}" SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
                          DisplayMemberPath="Name" Height="150" Margin="0,0,0,12"
-                         BorderBrush="{StaticResource Border}"/>
+                         BorderBrush="{DynamicResource Border}"/>
 
                 <TextBlock Text="Name" Style="{StaticResource Label}"/>
                 <TextBox Text="{Binding DoctorName, UpdateSourceTrigger=PropertyChanged}"/>

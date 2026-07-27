@@ -104,6 +104,14 @@ public static class DbBootstrapper
     /// <summary>Applies migrations, takes a dated backup first, and seeds a usable starter set.</summary>
     public static async Task InitialiseAsync(IDbContextFactory<AppDbContext> factory)
     {
+        // Said plainly, because "did it use my data or start a new one?" is the
+        // first question after any new version is installed.
+        var existed = File.Exists(DatabasePath);
+
+        AppLog.Info(existed
+            ? $"Opening the existing database at {DatabasePath}."
+            : $"No database at {DatabasePath} — creating one.");
+
         BackupOnce();
 
         await using var db = await factory.CreateDbContextAsync();

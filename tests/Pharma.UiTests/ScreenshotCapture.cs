@@ -221,6 +221,19 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("settings");
 
+        // ── The dark theme ─────────────────────────────────────────────────
+        app.ComboBox("AppThemeChoice").Select("Dark");
+        Settle();
+        Capture("settings-dark");
+
+        app.Navigate("NavSale", "Pharmacy counter");
+        Settle();
+        Capture("counter-dark");
+
+        app.Navigate("NavSettings", "Settings");
+        app.ComboBox("AppThemeChoice").Select("Light");
+        Settle();
+
         // ── The other queue layout ─────────────────────────────────────────
         app.ComboBox("QueueLayout").Select("Rows");
         app.Click("ShopSave");

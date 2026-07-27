@@ -52,6 +52,10 @@ public static partial class PackMath
     /// </summary>
     public static decimal Gross(decimal packMrp, int unitsPerPack, int quantityUnits)
     {
+        // Nothing sold, nothing charged. A negative quantity must never come back
+        // as a negative price — that is money out of the till, not a discount.
+        if (quantityUnits <= 0 || packMrp <= 0) return 0m;
+
         if (unitsPerPack <= 1) return Round(packMrp * quantityUnits);
 
         var packs = quantityUnits / unitsPerPack;
@@ -75,6 +79,11 @@ public static partial class PackMath
     public static string Describe(int quantityUnits, int unitsPerPack,
                                   string? packLabel = null, string? unitName = null)
     {
+        // A negative count is not a quantity anyone can hand over, and reading it
+        // back as "-1 × 10 TAB" would suggest it is. Zero is left alone — "0
+        // tablets" is a true and useful thing to say.
+        if (quantityUnits < 0) return "0";
+
         if (unitsPerPack <= 1) return quantityUnits.ToString();
 
         var packs = quantityUnits / unitsPerPack;

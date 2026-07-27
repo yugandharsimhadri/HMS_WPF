@@ -87,6 +87,17 @@ public partial class App : Application
             return;
         }
 
+        // Before the window is shown, so it never appears in the wrong theme and
+        // then repaints in front of the user.
+        try
+        {
+            AppTheme.Apply((await Services.GetRequiredService<SettingsService>().GetAsync()).Theme);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("The theme could not be read; carrying on with the light one.", ex);
+        }
+
         try
         {
             var window = new MainWindow { DataContext = Services.GetRequiredService<MainViewModel>() };

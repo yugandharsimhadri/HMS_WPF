@@ -101,3 +101,10 @@ public enum SaleStatus
     Returned,
     Cancelled
 }
+
+/// <summary>Which palette the application draws itself in.</summary>
+public enum AppThemeKind
+{
+    Light = 0,
+    Dark = 1
+}

@@ -7,7 +7,7 @@
         Title="Twinkle Children's Hospital — OPD &amp; Pharmacy"
         Icon="twinkle.ico"
         Height="820" Width="1360" WindowStartupLocation="Manual"
-        Background="{StaticResource Bg}">
+        Background="{DynamicResource Bg}">
 
     <Window.Resources>
         <local:NavBrushConverter x:Key="NavBrush"/>
@@ -41,7 +41,7 @@
         <Style x:Key="NavButton" TargetType="Button">
             <Setter Property="Height" Value="48"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Foreground" Value="#D6E2E6"/>
+            <Setter Property="Foreground" Value="{DynamicResource NavInk}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Template">
@@ -70,17 +70,17 @@
         </Grid.ColumnDefinitions>
 
         <!-- Navigation -->
-        <Border Grid.Column="0" Background="{StaticResource NavBg}">
+        <Border Grid.Column="0" Background="{DynamicResource NavBg}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="18,22,18,18">
                     <TextBlock Text="Twinkle" FontSize="20" FontWeight="Bold" Foreground="White"/>
                     <TextBlock Text="Children's Hospital" FontSize="13" FontWeight="SemiBold"
-                               Foreground="#BFE3DF" Margin="0,1,0,0"/>
-                    <TextBlock Text="OPD &amp; Pharmacy" FontSize="11" Foreground="#7FA3AA" Margin="0,4,0,0"/>
+                               Foreground="{DynamicResource NavInkBright}" Margin="0,1,0,0"/>
+                    <TextBlock Text="OPD &amp; Pharmacy" FontSize="11" Foreground="{DynamicResource NavInkFaint}" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <TextBlock DockPanel.Dock="Bottom" Margin="18,0,18,16" FontSize="10"
-                           Foreground="#6E8F96" TextWrapping="Wrap"
+                           Foreground="{DynamicResource NavInkFaded}" TextWrapping="Wrap"
                            Text="Data is stored on this PC. A backup is taken each day it is opened."/>
 
                 <StackPanel>
@@ -118,7 +118,7 @@
 
         <!-- Page -->
         <DockPanel Grid.Column="1">
-            <Border DockPanel.Dock="Top" Background="White" BorderBrush="{StaticResource Border}"
+            <Border DockPanel.Dock="Top" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
                     BorderThickness="0,0,0,1" Padding="24,16">
                 <StackPanel>
                     <TextBlock Text="{Binding Title}" Style="{StaticResource H1}"
@@ -135,8 +135,8 @@
         <!-- Anything opened over the shell. Nothing else can be running at the
              same time, so it can be neither lost nor duplicated. -->
         <Border Background="#8C0B1F24" Visibility="{Binding IsOverlayOpen, Converter={StaticResource BoolToVisible}}">
-            <Border Margin="28" Background="{StaticResource Bg}" CornerRadius="10"
-                    BorderBrush="{StaticResource Border}" BorderThickness="1"
+            <Border Margin="28" Background="{DynamicResource Bg}" CornerRadius="10"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="1"
                     AutomationProperties.AutomationId="Overlay">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.45" Color="#000000"/>

@@ -1,6 +1,7 @@
 <UserControl x:Class="Pharma.App.Views.ProductsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App">
 
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
@@ -106,7 +107,7 @@
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="GST %" Style="{StaticResource Label}"/>
                                 <TextBox Text="{Binding GstRate, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.AutomationId="ProductGstRate"/>
+                                         local:NumericInput.Mode="Money" AutomationProperties.AutomationId="ProductGstRate"/>
                             </StackPanel>
                             <StackPanel Grid.Column="4">
                                 <TextBlock Text="Schedule" Style="{StaticResource Label}"/>
@@ -154,7 +155,7 @@
                         <TextBlock Text="Units in one pack" Style="{StaticResource Label}"/>
                         <TextBox Text="{Binding UnitsPerPack, UpdateSourceTrigger=PropertyChanged}"
                                  ToolTip="There is no standard: 1, 3, 5, 10, 15 all occur. 1 for a bottle."
-                                 AutomationProperties.AutomationId="ProductUnitsPerPack"/>
+                                 local:NumericInput.Mode="Whole" AutomationProperties.AutomationId="ProductUnitsPerPack"/>
 
                         <CheckBox Content="Active" IsChecked="{Binding IsActive, Mode=TwoWay}" Margin="0,0,0,12"/>
 

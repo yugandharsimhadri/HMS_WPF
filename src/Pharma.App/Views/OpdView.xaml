@@ -8,25 +8,25 @@
 
         <!-- A waiting patient. Token first and large: it is what the desk calls out. -->
         <DataTemplate x:Key="WaitingTile">
-            <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="1"
+            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
                     CornerRadius="9" Padding="9" Margin="0,0,8,8" Width="178">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,6">
                         <Border DockPanel.Dock="Left" Width="28" Height="28" CornerRadius="7"
-                                Background="#E4EFED" Margin="0,0,8,0">
+                                Background="{DynamicResource AccentSoft}" Margin="0,0,8,0">
                             <TextBlock Text="{Binding TokenNo}" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="{StaticResource Accent}"
+                                       Foreground="{DynamicResource Accent}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding Patient.Name}" FontSize="13" FontWeight="SemiBold"
                                        TextTrimming="CharacterEllipsis"/>
                             <TextBlock Text="{Binding PatientLine}" FontSize="11"
-                                       Foreground="{StaticResource InkMuted}"/>
+                                       Foreground="{DynamicResource InkMuted}"/>
                         </StackPanel>
                     </DockPanel>
 
-                    <TextBlock Text="{Binding Complaint}" FontSize="11" Foreground="{StaticResource InkMuted}"
+                    <TextBlock Text="{Binding Complaint}" FontSize="11" Foreground="{DynamicResource InkMuted}"
                                TextWrapping="Wrap" MaxHeight="28" Margin="0,0,0,6"/>
 
                     <DockPanel Margin="0,0,0,7">
@@ -36,7 +36,7 @@
                                        Foreground="{Binding FeePaid, Converter={StaticResource FeeInk}}"/>
                         </Border>
                         <TextBlock Text="{Binding WaitedFor}" FontSize="10.5" VerticalAlignment="Center"
-                                   Foreground="{StaticResource InkMuted}"/>
+                                   Foreground="{DynamicResource InkMuted}"/>
                     </DockPanel>
 
                     <Button Content="Consult" Style="{StaticResource BtnPrimary}" Padding="6,6" FontSize="12.5"
@@ -71,25 +71,25 @@
 
         <!-- Completed: same shape, quieter, and the actions are about paperwork. -->
         <DataTemplate x:Key="CompletedTile">
-            <Border Background="#FAFBFC" BorderBrush="{StaticResource Border}" BorderThickness="1"
+            <Border Background="{DynamicResource SurfaceMuted}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
                     CornerRadius="9" Padding="9" Margin="0,0,8,8" Width="178">
                 <StackPanel>
                     <DockPanel Margin="0,0,0,5">
                         <Border DockPanel.Dock="Left" Width="26" Height="26" CornerRadius="7"
-                                Background="#EDF0F2" Margin="0,0,8,0">
+                                Background="{DynamicResource BadgeFill}" Margin="0,0,8,0">
                             <TextBlock Text="{Binding TokenNo}" FontSize="12"
-                                       Foreground="{StaticResource InkMuted}"
+                                       Foreground="{DynamicResource InkMuted}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding Patient.Name}" FontSize="12.5" FontWeight="SemiBold"
                                        TextTrimming="CharacterEllipsis"/>
                             <TextBlock Text="{Binding PatientLine}" FontSize="11"
-                                       Foreground="{StaticResource InkMuted}"/>
+                                       Foreground="{DynamicResource InkMuted}"/>
                         </StackPanel>
                     </DockPanel>
 
-                    <TextBlock Text="{Binding Diagnosis}" FontSize="11" Foreground="{StaticResource InkMuted}"
+                    <TextBlock Text="{Binding Diagnosis}" FontSize="11" Foreground="{DynamicResource InkMuted}"
                                TextWrapping="Wrap" MaxHeight="26" Margin="0,0,0,6"/>
 
                     <UniformGrid Columns="3">
@@ -116,13 +116,13 @@
         </DataTemplate>
         <!-- Same information and the same actions, laid out to fit more people. -->
         <DataTemplate x:Key="WaitingRow">
-            <Border Background="White" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1"
+            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
                     Padding="10,8">
                 <DockPanel>
                     <Border DockPanel.Dock="Left" Width="30" Height="30" CornerRadius="6"
-                            Background="#E4EFED" Margin="0,0,10,0">
+                            Background="{DynamicResource AccentSoft}" Margin="0,0,10,0">
                         <TextBlock Text="{Binding TokenNo}" FontSize="13.5" FontWeight="SemiBold"
-                                   Foreground="{StaticResource Accent}"
+                                   Foreground="{DynamicResource Accent}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
 
@@ -167,13 +167,13 @@
         </DataTemplate>
 
         <DataTemplate x:Key="CompletedRow">
-            <Border Background="#FAFBFC" BorderBrush="{StaticResource Border}" BorderThickness="0,0,0,1"
+            <Border Background="{DynamicResource SurfaceMuted}" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
                     Padding="10,8">
                 <DockPanel>
                     <Border DockPanel.Dock="Left" Width="28" Height="28" CornerRadius="6"
-                            Background="#EDF0F2" Margin="0,0,10,0">
+                            Background="{DynamicResource BadgeFill}" Margin="0,0,10,0">
                         <TextBlock Text="{Binding TokenNo}" FontSize="12.5"
-                                   Foreground="{StaticResource InkMuted}"
+                                   Foreground="{DynamicResource InkMuted}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
 
@@ -249,7 +249,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Doctor tabs. One per doctor plus All, so the doctor never repeats on a tile. -->
-        <Border Grid.Row="0" Grid.ColumnSpan="2" BorderBrush="{StaticResource Border}"
+        <Border Grid.Row="0" Grid.ColumnSpan="2" BorderBrush="{DynamicResource Border}"
                 BorderThickness="0,0,0,1" Margin="0,0,0,14">
             <DockPanel>
                 <DatePicker DockPanel.Dock="Right" Width="140" Margin="8,0,0,6"
@@ -300,7 +300,7 @@
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <TextBlock Text="Waiting" Style="{StaticResource H2}" Margin="0"/>
                         <TextBlock Text="{Binding Waiting.Count}" Style="{StaticResource H2}" Margin="6,0,0,0"
-                                   Foreground="{StaticResource Accent}"
+                                   Foreground="{DynamicResource Accent}"
                                    AutomationProperties.AutomationId="OpdWaitingCount"/>
                     </DockPanel>
 
@@ -316,7 +316,7 @@
                     <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                         <TextBlock Text="Completed" Style="{StaticResource H2}" Margin="0"/>
                         <TextBlock Text="{Binding Completed.Count}" Style="{StaticResource H2}" Margin="6,0,0,0"
-                                   Foreground="{StaticResource InkMuted}"
+                                   Foreground="{DynamicResource InkMuted}"
                                    AutomationProperties.AutomationId="OpdCompletedCount"/>
                     </DockPanel>
 
@@ -337,7 +337,7 @@
                         <TextBlock Text="Book a visit" Style="{StaticResource H2}" Margin="0"/>
                         <Button Content="✕" DockPanel.Dock="Right" HorizontalAlignment="Right"
                                 Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                Foreground="{StaticResource InkMuted}"
+                                Foreground="{DynamicResource InkMuted}"
                                 Command="{Binding CloseBookingCommand}"
                                 AutomationProperties.AutomationId="OpdCloseBooking"/>
                     </DockPanel>

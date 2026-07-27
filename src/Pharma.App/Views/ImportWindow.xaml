@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Import a supplier bill" Height="720" Width="1120"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource Bg}">
+        Background="{DynamicResource Bg}">
 
     <DockPanel Margin="18">
 

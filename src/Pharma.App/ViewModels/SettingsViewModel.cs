@@ -32,6 +32,13 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
     [ObservableProperty] private string _billFooter = "";
     [ObservableProperty] private QueueLayout _queueLayout = QueueLayout.Tiles;
 
+    /// <summary>Applied the moment it is picked, so the choice can be seen.</summary>
+    [ObservableProperty] private Pharma.Core.AppThemeKind _theme = Pharma.Core.AppThemeKind.Light;
+
+    public Array Themes => Enum.GetValues<Pharma.Core.AppThemeKind>();
+
+    partial void OnThemeChanged(Pharma.Core.AppThemeKind value) => AppTheme.Apply(value);
+
     public Array QueueLayouts => Enum.GetValues<QueueLayout>();
     [ObservableProperty] private string _databasePath = DbBootstrapper.DatabasePath;
     [ObservableProperty] private string _logPath = AppLog.CurrentFile;
@@ -112,6 +119,7 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
         PharmacistName = profile.PharmacistName;
         BillFooter = profile.BillFooter;
         QueueLayout = profile.QueueLayout;
+        Theme = profile.Theme;
 
         RefreshLastBackup();
 
@@ -171,10 +179,12 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
             DrugLicenceNo = DrugLicenceNo.Trim(),
             PharmacistName = PharmacistName.Trim(),
             BillFooter = BillFooter.Trim(),
-            QueueLayout = QueueLayout
+            QueueLayout = QueueLayout,
+            Theme = Theme
         });
 
-        Status = $"Saved. The OPD queue will use {QueueLayout.ToString().ToLowerInvariant()}.";
+        Status = $"Saved. The OPD queue will use {QueueLayout.ToString().ToLowerInvariant()}, " +
+                 $"in the {Theme.ToString().ToLowerInvariant()} theme.";
     }
 
     /// <summary>Opens the log folder so a problem can be reported with the file attached.</summary>

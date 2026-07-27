@@ -26,6 +26,13 @@ public class ShopProfile
     /// is, so it is the user's choice rather than ours.
     /// </summary>
     public QueueLayout QueueLayout { get; set; } = QueueLayout.Tiles;
+
+    /// <summary>
+    /// Light or dark. A counter under fluorescent light and a desk in a dim back
+    /// room want different things, and it is the same person switching between
+    /// them, so it is a setting rather than something we decide.
+    /// </summary>
+    public Pharma.Core.AppThemeKind Theme { get; set; } = Pharma.Core.AppThemeKind.Light;
 }
 
 public enum QueueLayout
@@ -44,6 +51,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     private const string KeyPharmacist = "shop.pharmacist";
     private const string KeyFooter = "shop.footer";
     private const string KeyQueueLayout = "opd.queuelayout";
+    private const string KeyTheme = "ui.theme";
     private const string KeyGstRegistered = "shop.gstregistered";
 
     public async Task<ShopProfile> GetAsync()
@@ -64,6 +72,10 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
             QueueLayout = Enum.TryParse<QueueLayout>(Get(map, KeyQueueLayout, ""), out var layout)
                 ? layout
                 : fallback.QueueLayout,
+
+            Theme = Enum.TryParse<Pharma.Core.AppThemeKind>(Get(map, KeyTheme, ""), out var theme)
+                ? theme
+                : fallback.Theme,
             GstRegistered = bool.TryParse(Get(map, KeyGstRegistered, ""), out var registered) && registered
         };
     }
@@ -80,6 +92,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         await SetAsync(db, KeyPharmacist, profile.PharmacistName);
         await SetAsync(db, KeyFooter, profile.BillFooter);
         await SetAsync(db, KeyQueueLayout, profile.QueueLayout.ToString());
+        await SetAsync(db, KeyTheme, profile.Theme.ToString());
         await SetAsync(db, KeyGstRegistered, profile.GstRegistered.ToString());
 
         await db.SaveChangesAsync();
