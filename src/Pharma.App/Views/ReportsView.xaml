@@ -48,12 +48,39 @@
                             Command="{Binding ExportExcelCommand}" AutomationProperties.AutomationId="ReportsExportExcel"/>
                 </StackPanel>
 
+                <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Style="{StaticResource Muted}"
+                           Margin="4,6,4,0" TextWrapping="Wrap"
+                           AutomationProperties.AutomationId="ReportsStatus"/>
+
                 <TabControl BorderThickness="0" Background="Transparent"
                             SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
                             AutomationProperties.AutomationId="ReportsTabs">
 
                     <TabItem Header="Day book">
                         <DockPanel Margin="0,10,0,0">
+
+                            <!-- Finding and reprinting an old bill. A walk-in has no
+                                 patient record, so the bill number or the name on it
+                                 are the only handles when someone comes back for a copy. -->
+                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <TextBlock DockPanel.Dock="Left" Text="Find any bill" VerticalAlignment="Center"
+                                           Style="{StaticResource Label}" Margin="0,0,10,0"/>
+                                <Button DockPanel.Dock="Right" Content="Reprint selected bill"
+                                        Style="{StaticResource BtnGhost}" Margin="8,0,0,0"
+                                        Command="{Binding ReprintBillCommand}"
+                                        AutomationProperties.AutomationId="ReprintBill"/>
+                                <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
+                                        Margin="8,0,0,0" Command="{Binding FindBillCommand}"
+                                        AutomationProperties.AutomationId="FindBillButton"/>
+                                <TextBox Text="{Binding BillSearch, UpdateSourceTrigger=PropertyChanged}" Margin="0"
+                                         ToolTip="Bill number or customer name — searches every date"
+                                         AutomationProperties.AutomationId="BillSearchBox">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding FindBillCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                            </DockPanel>
+
                             <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0"
                                     Margin="0,6,0,0" Padding="8,10,8,2">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -72,7 +99,9 @@
                                 </StackPanel>
                             </Border>
                             <Grid>
-                                <DataGrid ItemsSource="{Binding Sales}" AutomationProperties.AutomationId="ReportsDayBookGrid">
+                                <DataGrid ItemsSource="{Binding Sales}"
+                                          SelectedItem="{Binding SelectedSale, Mode=TwoWay}"
+                                          AutomationProperties.AutomationId="ReportsDayBookGrid">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
                                         <DataGridTextColumn Header="TIME" Binding="{Binding BillDate, StringFormat=HH:mm}" Width="70"/>

@@ -60,12 +60,20 @@ public partial class ReportsViewModel(
     /// looked up through this array rather than a positional switch, so inserting,
     /// removing or reordering a tab can never point an export command at the
     /// wrong report — only this list has to change to match the XAML.</summary>
+    /// <summary>
+    /// Must match the order of the tabs in ReportsView, position for position —
+    /// the selected index is looked up here to decide what Export writes.
+    /// Part packs and Stock to reconcile have no export of their own, so they
+    /// hold their places with None rather than shifting everything after them.
+    /// </summary>
     private static readonly ReportKind[] TabOrder =
     [
         ReportKind.DayBook,
         ReportKind.GstSummary,
         ReportKind.OpdRegister,
         ReportKind.ExpiringSoon,
+        ReportKind.None,            // Part packs
+        ReportKind.None,            // Stock to reconcile
         ReportKind.LowStock,
         ReportKind.StockRegister,
         ReportKind.ScheduleH1

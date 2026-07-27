@@ -4,6 +4,9 @@ namespace Pharma.App.Reports;
 
 public enum ReportKind
 {
+    /// <summary>A tab with nothing to export — it holds its place in the tab order.</summary>
+    None = -1,
+
     DayBook,
     GstSummary,
     OpdRegister,

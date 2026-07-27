@@ -9,8 +9,10 @@ namespace Pharma.UiTests;
 /// stock created through the Medicines/Sale screens must show up (and disappear)
 /// correctly, and Export Excel must produce a real, correctly named workbook.
 /// </summary>
-[Collection("ui")]
-public class ReportsUiTests(AppFixture app)
+// IClassFixture is what actually supplies the AppFixture; without it xunit has
+// nothing to hand the constructor and every test in the class fails before it
+// starts. Every other UI class here declares it the same way.
+public class ReportsUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
     private string CreateMedicineWithStock(string suffix, int quantity, decimal mrp)
     {
@@ -26,6 +28,14 @@ public class ReportsUiTests(AppFixture app)
             () => app.TextOf("ProductsStatus").Contains("saved", StringComparison.OrdinalIgnoreCase),
             "medicine to save");
 
+        // Stock lives on its own screen: Medicines describes a medicine, Inventory
+        // is where it arrives. Find it there first.
+        app.Navigate("NavInventory", "Inventory");
+        app.Type("InventorySearch", name);
+        app.Click("InventorySearchButton");
+        AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine in inventory");
+        app.Grid("InventoryProductsGrid").Rows[0].Select();
+
         app.Type("StockBatchNo", $"SB{suffix}");
         app.Type("StockQuantity", quantity.ToString());
         app.Type("StockPurchaseRate", (mrp * 0.7m).ToString("0.00"));
@@ -33,7 +43,7 @@ public class ReportsUiTests(AppFixture app)
         app.Click("StockAdd");
 
         AppFixture.WaitUntil(
-            () => app.TextOf("ProductsStatus").Contains("added to batch", StringComparison.OrdinalIgnoreCase),
+            () => app.TextOf("InventoryStatus").Contains("added to batch", StringComparison.OrdinalIgnoreCase),
             "stock to be added");
 
         return name;
@@ -44,11 +54,12 @@ public class ReportsUiTests(AppFixture app)
     private void SellAllStock(string medicineName, int quantity)
     {
         app.Navigate("NavSale", "Pharmacy counter");
+
+        // The counter filters as you type now — there is no Find button, and no
+        // batch to pick: nearest expiry is chosen for the operator.
         app.Type("SaleSearch", medicineName);
-        app.Click("SaleFind");
         AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine to be found");
         app.ListBox("SaleMatches").Items[0].Select();
-        AppFixture.WaitUntil(() => app.ComboBox("SaleBatch").SelectedItems.Length == 1, "a batch to be chosen");
 
         app.Type("SaleQuantity", quantity.ToString());
         app.Click("SaleAddLine");
