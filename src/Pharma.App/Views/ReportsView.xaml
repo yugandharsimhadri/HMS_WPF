@@ -218,6 +218,54 @@
                         </Grid>
                     </TabItem>
 
+                    <TabItem Header="Stock Register">
+                        <DockPanel Margin="0,10,0,0">
+                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="2,0,0,10">
+                                <TextBlock Text="Search" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
+                                <TextBox Width="220" Text="{Binding StockSearch, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,20,10" AutomationProperties.AutomationId="ReportsStockSearch"/>
+                                <CheckBox Content="Include Zero Stock" VerticalAlignment="Center" Margin="0,0,0,10"
+                                          IsChecked="{Binding IncludeZeroStock, Mode=TwoWay}"
+                                          AutomationProperties.AutomationId="ReportsStockIncludeZero"/>
+                            </StackPanel>
+                            <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Border}" BorderThickness="0,1,0,0"
+                                    Margin="0,6,0,0" Padding="8,10,8,2">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="Total Products: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding StockTotalProducts}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="Total Batches: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding StockTotalBatches}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="Total Units: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding StockTotalUnits}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="Cost Value: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding StockTotalCostValue, StringFormat='₹{0:N2}'}" FontWeight="SemiBold" Margin="0,0,16,0"/>
+                                    <TextBlock Text="MRP Value: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding StockTotalMrpValue, StringFormat='₹{0:N2}'}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                            <Grid>
+                                <DataGrid ItemsSource="{Binding StockRegister}" AutomationProperties.AutomationId="ReportsStockGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}" Width="*"/>
+                                        <DataGridTextColumn Header="MANUFACTURER" Binding="{Binding Product.Manufacturer}" Width="130"/>
+                                        <DataGridTextColumn Header="PACK" Binding="{Binding Product.PackSize}" Width="90"/>
+                                        <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="110"/>
+                                        <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=dd MMM yyyy}" Width="110"/>
+                                        <DataGridTextColumn Header="RACK" Binding="{Binding Product.RackLocation}" Width="80"/>
+                                        <DataGridTextColumn Header="CURRENT STOCK" Binding="{Binding QtyOnHand}" Width="110"/>
+                                        <DataGridTextColumn Header="REORDER LEVEL" Binding="{Binding Product.ReorderLevel}" Width="110"/>
+                                        <DataGridTextColumn Header="SHORTAGE" Binding="{Binding Product.Shortage}" Width="90"/>
+                                        <DataGridTextColumn Header="PURCHASE RATE" Binding="{Binding PurchaseRate, StringFormat=N2}" Width="110"/>
+                                        <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="No stock found for the current filters." Style="{StaticResource Muted}" FontSize="14"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Visibility="{Binding StockRegister.Count, Converter={StaticResource ZeroVis}}"/>
+                            </Grid>
+                        </DockPanel>
+                    </TabItem>
+
                     <TabItem Header="Schedule H1 register">
                         <DockPanel Margin="0,10,0,0">
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"

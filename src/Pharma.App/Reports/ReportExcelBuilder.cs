@@ -28,6 +28,7 @@ public static class ReportExcelBuilder
             ReportKind.OpdRegister => OpdSheet(ws, vm, shop),
             ReportKind.ExpiringSoon => ExpiringSheet(ws, vm, shop),
             ReportKind.LowStock => LowStockSheet(ws, vm, shop),
+            ReportKind.StockRegister => StockRegisterSheet(ws, vm, shop),
             ReportKind.ScheduleH1 => H1Sheet(ws, vm, shop),
             _ => 1
         };
@@ -142,6 +143,14 @@ public static class ReportExcelBuilder
         var cell = ws.Cell(row, col);
         cell.Value = text;
         cell.Style.Font.Bold = true;
+    }
+
+    private static void MoneyFormula(IXLWorksheet ws, int row, int col, string formula)
+    {
+        var cell = ws.Cell(row, col);
+        cell.FormulaA1 = formula;
+        cell.Style.NumberFormat.Format = CurrencyFormat;
+        cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
     }
 
     // ── Day book ─────────────────────────────────────────────────────────
@@ -379,6 +388,73 @@ public static class ReportExcelBuilder
 
         row++;
         BoldLabel(ws, row, 1, "Entries"); Int(ws, row, 2, vm.H1Register.Count);
+
+        Finish(ws, headerRow, lastData, cols);
+        return row;
+    }
+
+    // ── Stock register ───────────────────────────────────────────────────
+
+    private static int StockRegisterSheet(IXLWorksheet ws, ReportsViewModel vm, ShopProfile shop)
+    {
+        const int cols = 13;
+        var headerRow = WriteTitle(ws, ReportKind.StockRegister, vm, shop, cols);
+
+        string[] headers =
+        [
+            "Medicine", "Manufacturer", "Pack Size", "Batch No", "Expiry Date", "Rack Location",
+            "Current Stock", "Reorder Level", "Shortage", "Purchase Rate", "MRP",
+            "Stock Value (Cost)", "Stock Value (MRP)"
+        ];
+        for (var i = 0; i < headers.Length; i++) Head(ws, headerRow, i + 1, headers[i]);
+
+        var row = headerRow + 1;
+        var firstData = row;
+        foreach (var b in vm.StockRegister)
+        {
+            Str(ws, row, 1, b.Product.Name);
+            Str(ws, row, 2, b.Product.Manufacturer);
+            Str(ws, row, 3, b.Product.PackSize);
+            Str(ws, row, 4, b.BatchNo);
+            DateCell(ws, row, 5, b.ExpiryDate);
+            Str(ws, row, 6, b.Product.RackLocation);
+            Int(ws, row, 7, b.QtyOnHand);
+            Int(ws, row, 8, b.Product.ReorderLevel);
+            Int(ws, row, 9, b.Product.Shortage);
+            Money(ws, row, 10, b.PurchaseRate);
+            Money(ws, row, 11, b.Mrp);
+
+            // Live formulas rather than pre-computed numbers, so the workbook stays
+            // auditable if a reader edits a quantity or rate while reviewing it.
+            var qtyRef = ws.Cell(row, 7).Address.ColumnLetter + row;
+            var costRef = ws.Cell(row, 10).Address.ColumnLetter + row;
+            var mrpRef = ws.Cell(row, 11).Address.ColumnLetter + row;
+            MoneyFormula(ws, row, 12, $"={qtyRef}*{costRef}");
+            MoneyFormula(ws, row, 13, $"={qtyRef}*{mrpRef}");
+
+            row++;
+        }
+        var lastData = row - 1;
+
+        if (lastData >= firstData)
+        {
+            // Reorder Level and Shortage are per-product figures repeated on every
+            // batch row of that product — summing them across batches would double
+            // count a multi-batch medicine, so only genuinely batch-level columns
+            // (quantity and the two value columns) get a column total.
+            BoldLabel(ws, row, 1, "TOTAL");
+            SumFormula(ws, row, 7, firstData, lastData, IntFormat);
+            SumFormula(ws, row, 12, firstData, lastData, CurrencyFormat);
+            SumFormula(ws, row, 13, firstData, lastData, CurrencyFormat);
+            row++;
+        }
+
+        row++;
+        BoldLabel(ws, row, 1, "Total Products"); Int(ws, row, 2, vm.StockTotalProducts); row++;
+        BoldLabel(ws, row, 1, "Total Batches"); Int(ws, row, 2, vm.StockTotalBatches); row++;
+        BoldLabel(ws, row, 1, "Total Units in Stock"); Int(ws, row, 2, vm.StockTotalUnits); row++;
+        BoldLabel(ws, row, 1, "Total Stock Cost Value"); Money(ws, row, 2, vm.StockTotalCostValue); row++;
+        BoldLabel(ws, row, 1, "Total Stock MRP Value"); Money(ws, row, 2, vm.StockTotalMrpValue);
 
         Finish(ws, headerRow, lastData, cols);
         return row;

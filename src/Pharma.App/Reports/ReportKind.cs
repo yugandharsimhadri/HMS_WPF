@@ -9,6 +9,7 @@ public enum ReportKind
     OpdRegister,
     ExpiringSoon,
     LowStock,
+    StockRegister,
     ScheduleH1
 }
 
@@ -23,6 +24,7 @@ public static class ReportNaming
         ReportKind.OpdRegister => "OPD Register",
         ReportKind.ExpiringSoon => "Expiring Soon",
         ReportKind.LowStock => "Low Stock",
+        ReportKind.StockRegister => "Stock Register",
         ReportKind.ScheduleH1 => "Schedule H1 Register",
         _ => "Report"
     };
@@ -33,6 +35,9 @@ public static class ReportNaming
 
     public static string DateLabel(ReportKind kind, DateTime date, DateTime from, DateTime to)
     {
+        // Stock Register is a live snapshot, not tied to the Date picker at all.
+        if (kind == ReportKind.StockRegister) return $"As of {DateTime.Now:dd MMM yyyy, HH:mm}";
+
         if (!IsRangeBased(kind)) return date.ToString("dd MMM yyyy");
 
         var (start, end) = from <= to ? (from, to) : (to, from);
@@ -50,12 +55,19 @@ public static class ReportNaming
             ReportKind.OpdRegister => "OPDRegister",
             ReportKind.ExpiringSoon => "ExpiringSoon",
             ReportKind.LowStock => "LowStock",
+            ReportKind.StockRegister => "StockRegister",
             ReportKind.ScheduleH1 => "ScheduleH1",
             _ => "Report"
         };
 
         string suffix;
-        if (IsRangeBased(kind))
+        if (kind == ReportKind.StockRegister)
+        {
+            // A live snapshot — the filename is today's date, not whatever the
+            // page's (unrelated) Date picker happens to be set to.
+            suffix = DateTime.Today.ToString("yyyy-MM-dd");
+        }
+        else if (IsRangeBased(kind))
         {
             var (start, end) = from <= to ? (from, to) : (to, from);
             suffix = start.Date == end.Date

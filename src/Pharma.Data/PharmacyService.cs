@@ -76,13 +76,19 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             .ToListAsync();
     }
 
-    public async Task<List<Batch>> GetAllBatchesAsync()
+    /// <summary>
+    /// Every batch currently on the shelf — the Stock Register's source. Reads the
+    /// same Batch.QtyOnHand that Product.StockOnHand, Low Stock and Expiring Soon
+    /// already read, so there is only ever one place stock is calculated from.
+    /// </summary>
+    public async Task<List<Batch>> GetAllBatchesAsync(bool includeZeroStock = false)
     {
         await using var db = await factory.CreateDbContextAsync();
-        return await db.Batches.Include(b => b.Product)
-            .Where(b => !b.IsDeleted && b.QtyOnHand > 0)
-            .OrderBy(b => b.ExpiryDate)
-            .ToListAsync();
+        var q = db.Batches.Include(b => b.Product).Where(b => !b.IsDeleted);
+
+        if (!includeZeroStock) q = q.Where(b => b.QtyOnHand > 0);
+
+        return await q.OrderBy(b => b.Product.Name).ThenBy(b => b.ExpiryDate).ToListAsync();
     }
 
     /// <summary>Receives a supplier consignment. This is the only way stock enters the system.</summary>

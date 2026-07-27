@@ -22,6 +22,12 @@ public static class ReportPdfBuilder
 
     public static IDocument Build(ReportKind kind, ReportsViewModel vm, ShopProfile shop)
     {
+        // Stock Register is Excel-only by design — it's a wide, analysis-oriented
+        // dump, not a printable statement. The Export PDF button is disabled on
+        // that tab; this guard just makes the limitation explicit if ever bypassed.
+        if (kind == ReportKind.StockRegister)
+            throw new NotSupportedException("PDF export is not available for the Stock Register — use Export Excel instead.");
+
         return Document.Create(container =>
         {
             container.Page(page =>
