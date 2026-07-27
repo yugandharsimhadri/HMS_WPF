@@ -90,6 +90,9 @@ public class AppDbContext : DbContext
             e.Ignore(x => x.Display);
             e.Ignore(x => x.UnitPrice);
             e.Ignore(x => x.OnHand);
+            e.Ignore(x => x.Returnable);
+            e.Ignore(x => x.DaysToExpiry);
+            e.Ignore(x => x.EffectivePackCost);
         });
 
         b.Entity<StockAdjustment>(e =>

@@ -28,6 +28,8 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _genericName = "";
     [ObservableProperty] private string _manufacturer = "";
+    [ObservableProperty] private string _composition = "";
+    [ObservableProperty] private string _storage = "";
     [ObservableProperty] private string _packSize = "";
     [ObservableProperty] private string _hsnCode = "3004";
     [ObservableProperty] private decimal _gstRate = 12m;
@@ -121,6 +123,8 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         Name = value.Name;
         GenericName = value.GenericName ?? "";
         Manufacturer = value.Manufacturer ?? "";
+        Composition = value.Composition ?? "";
+        Storage = value.Storage ?? "";
         PackSize = value.PackSize ?? "";
         HsnCode = value.HsnCode;
         GstRate = value.GstRate;
@@ -144,6 +148,7 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     {
         SelectedProduct = null;
         Name = GenericName = Manufacturer = PackSize = RackLocation = "";
+        Composition = Storage = "";
         HsnCode = "3004";
         GstRate = 12m;
         Schedule = DrugSchedule.None;
@@ -213,6 +218,8 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
             product.Name = Name.Trim();
             product.GenericName = Empty(GenericName);
             product.Manufacturer = Empty(Manufacturer);
+            product.Composition = Empty(Composition);
+            product.Storage = Empty(Storage);
             product.PackSize = Empty(PackSize);
             product.HsnCode = string.IsNullOrWhiteSpace(HsnCode) ? "3004" : HsnCode.Trim();
             product.GstRate = GstRate;

@@ -172,6 +172,8 @@
                                 <DataGridTextColumn Header="ON HAND" Binding="{Binding QtyOnHand}" Width="90"/>
                                 <DataGridTextColumn Header="MRP" Binding="{Binding Mrp, StringFormat=N2}" Width="90"/>
                                 <DataGridTextColumn Header="RATE PAID" Binding="{Binding PurchaseRate, StringFormat=N2}" Width="100"/>
+                                <DataGridTextColumn Header="SUPPLIER" Binding="{Binding SupplierName}" Width="150"/>
+                                <DataGridTextColumn Header="THEIR BILL" Binding="{Binding SupplierInvoiceNo}" Width="120"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </DockPanel>

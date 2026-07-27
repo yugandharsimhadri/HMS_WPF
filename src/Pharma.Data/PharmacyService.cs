@@ -106,6 +106,8 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             existing.Name = product.Name;
             existing.GenericName = product.GenericName;
             existing.Manufacturer = product.Manufacturer;
+            existing.Composition = product.Composition;
+            existing.Storage = product.Storage;
             existing.PackSize = product.PackSize;
             existing.HsnCode = product.HsnCode;
             existing.GstRate = product.GstRate;
@@ -293,6 +295,9 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
                     UnitsPerPack = Math.Max(1, item.UnitsPerPack),
                     QtyOnHand = item.UnitsReceived,
                     SupplierName = entry.SupplierName,
+                    SupplierInvoiceNo = entry.SupplierInvoiceNo,
+                    PacksReceived = item.Quantity,
+                    FreePacks = item.FreeQuantity,
                     ReceivedOn = entry.EntryDate
                 });
 
@@ -305,6 +310,12 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             {
                 var before = batch.QtyOnHand;
                 batch.QtyOnHand += item.UnitsReceived;
+
+                // A second delivery of the same batch adds to what it cost, so the
+                // scheme on it stays true rather than being replaced.
+                batch.PacksReceived += item.Quantity;
+                batch.FreePacks += item.FreeQuantity;
+                batch.SupplierInvoiceNo = entry.SupplierInvoiceNo ?? batch.SupplierInvoiceNo;
 
                 // Price and expiry take the newest consignment's values; the pack
                 // size does not, because stock already counted in the old units
@@ -433,6 +444,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
             PurchaseRate = purchaseRate,
             QtyOnHand = packs * perPack,
             UnitsPerPack = perPack,
+            PacksReceived = packs,
             ReceivedOn = DateTime.Today,
             IsProvisional = true
         };

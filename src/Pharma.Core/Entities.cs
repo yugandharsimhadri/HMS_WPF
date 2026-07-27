@@ -141,6 +141,19 @@ public class Product : BaseEntity
     public string? GenericName { get; set; }
 
     public string? Manufacturer { get; set; }
+
+    /// <summary>
+    /// The salts and strengths, e.g. "Paracetamol 500mg + Caffeine 30mg". What a
+    /// pharmacist needs to substitute a brand that has run out.
+    /// </summary>
+    public string? Composition { get; set; }
+
+    /// <summary>
+    /// "Below 25°C", "2–8°C, do not freeze". Matters in a children's clinic:
+    /// vaccines, insulin and some syrups are ruined by a warm shelf.
+    /// </summary>
+    public string? Storage { get; set; }
+
     /// <summary>Printed pack, e.g. "10 TAB" or "100 ML". Free text — shops describe packs their own way.</summary>
     public string? PackSize { get; set; }
 
@@ -259,6 +272,38 @@ public class Batch : BaseEntity
     private int _unitsPerPack = 1;
 
     public string? SupplierName { get; set; }
+
+    /// <summary>
+    /// The supplier's bill this batch came in on. Without it the reconciliation
+    /// list can show that something needs a bill but not whose, which is most of
+    /// the work of reconciling.
+    /// </summary>
+    public string? SupplierInvoiceNo { get; set; }
+
+    /// <summary>
+    /// Packs received free on a scheme — the "+1" in 10+1. Captured at receiving
+    /// and then lost, which overstated cost per unit on every margin figure: ten
+    /// paid for and eleven received makes the real cost rate × 10 ÷ 11.
+    /// </summary>
+    public int FreePacks { get; set; }
+
+    /// <summary>What a pack really cost, once free goods are counted.</summary>
+    public decimal EffectivePackCost
+    {
+        get
+        {
+            var paid = QtyOnHand > 0 ? PurchaseRate : PurchaseRate;
+            var packs = PacksReceived;
+
+            return packs + FreePacks <= 0 ? paid : Round(paid * packs / (packs + FreePacks));
+        }
+    }
+
+    /// <summary>Paid-for packs behind this batch, as far as it can be told.</summary>
+    public int PacksReceived { get; set; }
+
+    private static decimal Round(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
     public DateTime ReceivedOn { get; set; } = DateTime.Today;
 
     /// <summary>

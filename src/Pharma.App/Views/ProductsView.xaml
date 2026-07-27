@@ -63,6 +63,16 @@
                                  ToolTip="The drug itself, e.g. Paracetamol 250mg. Searched too."
                                  AutomationProperties.AutomationId="ProductGenericName"/>
 
+                        <TextBlock Text="Composition" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding Composition, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="The salts and strengths, e.g. Paracetamol 500mg + Caffeine 30mg. Used when substituting a brand that has run out."
+                                 AutomationProperties.AutomationId="ProductComposition"/>
+
+                        <TextBlock Text="Storage" Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding Storage, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="e.g. Below 25°C, or 2–8°C do not freeze. Matters for vaccines and some syrups."
+                                 AutomationProperties.AutomationId="ProductStorage"/>
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
