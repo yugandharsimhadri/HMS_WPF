@@ -10,8 +10,23 @@ public class NavBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         => Equals(value?.ToString(), parameter?.ToString())
-            ? new SolidColorBrush(Color.FromRgb(0x0F, 0x76, 0x6E))
+            ? new SolidColorBrush(Color.FromArgb(0x33, 0x2A, 0xA7, 0x9B))
             : Brushes.Transparent;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
+/// <summary>
+/// Whether the nav key matches the active page — true where NavBrushConverter
+/// would tint the button. The tint alone was the only sign of "you are here";
+/// this drives a left bar and bold text on the same button so the current
+/// page is never colour alone.
+/// </summary>
+public class NavActiveConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Equals(value?.ToString(), parameter?.ToString());
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => Binding.DoNothing;

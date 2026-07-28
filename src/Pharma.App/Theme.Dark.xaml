@@ -23,18 +23,28 @@
     <SolidColorBrush x:Key="BadgeFill"    Color="#28323B"/>
     <SolidColorBrush x:Key="AccentSoft"   Color="#1C3A38"/>
     <SolidColorBrush x:Key="WarnFill"     Color="#33281A"/>
-    <SolidColorBrush x:Key="WarnStroke"   Color="#8A6428"/>
+    <!-- Lightened from #8A6428 (2.70:1 against WarnFill — under the 3:1 a
+         border needs) to #C08A34 (4.75:1). -->
+    <SolidColorBrush x:Key="WarnStroke"   Color="#C08A34"/>
     <SolidColorBrush x:Key="WarnInk"      Color="#EBC282"/>
     <SolidColorBrush x:Key="NavInk"       Color="#C3D2D8"/>
     <SolidColorBrush x:Key="NavInkBright" Color="#8FD3CC"/>
     <SolidColorBrush x:Key="NavInkFaint"  Color="#6C8A92"/>
-    <SolidColorBrush x:Key="NavInkFaded"  Color="#5C7A82"/>
+    <!-- Lightened from #5C7A82 (4.04:1 against the nav panel) to #6A8890
+         (4.90:1), matching the same fix made in Theme.Light.xaml. -->
+    <SolidColorBrush x:Key="NavInkFaded"  Color="#6A8890"/>
 
     <!-- Interaction: a row under the pointer, a pressed button, a grid header. -->
     <SolidColorBrush x:Key="HoverFill"   Color="#223038"/>
     <SolidColorBrush x:Key="PressedFill" Color="#202A32"/>
     <SolidColorBrush x:Key="HeaderFill"  Color="#232E36"/>
-    <SolidColorBrush x:Key="ArrowInk"    Color="#7B8B97"/>
+    <!-- Lightened from #7B8B97 (4.57:1, fine on its own, but too close to the
+         line once anti-aliasing thins a 1.4px stroke) to #8C9CA7 (5.68:1). -->
+    <SolidColorBrush x:Key="ArrowInk"    Color="#8C9CA7"/>
+
+    <!-- Keyboard focus — see Theme.Light.xaml. Lightened so the same blue
+         reads clearly against dark surfaces too. -->
+    <SolidColorBrush x:Key="FocusStroke" Color="#5B8DEF"/>
 
     <!-- Inset and raised still read the same way, just darker: fields sink,
          buttons lift. -->
@@ -57,9 +67,13 @@
     <SolidColorBrush x:Key="InputStrokeFocus" Color="#2AA79B"/>
     <SolidColorBrush x:Key="InputFillDisabled" Color="#1A1F24"/>
 
+    <!-- The old stops (#2FB8AA / #1E8F84) put white button text at 2.45:1 and
+         3.95:1 — both under the 4.5:1 normal text needs. Both stops now
+         clear it, at some cost to the "lifted" gradient's contrast with
+         itself; the button still reads raised against the dark ground. -->
     <LinearGradientBrush x:Key="AccentFill" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#2FB8AA" Offset="0"/>
-        <GradientStop Color="#1E8F84" Offset="1"/>
+        <GradientStop Color="#1B8078" Offset="0"/>
+        <GradientStop Color="#14675E" Offset="1"/>
     </LinearGradientBrush>
 
     <LinearGradientBrush x:Key="GhostFill" StartPoint="0,0" EndPoint="0,1">

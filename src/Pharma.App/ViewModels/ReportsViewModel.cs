@@ -21,6 +21,15 @@ public class ExpiringRow(Batch batch)
     public Batch Batch { get; } = batch;
     public int DaysRemaining { get; } = (batch.ExpiryDate.Date - DateTime.Today).Days;
     public bool IsExpired => DaysRemaining < 0;
+
+    /// <summary>
+    /// Read out in words rather than left for the red row colour to say alone —
+    /// a colour-blind or low-vision user gets the same "this is expired"
+    /// signal a sighted one gets from the tint.
+    /// </summary>
+    public string StatusLabel => IsExpired
+        ? $"⚠ Expired {-DaysRemaining} day(s) ago"
+        : $"Expires in {DaysRemaining} day(s)";
 }
 
 public partial class ReportsViewModel(

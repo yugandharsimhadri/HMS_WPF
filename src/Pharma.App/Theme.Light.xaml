@@ -10,7 +10,10 @@
     <SolidColorBrush x:Key="Surface"     Color="#FFFFFF"/>
     <SolidColorBrush x:Key="Border"      Color="#DCE1E7"/>
     <SolidColorBrush x:Key="Ink"         Color="#1B2733"/>
-    <SolidColorBrush x:Key="InkMuted"    Color="#61707E"/>
+    <!-- Darkened from #61707E: the old value cleared 4.5:1 against white by a
+         hair (5.09) but fell to 4.52 on the grid header fill — one rounding
+         error from failing WCAG AA. This clears every surface with margin. -->
+    <SolidColorBrush x:Key="InkMuted"    Color="#57636F"/>
     <SolidColorBrush x:Key="Accent"      Color="#0F766E"/>
     <SolidColorBrush x:Key="AccentDark"  Color="#0B5A54"/>
     <SolidColorBrush x:Key="Danger"      Color="#B42318"/>
@@ -22,18 +25,31 @@
     <SolidColorBrush x:Key="BadgeFill"    Color="#EDF0F2"/>
     <SolidColorBrush x:Key="AccentSoft"   Color="#E4EFED"/>
     <SolidColorBrush x:Key="WarnFill"     Color="#FFF4E5"/>
-    <SolidColorBrush x:Key="WarnStroke"   Color="#F5B742"/>
+    <!-- Darkened from #F5B742: that stroke read at 1.65:1 against WarnFill,
+         so the warning band's own border was nearly invisible. -->
+    <SolidColorBrush x:Key="WarnStroke"   Color="#B5740E"/>
     <SolidColorBrush x:Key="WarnInk"      Color="#7A4B00"/>
     <SolidColorBrush x:Key="NavInk"       Color="#D6E2E6"/>
     <SolidColorBrush x:Key="NavInkBright" Color="#BFE3DF"/>
     <SolidColorBrush x:Key="NavInkFaint"  Color="#7FA3AA"/>
-    <SolidColorBrush x:Key="NavInkFaded"  Color="#6E8F96"/>
+    <!-- Lightened from #6E8F96 (4.00:1 against the nav panel — just under the
+         4.5:1 normal text needs) to #7C9BA2 (4.68:1). -->
+    <SolidColorBrush x:Key="NavInkFaded"  Color="#7C9BA2"/>
 
     <!-- Interaction: a row under the pointer, a pressed button, a grid header. -->
     <SolidColorBrush x:Key="HoverFill"   Color="#EDF3F2"/>
     <SolidColorBrush x:Key="PressedFill" Color="#EDF2F5"/>
     <SolidColorBrush x:Key="HeaderFill"  Color="#EEF2F5"/>
-    <SolidColorBrush x:Key="ArrowInk"    Color="#A9B4BE"/>
+    <!-- Darkened from #A9B4BE (2.11:1 — failed the 3:1 a graphical control
+         needs) to #66707A (5.04:1), so the combo-box and date-picker glyphs
+         are visible to low-vision users, not just decorative. -->
+    <SolidColorBrush x:Key="ArrowInk"    Color="#66707A"/>
+
+    <!-- Keyboard focus. Blue appears nowhere else in this palette, so a
+         focused control is never mistaken for a selected, hovered or teal
+         "current" one — the shape of the ring is the only thing that has to
+         be seen, not a shade of the same colour as something else. -->
+    <SolidColorBrush x:Key="FocusStroke" Color="#1D4ED8"/>
 
     <!--
         Input chrome. Fields read as slightly recessed: the fill is darker at the
@@ -60,8 +76,10 @@
     <SolidColorBrush x:Key="InputStrokeFocus" Color="#0F766E"/>
     <SolidColorBrush x:Key="InputFillDisabled" Color="#F1F3F5"/>
 
+    <!-- The top stop was #17968C, which put white button text at 3.63:1 —
+         under the 4.5:1 normal text needs. Both stops now clear it. -->
     <LinearGradientBrush x:Key="AccentFill" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#17968C" Offset="0"/>
+        <GradientStop Color="#12847A" Offset="0"/>
         <GradientStop Color="#0F766E" Offset="1"/>
     </LinearGradientBrush>
 

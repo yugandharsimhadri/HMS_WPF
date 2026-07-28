@@ -110,7 +110,7 @@
                     <DataGrid ItemsSource="{Binding Issues}"
                               AutomationProperties.AutomationId="ImportIssuesGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="" Binding="{Binding Severity}" Width="80"/>
+                            <DataGridTextColumn Header="SEVERITY" Binding="{Binding Severity}" Width="80"/>
                             <DataGridTextColumn Header="LINE" Binding="{Binding Line}" Width="55"/>
                             <DataGridTextColumn Header="FIELD" Binding="{Binding Field}" Width="120"/>
                             <DataGridTextColumn Header="DETAIL" Binding="{Binding Message}" Width="*"/>

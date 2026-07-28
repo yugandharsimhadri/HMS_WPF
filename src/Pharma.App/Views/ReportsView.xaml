@@ -213,6 +213,9 @@
                                         </Style>
                                     </DataGrid.RowStyle>
                                     <DataGrid.Columns>
+                                        <!-- Spelled out in words, not left to the row's red tint to
+                                             say alone — the tint still reinforces it for sighted users. -->
+                                        <DataGridTextColumn Header="STATUS" Binding="{Binding StatusLabel}" Width="170"/>
                                         <DataGridTextColumn Header="MEDICINE" Binding="{Binding Batch.Product.Name}" Width="*"/>
                                         <DataGridTextColumn Header="BATCH" Binding="{Binding Batch.BatchNo}" Width="130"/>
                                         <DataGridTextColumn Header="EXPIRY" Binding="{Binding Batch.ExpiryDate, StringFormat=dd MMM yyyy}" Width="120"/>

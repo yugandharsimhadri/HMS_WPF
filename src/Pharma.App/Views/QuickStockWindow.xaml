@@ -94,8 +94,12 @@
 
                 <Border Background="{DynamicResource WarnFill}" BorderBrush="{DynamicResource WarnStroke}" BorderThickness="1"
                         CornerRadius="6" Padding="10,8" Margin="0,14,0,0">
-                    <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource WarnInk}" FontSize="{StaticResource FontLabel}"
-                               Text="This goes on the shelf now so the patient can be served. It has no supplier bill behind it, so it is listed under Reports → Stock to reconcile until the bill arrives. Leave the batch number blank and one is allocated for you."/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚠" FontSize="{StaticResource FontSubheading}" FontWeight="Bold"
+                                   Foreground="{DynamicResource WarnInk}" Margin="0,0,8,0" VerticalAlignment="Top"/>
+                        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource WarnInk}" FontSize="{StaticResource FontLabel}"
+                                   Text="This goes on the shelf now so the patient can be served. It has no supplier bill behind it, so it is listed under Reports → Stock to reconcile until the bill arrives. Leave the batch number blank and one is allocated for you."/>
+                    </StackPanel>
                 </Border>
 
             </StackPanel>

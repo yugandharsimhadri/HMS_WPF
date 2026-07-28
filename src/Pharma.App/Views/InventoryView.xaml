@@ -81,9 +81,13 @@
                         <Border Background="{DynamicResource WarnFill}" BorderBrush="{DynamicResource WarnStroke}" BorderThickness="1"
                                 CornerRadius="6" Padding="10,8" Margin="0,0,0,12"
                                 Visibility="{Binding PackWarning, Converter={StaticResource TextToVisible}}">
-                            <TextBlock Text="{Binding PackWarning}" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource WarnInk}" FontSize="{StaticResource FontLabel}"
-                                       AutomationProperties.AutomationId="InventoryPackWarning"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚠" FontSize="{StaticResource FontSubheading}" FontWeight="Bold"
+                                           Foreground="{DynamicResource WarnInk}" Margin="0,0,8,0" VerticalAlignment="Top"/>
+                                <TextBlock Text="{Binding PackWarning}" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource WarnInk}" FontSize="{StaticResource FontLabel}"
+                                           AutomationProperties.AutomationId="InventoryPackWarning"/>
+                            </StackPanel>
                         </Border>
 
                         <Grid>

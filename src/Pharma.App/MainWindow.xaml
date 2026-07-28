@@ -12,6 +12,7 @@
 
     <Window.Resources>
         <local:NavBrushConverter x:Key="NavBrush"/>
+        <local:NavActiveConverter x:Key="NavActive"/>
 
         <DataTemplate DataType="{x:Type vm:ConsultationViewModel}">
             <views:ConsultationView/>
@@ -39,7 +40,16 @@
             <views:SettingsView/>
         </DataTemplate>
 
+        <!--
+            The current page used to be shown by a background tint alone —
+            at 2.5:1 against the nav panel, under the 3:1 a graphical
+            indicator needs, and invisible to anyone who cannot tell the tint
+            from the panel behind it. "IsCurrent" (bound below, per button,
+            to NavActiveConverter) now drives a left bar and bold text as
+            well, so which page is open reads even with the tint switched off.
+        -->
         <Style x:Key="NavButton" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource NavFocusVisual}"/>
             <Setter Property="Height" Value="48"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="{DynamicResource NavInk}"/>
@@ -48,12 +58,23 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" Padding="18,0">
-                            <ContentPresenter VerticalAlignment="Center"/>
-                        </Border>
+                        <Grid>
+                            <Border x:Name="b" Background="{TemplateBinding Background}" Padding="18,0">
+                                <DockPanel>
+                                    <Border x:Name="ActiveBar" DockPanel.Dock="Left" Width="4"
+                                            Margin="-18,0,14,0" Background="{DynamicResource NavActiveBar}"
+                                            Visibility="Collapsed"/>
+                                    <ContentPresenter x:Name="cp" VerticalAlignment="Center"/>
+                                </DockPanel>
+                            </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="b" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="Tag" Value="True">
+                                <Setter TargetName="ActiveBar" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="cp" Property="TextElement.FontWeight" Value="Bold"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -104,31 +125,38 @@
                     <Button Style="{StaticResource NavButton}" Content="OPD"
                             Command="{Binding GoCommand}" CommandParameter="opd"
                             AutomationProperties.AutomationId="NavOpd"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=opd}"/>
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=opd}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=opd}"/>
                     <Button Style="{StaticResource NavButton}" Content="Patients"
                             Command="{Binding GoCommand}" CommandParameter="patients"
                             AutomationProperties.AutomationId="NavPatients"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=patients}"/>
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=patients}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=patients}"/>
                     <Button Style="{StaticResource NavButton}" Content="Pharmacy counter"
                             Command="{Binding GoCommand}" CommandParameter="sale"
                             AutomationProperties.AutomationId="NavSale"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=sale}"/>
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=sale}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=sale}"/>
                     <Button Style="{StaticResource NavButton}" Content="Medicines"
                             Command="{Binding GoCommand}" CommandParameter="products"
                             AutomationProperties.AutomationId="NavProducts"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=products}"/>
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=products}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=products}"/>
                     <Button Style="{StaticResource NavButton}" Content="Inventory"
                             Command="{Binding GoCommand}" CommandParameter="inventory"
                             AutomationProperties.AutomationId="NavInventory"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=inventory}"/>
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=inventory}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=inventory}"/>
                     <Button Style="{StaticResource NavButton}" Content="Reports"
                             Command="{Binding GoCommand}" CommandParameter="reports"
                             AutomationProperties.AutomationId="NavReports"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=reports}"/>
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=reports}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=reports}"/>
                     <Button Style="{StaticResource NavButton}" Content="Settings"
                             Command="{Binding GoCommand}" CommandParameter="settings"
                             AutomationProperties.AutomationId="NavSettings"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=settings}"/>
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=settings}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=settings}"/>
                 </StackPanel>
             </DockPanel>
         </Border>

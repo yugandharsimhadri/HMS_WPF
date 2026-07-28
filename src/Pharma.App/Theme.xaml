@@ -18,6 +18,57 @@
     <CornerRadius x:Key="FieldRadius">6</CornerRadius>
 
     <!--
+        The navigation column (MainWindow) keeps the same dark ground in both
+        the light and dark app themes, so its own accents are declared here,
+        once, rather than in Theme.Light.xaml / Theme.Dark.xaml where they
+        would need to double as "works on white" and "works on near-black".
+    -->
+    <SolidColorBrush x:Key="NavActiveBar" Color="#2AA79B"/>
+    <SolidColorBrush x:Key="NavFocusStroke" Color="#5B8DEF"/>
+
+    <!--
+        One focus ring for the whole application. WPF draws this as an
+        adorner sized to the control, so it survives whatever
+        ControlTemplate the control itself uses — there is nowhere for a
+        keyboard user to lose it. Applied per-control below rather than as
+        a blanket TargetType="Control" style, because a style with no key
+        only reaches controls that do not already have a more specific
+        style of their own — which, in this file, is almost nothing.
+    -->
+    <Style x:Key="FocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Rectangle Margin="-3"
+                               StrokeThickness="2"
+                               StrokeDashArray="1 2"
+                               SnapsToDevicePixels="True"
+                               Stroke="{DynamicResource FocusStroke}"
+                               RadiusX="4" RadiusY="4"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Same ring, but for the navigation column, which keeps NavFocusStroke
+         (a fixed colour tuned for the always-dark sidebar) rather than
+         FocusStroke (which is swapped between the light and dark themes for
+         the mostly-light or mostly-dark page content). -->
+    <Style x:Key="NavFocusVisual">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Rectangle Margin="-2"
+                               StrokeThickness="2"
+                               StrokeDashArray="1 2"
+                               SnapsToDevicePixels="True"
+                               Stroke="{DynamicResource NavFocusStroke}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
         One typeface, named once. Nothing declared a font before, so the
         application took whatever the machine happened to give it and looked
         different from one PC to the next. The fallbacks matter: Segoe UI
@@ -66,6 +117,7 @@
     <!-- ── Text box ──────────────────────────────────────────────────────── -->
 
     <Style TargetType="TextBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Padding" Value="9,7"/>
         <Setter Property="MinHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
@@ -121,6 +173,7 @@
 
     <!-- DatePicker hosts its own text box type, so it needs its own chrome. -->
     <Style TargetType="DatePickerTextBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FontSize" Value="13"/>
@@ -160,6 +213,7 @@
     </ControlTemplate>
 
     <Style TargetType="DatePicker">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="MinHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Background" Value="{DynamicResource InputFill}"/>
@@ -251,6 +305,7 @@
     </ControlTemplate>
 
     <Style TargetType="ComboBoxItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Padding" Value="10,7"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
@@ -258,6 +313,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBoxItem">
                     <Border x:Name="Bd" Background="Transparent" CornerRadius="4"
+                            BorderThickness="2" BorderBrush="Transparent"
                             Padding="{TemplateBinding Padding}" Margin="3,1">
                         <ContentPresenter/>
                     </Border>
@@ -267,7 +323,9 @@
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentDark}"/>
                             <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -276,6 +334,7 @@
     </Style>
 
     <Style TargetType="ComboBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="MinHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
@@ -356,12 +415,14 @@
     <!-- ── Other inputs ──────────────────────────────────────────────────── -->
 
     <Style TargetType="CheckBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
     <Style TargetType="ListBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource InputStroke}"/>
@@ -386,12 +447,14 @@
     </Style>
 
     <Style TargetType="ListBoxItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Padding" Value="9,6"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
                     <Border x:Name="Bd" Background="Transparent" CornerRadius="4"
+                            BorderThickness="2" BorderBrush="Transparent"
                             Padding="{TemplateBinding Padding}" Margin="3,1">
                         <ContentPresenter/>
                     </Border>
@@ -399,9 +462,14 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverFill}"/>
                         </Trigger>
+                        <!-- Selected reads by shape (a left-weighted border) and
+                             weight as well as fill, so it survives when Accent
+                             and the row's own colour are hard to tell apart. -->
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentDark}"/>
                             <Setter Property="Foreground" Value="White"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -412,6 +480,7 @@
     <!-- ── Buttons ───────────────────────────────────────────────────────── -->
 
     <Style x:Key="BtnBase" TargetType="Button">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Padding" Value="14,8"/>
         <Setter Property="MinHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
@@ -544,13 +613,57 @@
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
     </Style>
 
+    <!--
+        BasedOn the type's own default style rather than replacing it: a
+        DataGridRow's real template also hosts the RowDetailsPresenter (used
+        by the data-health merge screen) and the alternation machinery, and
+        redeclaring TargetType="DataGridRow" with no BasedOn would blank all
+        of that out. This only adds the cues on top.
+    -->
+    <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource HoverFill}"/>
+            </Trigger>
+            <!-- A selected row is never fill alone: the left edge gets a
+                 solid accent bar and the text goes semibold, so it still
+                 reads once the fill and the row beneath it look alike. -->
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource AccentSoft}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!--
+        BasedOn the type's default style pulls in its Foreground setter too —
+        that one points at SystemColors.ControlTextBrushKey rather than this
+        app's palette, which otherwise wins over the Ink colour inherited from
+        DataGrid.Foreground and left every cell a fixed OS grey regardless of
+        theme. Overriding it here restores the swap between light and dark.
+    -->
+    <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Foreground" Value="White"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <Style TargetType="TabItem">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Padding" Value="14,7"/>
         <Setter Property="FontSize" Value="13"/>
     </Style>
 
     <!-- Doctor tabs: radio buttons drawn as tabs, so exactly one is ever active. -->
     <Style x:Key="DoctorTab" TargetType="RadioButton">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FontSize" Value="13.5"/>
         <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
@@ -558,17 +671,21 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="Bd" Background="Transparent" Padding="14,9,14,10"
-                            BorderBrush="Transparent" BorderThickness="0,0,0,2">
+                            BorderBrush="Transparent" BorderThickness="0,0,0,3">
                         <ContentPresenter VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderFill}"/>
                         </Trigger>
+                        <!-- The active doctor tab is never colour alone: the
+                             underline appears (shape), the text goes bold
+                             (weight) and switches to Accent (colour) together. -->
                         <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSoft}"/>
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
