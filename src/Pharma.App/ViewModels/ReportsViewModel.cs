@@ -351,7 +351,7 @@ public partial class ReportsViewModel(
         var (kind, hasData) = CurrentReport();
         if (!hasData)
         {
-            MessageBox.Show("No data available to export.", "Reports", MessageBoxButton.OK, MessageBoxImage.Information);
+            Dialog.Show("No data available to export.", "Reports", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -372,7 +372,7 @@ public partial class ReportsViewModel(
         catch (Exception ex)
         {
             AppLog.Error("PDF export failed.", ex);
-            MessageBox.Show($"Could not create the PDF.\n\n{ex.Message}", "Reports", MessageBoxButton.OK, MessageBoxImage.Error);
+            Dialog.Show($"Could not create the PDF.\n\n{ex.Message}", "Reports", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -382,7 +382,7 @@ public partial class ReportsViewModel(
         var (kind, hasData) = CurrentReport();
         if (!hasData)
         {
-            MessageBox.Show("No data available to export.", "Reports", MessageBoxButton.OK, MessageBoxImage.Information);
+            Dialog.Show("No data available to export.", "Reports", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -403,7 +403,7 @@ public partial class ReportsViewModel(
         catch (Exception ex)
         {
             AppLog.Error("Excel export failed.", ex);
-            MessageBox.Show($"Could not create the workbook.\n\n{ex.Message}", "Reports", MessageBoxButton.OK, MessageBoxImage.Error);
+            Dialog.Show($"Could not create the workbook.\n\n{ex.Message}", "Reports", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

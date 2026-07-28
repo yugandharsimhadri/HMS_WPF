@@ -84,7 +84,7 @@ public partial class DataHealthViewModel(DataHealthService health) : ObservableO
     {
         if (row is null || row.Finding.Problem != HealthProblem.Duplicate) return;
 
-        var answer = System.Windows.MessageBox.Show(
+        var answer = Dialog.Show(
             $"Fold this copy of {row.Medicine} into the one it duplicates?\n\n" +
             $"Its batches, purchases, sales and prescriptions all move across, and " +
             $"the empty record is retired.\n\nThis cannot be undone from here.",

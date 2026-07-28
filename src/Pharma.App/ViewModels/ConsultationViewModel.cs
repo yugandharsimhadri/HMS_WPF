@@ -363,7 +363,7 @@ public partial class ConsultationViewModel : ObservableObject
     {
         if (HasUnsavedWork())
         {
-            var answer = MessageBox.Show(
+            var answer = Dialog.Show(
                 "This consultation has changes that have not been saved.\n\nClose it and lose them?",
                 "Consultation", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
@@ -448,7 +448,7 @@ public partial class ConsultationViewModel : ObservableObject
             log.Skip($"failed: {ex.GetType().Name}: {ex.Message}");
             AppLog.Error("Saving the consultation failed.", ex);
 
-            MessageBox.Show(ex.Message, "Consultation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Dialog.Show(ex.Message, "Consultation", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

@@ -757,6 +757,6 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     private void Warn(string message)
     {
         Status = message;
-        MessageBox.Show(message, "Pharmacy counter", MessageBoxButton.OK, MessageBoxImage.Warning);
+        Dialog.Show(message, "Pharmacy counter", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 }

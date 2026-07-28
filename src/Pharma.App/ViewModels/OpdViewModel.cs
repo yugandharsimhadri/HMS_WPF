@@ -329,7 +329,7 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     {
         if (visit is null) return;
 
-        var confirm = MessageBox.Show(
+        var confirm = Dialog.Show(
             $"Cancel token {visit.TokenNo} for {visit.Patient.Name}?",
             "Cancel visit", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -410,6 +410,6 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     private void Warn(string message)
     {
         Status = message;
-        MessageBox.Show(message, "OPD", MessageBoxButton.OK, MessageBoxImage.Warning);
+        Dialog.Show(message, "OPD", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 }

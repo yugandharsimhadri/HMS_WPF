@@ -206,7 +206,7 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         // So offer to open it rather than just refusing.
         Status = duplicate.Message;
 
-        var answer = MessageBox.Show(
+        var answer = Dialog.Show(
             $"{duplicate.Message}\n\nOpen the one that is already there?",
             "Medicines", MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
@@ -275,7 +275,7 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         var packs = preview.QuantityAfter / Math.Max(1, preview.UnitsPerPack);
         var unit = product.DispensingUnit.Name(preview.QuantityAfter);
 
-        var answer = MessageBox.Show(
+        var answer = Dialog.Show(
             $"{preview.Batches} batch(es) of {product.Name} on the shelf were received " +
             $"under a different pack size, so the counter still sells them by the pack.\n\n" +
             $"Re-count them as {preview.UnitsPerPack} per pack?\n\n" +
@@ -297,6 +297,6 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     private void Warn(string message)
     {
         Status = message;
-        MessageBox.Show(message, "Medicines", MessageBoxButton.OK, MessageBoxImage.Warning);
+        Dialog.Show(message, "Medicines", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 }

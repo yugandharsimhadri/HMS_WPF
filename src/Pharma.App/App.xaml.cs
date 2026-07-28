@@ -77,7 +77,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             AppLog.Error("Database could not be opened.", ex);
-            MessageBox.Show(
+            Dialog.Show(
                 $"The database could not be opened.\n\n{DbBootstrapper.DatabasePath}\n\n{ex.Message}" +
                 $"\n\nDetails were written to:\n{AppLog.CurrentFile}",
                 ProductName, MessageBoxButton.OK, MessageBoxImage.Error);
@@ -107,7 +107,7 @@ public partial class App : Application
         catch (Exception ex)
         {
             AppLog.Error("Main window failed to open.", ex);
-            MessageBox.Show(
+            Dialog.Show(
                 $"The application could not start.\n\n{ex.Message}\n\nDetails were written to:\n{AppLog.CurrentFile}",
                 ProductName, MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
@@ -128,7 +128,7 @@ public partial class App : Application
             var summary = await Services.GetRequiredService<DataHealthService>().DailyCheckAsync();
             if (summary is null) return;
 
-            var answer = MessageBox.Show(
+            var answer = Dialog.Show(
                 $"Some medicine records need attention:\n\n{summary}.\n\n" +
                 $"Until they are put right, prices and stock counts for those medicines " +
                 $"will be wrong.\n\nOpen the data health check now?",
@@ -174,7 +174,7 @@ public partial class App : Application
     {
         try
         {
-            MessageBox.Show(
+            Dialog.Show(
                 $"Something went wrong and the last action was cancelled.\n\n{ex.Message}\n\n" +
                 $"Your saved data is safe. Details were written to:\n{AppLog.CurrentFile}",
                 ProductName, MessageBoxButton.OK, MessageBoxImage.Warning);

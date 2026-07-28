@@ -140,7 +140,7 @@ public partial class ImportViewModel(
         catch (Exception ex)
         {
             AppLog.Error("Import failed.", ex);
-            MessageBox.Show(
+            Dialog.Show(
                 $"Nothing was imported.\n\n{ex.Message}",
                 "Import", MessageBoxButton.OK, MessageBoxImage.Warning);
             Status = ex.Message;

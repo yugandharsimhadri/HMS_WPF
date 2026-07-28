@@ -225,7 +225,7 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
 
         var removed = SelectedPatient.Name;
 
-        var confirm = MessageBox.Show(
+        var confirm = Dialog.Show(
             $"Remove {removed} from the register?",
             "Patients", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
@@ -250,6 +250,6 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
     private void Warn(string message)
     {
         Status = message;
-        MessageBox.Show(message, "Patients", MessageBoxButton.OK, MessageBoxImage.Warning);
+        Dialog.Show(message, "Patients", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 }

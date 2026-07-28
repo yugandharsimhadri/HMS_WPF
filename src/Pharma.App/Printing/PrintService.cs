@@ -40,7 +40,7 @@ public static class PrintService
             if (!AnyPrinterInstalled())
             {
                 AppLog.Warn($"{jobName}: no printer is installed.");
-                MessageBox.Show(
+                Dialog.Show(
                     "No printer is set up on this PC.\n\n" +
                     "Add a printer in Windows Settings, or use Preview to save the document as a PDF.",
                     "Print", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -98,7 +98,7 @@ public static class PrintService
     private static void Fail(string message, Exception ex)
     {
         AppLog.Error(message, ex);
-        MessageBox.Show(
+        Dialog.Show(
             $"{message}\n\n{ex.Message}\n\nThe record itself is saved and can be printed again.",
             "Print", MessageBoxButton.OK, MessageBoxImage.Warning);
     }

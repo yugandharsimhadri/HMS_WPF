@@ -33,7 +33,7 @@ public static class Safely
             AppLog.Error($"{what} failed.", ex);
             report?.Invoke(message);
 
-            MessageBox.Show(
+            Dialog.Show(
                 $"{message}\n\nNothing was changed. Details were written to:\n{AppLog.CurrentFile}",
                 App.ProductName, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
@@ -57,7 +57,7 @@ public static class Safely
             AppLog.Error($"{what} failed.", ex);
             report?.Invoke(message);
 
-            MessageBox.Show(
+            Dialog.Show(
                 $"{message}\n\nNothing was changed. Details were written to:\n{AppLog.CurrentFile}",
                 App.ProductName, MessageBoxButton.OK, MessageBoxImage.Warning);
         }

@@ -202,7 +202,7 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
         catch (Exception ex)
         {
             AppLog.Error("Could not open the log folder.", ex);
-            MessageBox.Show(AppLog.LogDirectory, "Log folder", MessageBoxButton.OK, MessageBoxImage.Information);
+            Dialog.Show(AppLog.LogDirectory, "Log folder", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 
@@ -219,7 +219,7 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
     {
         if (string.IsNullOrWhiteSpace(DoctorName))
         {
-            MessageBox.Show("Doctor name is required.", "Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            Dialog.Show("Doctor name is required.", "Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

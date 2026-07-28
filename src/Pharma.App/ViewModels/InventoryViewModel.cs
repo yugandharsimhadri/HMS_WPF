@@ -339,6 +339,6 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     private void Warn(string message)
     {
         Status = message;
-        MessageBox.Show(message, "Inventory", MessageBoxButton.OK, MessageBoxImage.Warning);
+        Dialog.Show(message, "Inventory", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 }
