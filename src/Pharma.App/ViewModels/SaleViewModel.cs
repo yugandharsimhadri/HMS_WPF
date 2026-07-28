@@ -95,6 +95,12 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     [ObservableProperty] private Visit? _selectedVisit;
     [ObservableProperty] private string _status = "";
 
+    // What the doctor wrote but the bill could not take — out of stock, or not
+    // in the catalogue at all. Kept apart from Status because the counter reads
+    // an empty bill as "nothing happened" and walks away: this one is shown
+    // where the operator is already looking, not in the small print at the end.
+    [ObservableProperty] private string _loadWarning = "";
+
     // Totals
     [ObservableProperty] private decimal _gross;
     [ObservableProperty] private decimal _discount;
@@ -609,6 +615,15 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             ? $"Loaded {visit.Prescription.Count} item(s) from token {visit.TokenNo}."
             : $"Loaded. {string.Join(". ", notes)}.";
 
+        // Spelled out rather than left as the same sentence as Status: an
+        // operator who sees an empty bill needs to know it is the stock that is
+        // missing, not the prescription.
+        LoadWarning = notes.Count == 0
+            ? ""
+            : Lines.Count == 0
+                ? $"Nothing could be billed. {string.Join(". ", notes)}."
+                : string.Join(". ", notes) + ".";
+
         log.Ok($"{Lines.Count} line(s) added; missing={missing.Count} short={partial.Count}");
     }
 
@@ -678,6 +693,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         {
             var saved = await pharmacy.SaveSaleAsync(sale, lines);
             Status = $"Bill {saved.BillNo} saved · ₹{saved.NetAmount:0.00}";
+            LoadWarning = "";
 
             if (print)
             {
@@ -714,6 +730,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         SelectedProduct = null;
         SelectedVisit = null;
         Matches.Clear();
+        LoadWarning = "";
 
         Recalculate();
     }

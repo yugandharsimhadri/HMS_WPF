@@ -190,6 +190,26 @@
                             Command="{Binding LoadPrescriptionCommand}" Margin="0,0,0,14"
                             AutomationProperties.AutomationId="SaleLoadPrescription"/>
 
+                    <!--
+                        Sits directly under the button that causes it, because an
+                        empty bill reads as "the load did nothing" and the reason
+                        was previously only in the status line at the very bottom
+                        of this panel, below the fold on a short window.
+                    -->
+                    <Border Background="{DynamicResource WarnFill}" BorderBrush="{DynamicResource WarnStroke}"
+                            BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,14"
+                            Visibility="{Binding LoadWarning, Converter={StaticResource TextToVisible}}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="!" FontWeight="Bold"
+                                       Foreground="{DynamicResource WarnInk}" Margin="0,0,8,0"
+                                       VerticalAlignment="Top"/>
+                            <TextBlock Text="{Binding LoadWarning}" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource WarnInk}"
+                                       FontSize="{StaticResource FontLabel}"
+                                       AutomationProperties.AutomationId="SaleLoadWarning"/>
+                        </DockPanel>
+                    </Border>
+
                     <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,12"/>
 
                     <Grid>
