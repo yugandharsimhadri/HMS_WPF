@@ -220,7 +220,7 @@ public class FeverVisitUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductsSearchButton");
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, $"{name} in the catalogue");
 
-        return app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray()[8];
+        return app.CellOf("ProductsGrid", "STOCK");
     }
 
     private void ClosePreview()

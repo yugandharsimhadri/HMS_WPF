@@ -118,8 +118,7 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductsSearchButton");
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine again");
 
-        var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
-        Assert.Equal("885", cells[8]);
+        Assert.Equal("885", app.CellOf("ProductsGrid", "STOCK"));
     }
 
     [Fact]
@@ -147,7 +146,7 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductsSearchButton");
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine again");
 
-        Assert.Equal("885", app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray()[8]);
+        Assert.Equal("885", app.CellOf("ProductsGrid", "STOCK"));
 
         // Two a day for four and a half days.
         app.Navigate("NavSale", "Pharmacy counter");
@@ -173,7 +172,6 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductsSearchButton");
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine");
 
-        var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
-        Assert.Equal("876", cells[8]);
+        Assert.Equal("876", app.CellOf("ProductsGrid", "STOCK"));
     }
 }

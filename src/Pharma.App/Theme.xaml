@@ -590,7 +590,10 @@
         <Setter Property="IsReadOnly" Value="True"/>
         <Setter Property="HeadersVisibility" Value="Column"/>
         <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Border}"/>
+        <!-- Its own weight, well under the border round the outside. A rule as
+             dark as the frame, drawn between every pair of rows, is most of what
+             made these look like spreadsheets. -->
+        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource GridLine}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
@@ -609,9 +612,16 @@
         -->
         <Setter Property="AlternationCount" Value="2"/>
         <Setter Property="FontSize" Value="13"/>
-        <!-- Roomy enough that each row reads as its own item rather than a
-             spreadsheet line, matching the pharmacy counter's list. -->
-        <Setter Property="RowHeight" Value="46"/>
+        <!--
+            40, not 46. The extra six pixels were meant to stop a row reading as
+            a spreadsheet line, but the weight of the rule between rows was
+            doing that; with a proper hairline the height only pushed rows apart
+            and cost four or five of them off the bottom of every screen.
+
+            The two grids that stack a drug name under the brand set their own
+            height, since theirs is a genuinely taller row.
+        -->
+        <Setter Property="RowHeight" Value="40"/>
         <Setter Property="SelectionMode" Value="Single"/>
         <Setter Property="CanUserAddRows" Value="False"/>
     </Style>
@@ -620,8 +630,13 @@
         <Setter Property="Background" Value="{DynamicResource HeaderFill}"/>
         <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
         <Setter Property="FontSize" Value="11"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Padding" Value="14,10"/>
+        <!-- A column label is scaffolding. Bold, it competed with the rows it
+             was labelling; at normal weight the eye goes to the data. -->
+        <Setter Property="FontWeight" Value="Normal"/>
+        <!-- 14 either side read as generous on a two-column grid and as waste on
+             a nine-column one, where it was 28px of nothing per column and the
+             headers were being clipped to pay for it. -->
+        <Setter Property="Padding" Value="10,10"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
         <!-- Bottom rule only. The per-column dividers chopped the header into
              boxes, which is the main thing that made these grids read as a
@@ -629,6 +644,158 @@
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
     </Style>
+
+    <!--
+        ── What goes in the cells ─────────────────────────────────────────────
+
+        The grid chrome was themed already; these are for the content, and they
+        are keyed rather than implicit because only the column author knows
+        which of them a column wants.
+
+        Numbers are the point of most of these grids — quantities, rates, MRPs,
+        stock — and they were left-aligned, so the units, tens and hundreds of a
+        column never lined up and a figure could not be compared with the one
+        below it without reading both. Right-aligned, with tabular figures so
+        every digit takes the same width whatever the typeface would rather do.
+    -->
+    <Style x:Key="GridNumber" TargetType="TextBlock">
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+
+    <!-- The header has to move with its column or the label sits over the
+         wrong end of the figures. -->
+    <Style x:Key="GridNumberHeader" TargetType="DataGridColumnHeader"
+           BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+        <Setter Property="HorizontalContentAlignment" Value="Right"/>
+    </Style>
+
+    <!-- Money that is being asked for or paid, as against the rates and
+         quantities it was worked out from. One per row at most. -->
+    <Style x:Key="GridAmount" TargetType="TextBlock" BasedOn="{StaticResource GridNumber}">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- The column that says which row this is: the medicine, the patient, the
+         bill. One per grid, and it carries the weight. -->
+    <Style x:Key="GridName" TargetType="TextBlock">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- Supporting detail — the maker, the supplier, a note. Present when
+         looked for, quiet when not. -->
+    <Style x:Key="GridMuted" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- Anything that would otherwise be cut off mid-word. A composition or an
+         address is worth reading, and "Dextromethorphar" is not. -->
+    <Style x:Key="GridWrap" TargetType="TextBlock">
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!--
+        A short code in a quiet box — a rack number, a batch, a schedule. It is
+        a label to be matched against a shelf or a pack, not a sentence, and
+        boxing it stops it reading as more prose in a row full of prose.
+    -->
+    <Style x:Key="GridChip" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource BadgeFill}"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="6,2"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="GridChipText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSmall}"/>
+        <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
+    </Style>
+
+    <!-- Nothing recorded. An em dash says "we know, and there is none" where a
+         blank cell only says the screen might be broken. -->
+    <Style x:Key="GridEmpty" TargetType="TextBlock">
+        <Setter Property="Text" Value="—"/>
+        <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
+        <Setter Property="Opacity" Value="0.7"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!--
+        The schedule a medicine is on. Bind a DrugSchedule to it.
+
+        H1 and X carry real obligations — a register kept for three years, a
+        prescription retained — so they are called out. An unscheduled medicine
+        is the ordinary case and says nothing rather than spending a badge on
+        it; the column was showing "None" cut down to "Non", which was worse
+        than blank.
+    -->
+    <DataTemplate x:Key="ScheduleBadge">
+        <Grid VerticalAlignment="Center">
+            <TextBlock x:Name="Nothing" Style="{StaticResource GridEmpty}" Visibility="Collapsed"/>
+
+            <Border x:Name="Box" Style="{StaticResource GridChip}"
+                    Background="{DynamicResource DangerFill}">
+                <TextBlock x:Name="Mark" Text="{Binding}" Style="{StaticResource GridChipText}"
+                           FontWeight="SemiBold" Foreground="{DynamicResource DangerInk}"/>
+            </Border>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding}" Value="None">
+                <Setter TargetName="Box" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="Nothing" Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+            <!-- H is prescription-only but not registrable: worth marking,
+                 not worth alarming anyone. -->
+            <DataTrigger Binding="{Binding}" Value="H">
+                <Setter TargetName="Box" Property="Background" Value="{DynamicResource WarnFill}"/>
+                <Setter TargetName="Mark" Property="Foreground" Value="{DynamicResource WarnInk}"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
+
+    <!--
+        What is left on the shelf. Bind a Product to it.
+
+        A plain figure when there is plenty, because a column of pills is a
+        column nobody reads. The badge appears only when the answer is not
+        "fine" — which is the whole reason for having one.
+    -->
+    <DataTemplate x:Key="StockBadge">
+        <Border x:Name="Pill" Style="{StaticResource GridChip}"
+                HorizontalAlignment="Right" Background="Transparent" Padding="0">
+            <TextBlock x:Name="Count" Text="{Binding StockOnHand}"
+                       Foreground="{DynamicResource Ink}"
+                       Typography.NumeralAlignment="Tabular"
+                       VerticalAlignment="Center"/>
+        </Border>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding Level}" Value="Low">
+                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource WarnFill}"/>
+                <Setter TargetName="Pill" Property="Padding" Value="6,2"/>
+                <Setter TargetName="Count" Property="Foreground" Value="{DynamicResource WarnInk}"/>
+                <Setter TargetName="Count" Property="FontSize" Value="{StaticResource FontSmall}"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Level}" Value="Empty">
+                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource DangerFill}"/>
+                <Setter TargetName="Pill" Property="Padding" Value="6,2"/>
+                <!-- "Out", not "0". In a column of figures a nought reads as
+                     just another number. -->
+                <Setter TargetName="Count" Property="Text" Value="Out"/>
+                <Setter TargetName="Count" Property="Foreground" Value="{DynamicResource DangerInk}"/>
+                <Setter TargetName="Count" Property="FontSize" Value="{StaticResource FontSmall}"/>
+                <Setter TargetName="Count" Property="FontWeight" Value="SemiBold"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
 
     <!--
         BasedOn the type's own default style rather than replacing it: a
@@ -671,8 +838,22 @@
     <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
-        <Setter Property="Padding" Value="14,0"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
+        <!-- Matches the header above it, so a figure sits under its own label. -->
+        <Setter Property="Padding" Value="10,0"/>
+        <!--
+            The cell stretches to the full height of its row. It used to be
+            VerticalAlignment=Center, which shrank each cell to the height of
+            whatever was in it and floated it in the middle of the row — and
+            since the horizontal grid line is drawn as the cell's own bottom
+            border, the rule went with it. Every cell drew its rule at its own
+            height, so a row of equal-length text looked like one clean line and
+            anything else did not: an empty cell drew a stub in mid-air, and a
+            two-line cell drew its rule above its neighbours'.
+
+            The content is centred inside the template instead, which is where
+            that belongs.
+        -->
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
         <!--
             The stock cell template hardcodes its Border with no Padding
             TemplateBinding, so the Padding above would be ignored without

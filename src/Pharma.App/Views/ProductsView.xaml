@@ -29,18 +29,70 @@
                     </TextBox>
                 </DockPanel>
 
-                <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" RowHeight="48"
                           AutomationProperties.AutomationId="ProductsGrid">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}" Width="*" MinWidth="150"/>
-                        <DataGridTextColumn Header="DRUG" Binding="{Binding GenericName}" Width="140"/>
-                        <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="80"/>
-                        <DataGridTextColumn Header="MAKER" Binding="{Binding Manufacturer}" Width="130"/>
-                        <DataGridTextColumn Header="RACK" Binding="{Binding RackLocation}" Width="60"/>
-                        <DataGridTextColumn Header="GST %" Binding="{Binding GstRate, StringFormat=N1}" Width="60"/>
-                        <DataGridTextColumn Header="SCH" Binding="{Binding Schedule}" Width="60"/>
-                        <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="75"/>
-                        <DataGridTextColumn Header="STOCK" Binding="{Binding StockOnHand}" Width="70"/>
+                        <!-- The drug name used to have a column of its own, 140px
+                             wide, which cut "Dextromethorphan" off mid-word. It
+                             belongs under the brand anyway: it is the same
+                             medicine said another way, not a separate fact. -->
+                        <DataGridTemplateColumn Header="MEDICINE" Width="*" MinWidth="160" ClipboardContentBinding="{Binding Name}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource GridName}"/>
+                                        <TextBlock Text="{Binding GenericName}" FontSize="{StaticResource FontSmall}"
+                                                   Foreground="{DynamicResource InkMuted}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding GenericName, Converter={StaticResource TextToVisible}}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="72"/>
+                        <DataGridTextColumn Header="MAKER" Binding="{Binding Manufacturer}" Width="86"
+                                            ElementStyle="{StaticResource GridMuted}"/>
+
+                        <DataGridTemplateColumn Header="RACK" Width="56" ClipboardContentBinding="{Binding RackLocation}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource GridChip}"
+                                            Visibility="{Binding RackLocation, Converter={StaticResource TextToVisible}}">
+                                        <TextBlock Text="{Binding RackLocation}" Style="{StaticResource GridChipText}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="GST" Binding="{Binding GstRate, StringFormat={}{0:N0}%}" Width="50"
+                                            ElementStyle="{StaticResource GridNumber}"
+                                            HeaderStyle="{StaticResource GridNumberHeader}"/>
+
+                        <!-- A schedule is worth calling out; "None" truncated to
+                             "Non" was worth nothing at all. -->
+                        <DataGridTemplateColumn Header="SCH" Width="52" ClipboardContentBinding="{Binding Schedule}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ContentControl Content="{Binding Schedule}"
+                                                    ContentTemplate="{StaticResource ScheduleBadge}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="76"
+                                            ElementStyle="{StaticResource GridNumber}"
+                                            HeaderStyle="{StaticResource GridNumberHeader}"/>
+
+                        <DataGridTemplateColumn Header="STOCK" Width="76" ClipboardContentBinding="{Binding StockOnHand}"
+                                                HeaderStyle="{StaticResource GridNumberHeader}">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ContentControl Content="{Binding}" HorizontalAlignment="Right"
+                                                    ContentTemplate="{StaticResource StockBadge}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </DockPanel>

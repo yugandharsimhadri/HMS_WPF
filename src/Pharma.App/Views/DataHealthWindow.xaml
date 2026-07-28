@@ -44,9 +44,9 @@
                       AutomationProperties.AutomationId="HealthGrid">
                 <DataGrid.Columns>
                     <DataGridCheckBoxColumn Header="FIX" Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="44"/>
-                    <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="200" IsReadOnly="True"/>
-                    <DataGridTextColumn Header="PROBLEM" Binding="{Binding Problem}" Width="200" IsReadOnly="True"/>
-                    <DataGridTextColumn Header="NOW" Binding="{Binding Now}" Width="220" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="200" ElementStyle="{StaticResource GridName}" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="PROBLEM" Binding="{Binding Problem}" Width="200" ElementStyle="{StaticResource GridWrap}" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="NOW" Binding="{Binding Now}" Width="220" ElementStyle="{StaticResource GridWrap}" IsReadOnly="True"/>
                     <DataGridTextColumn Header="AFTER" Binding="{Binding After}" Width="150" IsReadOnly="True"/>
                     <DataGridTextColumn Header="STOCK" Binding="{Binding StockChange}" Width="110" IsReadOnly="True"/>
 

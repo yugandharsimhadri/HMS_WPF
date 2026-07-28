@@ -27,6 +27,11 @@
          border needs) to #C08A34 (4.75:1). -->
     <SolidColorBrush x:Key="WarnStroke"   Color="#C08A34"/>
     <SolidColorBrush x:Key="WarnInk"      Color="#EBC282"/>
+
+    <!-- See Theme.Light.xaml. Warm rather than pure red, so it sits with the
+         other surfaces; DangerInk reads 7.1:1 on DangerFill. -->
+    <SolidColorBrush x:Key="DangerFill"   Color="#38221F"/>
+    <SolidColorBrush x:Key="DangerInk"    Color="#F0A79E"/>
     <SolidColorBrush x:Key="NavInk"       Color="#C3D2D8"/>
     <SolidColorBrush x:Key="NavInkBright" Color="#8FD3CC"/>
     <SolidColorBrush x:Key="NavInkFaint"  Color="#6C8A92"/>
@@ -38,6 +43,9 @@
     <SolidColorBrush x:Key="HoverFill"   Color="#223038"/>
     <SolidColorBrush x:Key="PressedFill" Color="#202A32"/>
     <SolidColorBrush x:Key="HeaderFill"  Color="#232E36"/>
+
+    <!-- See Theme.Light.xaml: a rule between rows, not a border. -->
+    <SolidColorBrush x:Key="GridLine"    Color="#242E36"/>
     <!-- Lightened from #7B8B97 (4.57:1, fine on its own, but too close to the
          line once anti-aliasing thins a 1.4px stroke) to #8C9CA7 (5.68:1). -->
     <SolidColorBrush x:Key="ArrowInk"    Color="#8C9CA7"/>

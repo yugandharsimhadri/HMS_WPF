@@ -237,7 +237,21 @@ public class Product : BaseEntity
     public string RackLabel => string.IsNullOrWhiteSpace(RackLocation) ? "" : $"rack {RackLocation}";
     /// <summary>How far under the reorder level current stock has fallen. Zero when not low.</summary>
     public int Shortage => Math.Max(0, ReorderLevel - StockOnHand);
+
+    /// <summary>
+    /// How the shelf stands, for anything that has to show it at a glance.
+    ///
+    /// In a column of figures a "0" looks exactly like a "10", and whether
+    /// there is any left is the one thing on that screen somebody has to
+    /// notice. Running low only means anything once a reorder level has been
+    /// set, so a medicine without one is never called low — only empty.
+    /// </summary>
+    public StockLevel Level => StockOnHand <= 0 ? StockLevel.Empty
+                             : Shortage > 0 ? StockLevel.Low
+                             : StockLevel.Fine;
 }
+
+public enum StockLevel { Fine, Low, Empty }
 
 /// <summary>
 /// Stock is always batch-wise: MRP and expiry are printed on the strip and differ

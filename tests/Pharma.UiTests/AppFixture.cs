@@ -148,6 +148,39 @@ public class AppFixture : IDisposable
         row.Select();
     }
 
+    /// <summary>
+    /// A cell of a row, addressed by its column heading rather than its position.
+    ///
+    /// Reading cells by index broke every time a column was added or taken away
+    /// — which is a change to how a screen looks, not to what it means, and
+    /// should not be able to fail a test about stock counts. The failure was
+    /// also silent-ish: the index still existed, so the assertion compared a
+    /// stock figure against a GST rate.
+    /// </summary>
+    public string CellOf(string gridAutomationId, string header, int row = 0)
+    {
+        var grid = Grid(gridAutomationId);
+        var columns = grid.Header.Columns.Select(c => c.Text ?? "").ToArray();
+        var index = Array.FindIndex(columns, c => string.Equals(c, header, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+            throw new InvalidOperationException(
+                $"'{gridAutomationId}' has no column '{header}'. It has: {string.Join(", ", columns)}.");
+
+        var cell = grid.Rows[row].Cells[index];
+        var value = cell.Value ?? "";
+
+        // A text column reports its own value. A template column has none, and
+        // WPF hands back its internal placeholder instead — "Item:
+        // Pharma.Core.Product, Column Display Index: 7" — so read what the cell
+        // is actually showing the operator.
+        if (value.Length > 0 && !value.StartsWith("Item:", StringComparison.Ordinal)) return value;
+
+        return cell.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
+                   .Select(t => t.Name ?? "")
+                   .FirstOrDefault(t => t.Length > 0) ?? "";
+    }
+
     private FlaUI.Core.AutomationElements.GridRow? FindRow(string gridAutomationId, string text)
         => Grid(gridAutomationId).Rows
             .FirstOrDefault(r => r.Cells.Any(c => (c.Value ?? "").Contains(text, StringComparison.OrdinalIgnoreCase)));

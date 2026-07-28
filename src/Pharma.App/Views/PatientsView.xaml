@@ -38,12 +38,21 @@
                     <DataGrid ItemsSource="{Binding Patients}" SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
                               AutomationProperties.AutomationId="PatientsGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="PATIENT NO" Binding="{Binding PatientNo}" Width="110"/>
-                            <DataGridTextColumn Header="NAME" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="PATIENT NO" Binding="{Binding PatientNo}" Width="110"
+                                                ElementStyle="{StaticResource GridMuted}"/>
+                            <DataGridTextColumn Header="NAME" Binding="{Binding Name}" Width="*" MinWidth="150"
+                                                ElementStyle="{StaticResource GridName}"/>
                             <DataGridTextColumn Header="PHONE" Binding="{Binding Phone}" Width="130"/>
-                            <DataGridTextColumn Header="AGE" Binding="{Binding Age}" Width="60"/>
-                            <DataGridTextColumn Header="SEX" Binding="{Binding Gender}" Width="80"/>
-                            <DataGridTextColumn Header="ALLERGIES" Binding="{Binding Allergies}" Width="180"/>
+                            <DataGridTextColumn Header="AGE" Binding="{Binding Age}" Width="60"
+                                                ElementStyle="{StaticResource GridNumber}"
+                                                HeaderStyle="{StaticResource GridNumberHeader}"/>
+                            <DataGridTextColumn Header="SEX" Binding="{Binding Gender}" Width="80"
+                                                ElementStyle="{StaticResource GridMuted}"/>
+                            <!-- An allergy is the one thing on this row that can
+                                 hurt somebody, so it wraps rather than being cut
+                                 off at whatever the column happens to fit. -->
+                            <DataGridTextColumn Header="ALLERGIES" Binding="{Binding Allergies}" Width="190"
+                                                ElementStyle="{StaticResource GridWrap}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
@@ -67,13 +76,21 @@
                             <DataGrid ItemsSource="{Binding History}" SelectedItem="{Binding SelectedVisit, Mode=TwoWay}"
                                       AutomationProperties.AutomationId="PatientHistoryGrid">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="DATE" Binding="{Binding ScheduledOn, StringFormat='dd MMM yyyy HH:mm'}" Width="150"/>
-                                    <DataGridTextColumn Header="VISIT NO" Binding="{Binding VisitNo}" Width="90"/>
+                                    <DataGridTextColumn Header="DATE" Binding="{Binding ScheduledOn, StringFormat='dd MMM yyyy HH:mm'}" Width="150"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="VISIT NO" Binding="{Binding VisitNo}" Width="90"
+                                                        ElementStyle="{StaticResource GridName}"/>
                                     <DataGridTextColumn Header="DOCTOR" Binding="{Binding Doctor.Name}" Width="150"/>
-                                    <DataGridTextColumn Header="DIAGNOSIS" Binding="{Binding Diagnosis}" Width="*"/>
-                                    <DataGridTextColumn Header="RX" Binding="{Binding Prescription.Count}" Width="45"/>
-                                    <DataGridTextColumn Header="FEE" Binding="{Binding Fee, StringFormat=N2}" Width="70"/>
-                                    <DataGridTextColumn Header="RECEIPT" Binding="{Binding FeeReceiptNo}" Width="100"/>
+                                    <DataGridTextColumn Header="DIAGNOSIS" Binding="{Binding Diagnosis}" Width="*" MinWidth="140"
+                                                        ElementStyle="{StaticResource GridWrap}"/>
+                                    <DataGridTextColumn Header="RX" Binding="{Binding Prescription.Count}" Width="50"
+                                                        ElementStyle="{StaticResource GridNumber}"
+                                                        HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                    <DataGridTextColumn Header="FEE" Binding="{Binding Fee, StringFormat=N2}" Width="80"
+                                                        ElementStyle="{StaticResource GridAmount}"
+                                                        HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                    <DataGridTextColumn Header="RECEIPT" Binding="{Binding FeeReceiptNo}" Width="100"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
                                     <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="100"/>
                                 </DataGrid.Columns>
                             </DataGrid>
@@ -90,12 +107,19 @@
                             <DataGrid ItemsSource="{Binding Bills}" SelectedItem="{Binding SelectedBill, Mode=TwoWay}"
                                       AutomationProperties.AutomationId="PatientBillsGrid">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="DATE" Binding="{Binding BillDate, StringFormat='dd MMM yyyy HH:mm'}" Width="150"/>
-                                    <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"/>
-                                    <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}" Width="60"/>
-                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="*"/>
-                                    <DataGridTextColumn Header="NET" Binding="{Binding NetAmount, StringFormat=N2}" Width="100"/>
-                                    <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"/>
+                                    <DataGridTextColumn Header="DATE" Binding="{Binding BillDate, StringFormat='dd MMM yyyy HH:mm'}" Width="150"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"
+                                                        ElementStyle="{StaticResource GridName}"/>
+                                    <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}" Width="60"
+                                                        ElementStyle="{StaticResource GridNumber}"
+                                                        HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="*" MinWidth="120"/>
+                                    <DataGridTextColumn Header="NET" Binding="{Binding NetAmount, StringFormat=N2}" Width="100"
+                                                        ElementStyle="{StaticResource GridAmount}"
+                                                        HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                    <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
                                     <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="90"/>
                                 </DataGrid.Columns>
                             </DataGrid>

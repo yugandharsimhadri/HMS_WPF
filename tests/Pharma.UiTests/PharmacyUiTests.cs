@@ -54,10 +54,8 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine to be listed");
 
-        var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
-
-        Assert.Equal(name, cells[0]);
-        Assert.Equal("100", cells[8]);   // stock on hand; 7 is units per pack
+        Assert.Equal(name, app.CellOf("ProductsGrid", "MEDICINE"));
+        Assert.Equal("100", app.CellOf("ProductsGrid", "STOCK"));
     }
 
     [Fact]
@@ -116,8 +114,7 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductsSearchButton");
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine to be listed");
 
-        var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
-        Assert.Equal("36", cells[8]);
+        Assert.Equal("36", app.CellOf("ProductsGrid", "STOCK"));
     }
 
     [Fact]

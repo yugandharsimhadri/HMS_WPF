@@ -229,12 +229,16 @@
                     <DataGrid ItemsSource="{Binding Lines}" RowHeight="30"
                               AutomationProperties.AutomationId="RxGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="*"/>
+                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="*" MinWidth="140"
+                                                ElementStyle="{StaticResource GridName}"/>
                             <DataGridTextColumn Header="DOSE" Binding="{Binding Dosage}" Width="80"/>
                             <DataGridTextColumn Header="FREQUENCY" Binding="{Binding Frequency}" Width="95"/>
-                            <DataGridTextColumn Header="DAYS" Binding="{Binding Days}" Width="55"/>
+                            <DataGridTextColumn Header="DAYS" Binding="{Binding Days}" Width="55"
+                                                ElementStyle="{StaticResource GridNumber}"
+                                                HeaderStyle="{StaticResource GridNumberHeader}"/>
                             <DataGridTextColumn Header="DISPENSE" Binding="{Binding Course}" Width="150"/>
-                            <DataGridTextColumn Header="INSTRUCTIONS" Binding="{Binding Instructions}" Width="140"/>
+                            <DataGridTextColumn Header="INSTRUCTIONS" Binding="{Binding Instructions}" Width="150"
+                                                ElementStyle="{StaticResource GridMuted}"/>
                             <DataGridTemplateColumn Width="34">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>

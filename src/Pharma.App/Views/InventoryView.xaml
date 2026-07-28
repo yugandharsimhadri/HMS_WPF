@@ -35,15 +35,50 @@
             <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14" Height="230">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Medicines" Style="{StaticResource H2}"/>
-                    <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}"
+                    <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" RowHeight="48"
                               AutomationProperties.AutomationId="InventoryProductsGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}" Width="*" MinWidth="160"/>
-                            <DataGridTextColumn Header="DRUG" Binding="{Binding GenericName}" Width="150"/>
-                            <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="80"/>
-                            <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="75"/>
-                            <DataGridTextColumn Header="ON HAND" Binding="{Binding StockOnHand}" Width="80"/>
-                            <DataGridTextColumn Header="RACK" Binding="{Binding RackLocation}" Width="60"/>
+                            <!-- Brand with the drug name under it, as on the
+                                 Medicines screen: one medicine, said two ways. -->
+                            <DataGridTemplateColumn Header="MEDICINE" Width="*" MinWidth="160" ClipboardContentBinding="{Binding Name}">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource GridName}"/>
+                                            <TextBlock Text="{Binding GenericName}" FontSize="{StaticResource FontSmall}"
+                                                       Foreground="{DynamicResource InkMuted}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Visibility="{Binding GenericName, Converter={StaticResource TextToVisible}}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="72"/>
+                            <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="76"
+                                                ElementStyle="{StaticResource GridNumber}"
+                                                HeaderStyle="{StaticResource GridNumberHeader}"/>
+
+                            <DataGridTemplateColumn Header="ON HAND" Width="95" ClipboardContentBinding="{Binding StockOnHand}"
+                                                    HeaderStyle="{StaticResource GridNumberHeader}">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ContentControl Content="{Binding}" HorizontalAlignment="Right"
+                                                        ContentTemplate="{StaticResource StockBadge}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Header="RACK" Width="56" ClipboardContentBinding="{Binding RackLocation}">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource GridChip}"
+                                                Visibility="{Binding RackLocation, Converter={StaticResource TextToVisible}}">
+                                            <TextBlock Text="{Binding RackLocation}" Style="{StaticResource GridChipText}"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>
@@ -55,14 +90,24 @@
                     <DataGrid ItemsSource="{Binding Adjustments}"
                               AutomationProperties.AutomationId="AdjustmentsGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="WHEN" Binding="{Binding AdjustedOn, StringFormat='dd MMM HH:mm'}" Width="100"/>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*" MinWidth="140"/>
-                            <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="90"/>
-                            <DataGridTextColumn Header="WAS" Binding="{Binding QuantityBefore}" Width="55"/>
-                            <DataGridTextColumn Header="NOW" Binding="{Binding QuantityAfter}" Width="55"/>
-                            <DataGridTextColumn Header="CHANGE" Binding="{Binding Direction}" Width="70"/>
-                            <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="95"/>
-                            <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="150"/>
+                            <DataGridTextColumn Header="WHEN" Binding="{Binding AdjustedOn, StringFormat='dd MMM HH:mm'}" Width="105"
+                                                ElementStyle="{StaticResource GridMuted}"/>
+                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*" MinWidth="140"
+                                                ElementStyle="{StaticResource GridName}"/>
+                            <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="95"
+                                                ElementStyle="{StaticResource GridMuted}"/>
+                            <DataGridTextColumn Header="WAS" Binding="{Binding QuantityBefore}" Width="60"
+                                                ElementStyle="{StaticResource GridNumber}"
+                                                HeaderStyle="{StaticResource GridNumberHeader}"/>
+                            <DataGridTextColumn Header="NOW" Binding="{Binding QuantityAfter}" Width="60"
+                                                ElementStyle="{StaticResource GridNumber}"
+                                                HeaderStyle="{StaticResource GridNumberHeader}"/>
+                            <DataGridTextColumn Header="CHANGE" Binding="{Binding Direction}" Width="75"
+                                                ElementStyle="{StaticResource GridNumber}"
+                                                HeaderStyle="{StaticResource GridNumberHeader}"/>
+                            <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="100"/>
+                            <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="170"
+                                                ElementStyle="{StaticResource GridMuted}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>

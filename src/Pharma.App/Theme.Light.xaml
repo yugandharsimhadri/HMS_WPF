@@ -29,6 +29,12 @@
          so the warning band's own border was nearly invisible. -->
     <SolidColorBrush x:Key="WarnStroke"   Color="#B5740E"/>
     <SolidColorBrush x:Key="WarnInk"      Color="#7A4B00"/>
+
+    <!-- The same pair for something that is wrong rather than merely worth
+         watching: out of stock, a restricted schedule. DangerInk on DangerFill
+         is 7.4:1 here, so it reads at badge size. -->
+    <SolidColorBrush x:Key="DangerFill"   Color="#FDECEA"/>
+    <SolidColorBrush x:Key="DangerInk"    Color="#8C2318"/>
     <SolidColorBrush x:Key="NavInk"       Color="#D6E2E6"/>
     <SolidColorBrush x:Key="NavInkBright" Color="#BFE3DF"/>
     <SolidColorBrush x:Key="NavInkFaint"  Color="#7FA3AA"/>
@@ -40,6 +46,11 @@
     <SolidColorBrush x:Key="HoverFill"   Color="#EDF3F2"/>
     <SolidColorBrush x:Key="PressedFill" Color="#EDF2F5"/>
     <SolidColorBrush x:Key="HeaderFill"  Color="#EEF2F5"/>
+
+    <!-- The rule between two rows. Border is the right weight around the edge
+         of a grid and far too heavy repeated forty times down it — that is what
+         made these read as spreadsheets rather than as lists. -->
+    <SolidColorBrush x:Key="GridLine"    Color="#EDF1F4"/>
     <!-- Darkened from #A9B4BE (2.11:1 — failed the 3:1 a graphical control
          needs) to #66707A (5.04:1), so the combo-box and date-picker glyphs
          are visible to low-vision users, not just decorative. -->
