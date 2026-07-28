@@ -4,14 +4,24 @@
         Title="Print preview" Height="820" Width="720"
         WindowStartupLocation="CenterOwner"
         FontFamily="{StaticResource UiFont}"
-        Background="{DynamicResource Bg}">
+        Background="#DDE2E7">
 
+    <!--
+        This window shows paper, not app UI — every colour on it is a fixed,
+        literal value, never a {DynamicResource} from Theme.Light/Dark.xaml.
+        Nothing here may follow the app's light/dark theme: a receipt has to
+        look the same on screen as it does printed, regardless of what mode
+        the rest of the app happens to be in. The document itself pins its
+        own white page and black ink in DocumentBuilder.NewDocument(); the
+        chrome here just has to stay out of its way and never render dark
+        behind it.
+    -->
     <DockPanel>
-        <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="{StaticResource Border}"
+        <Border DockPanel.Dock="Bottom" Background="#FFFFFF" BorderBrush="#C7CDD3"
                 BorderThickness="0,1,0,0" Padding="16,12">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Left" Text="{Binding JobName, RelativeSource={RelativeSource AncestorType=Window}}"
-                           Style="{StaticResource Muted}" VerticalAlignment="Center"/>
+                           Foreground="#333333" FontSize="12" VerticalAlignment="Center"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Close" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
                             Click="Close_Click" AutomationProperties.AutomationId="PreviewClose"/>
@@ -21,8 +31,12 @@
             </DockPanel>
         </Border>
 
-        <!-- Page-at-a-time so what is on screen is what comes out of the printer. -->
-        <FlowDocumentPageViewer x:Name="Viewer" Background="#E7EBEF" Padding="0"
-                                AutomationProperties.AutomationId="PreviewViewer"/>
+        <!-- Page-at-a-time so what is on screen is what comes out of the printer.
+             The surrounding well is a fixed neutral grey so the white page
+             always reads as a distinct sheet of paper sitting on it. -->
+        <Border Background="#DDE2E7">
+            <FlowDocumentPageViewer x:Name="Viewer" Background="#DDE2E7" Padding="12"
+                                    AutomationProperties.AutomationId="PreviewViewer"/>
+        </Border>
     </DockPanel>
 </Window>

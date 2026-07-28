@@ -1,4 +1,5 @@
 using System.Windows.Documents;
+using System.Windows.Media;
 using Pharma.App.Printing;
 using Pharma.Core;
 using Pharma.Data;
@@ -269,4 +270,33 @@ public class PrintDocumentTests
         Assert.Contains("MEDICINE 01", text);
         Assert.Contains("MEDICINE 60", text);
     }
+
+    // ── Print-safe palette ─────────────────────────────────────────────────
+    //
+    // Regression guard for a bug where the preview page picked up a dark
+    // background from somewhere while the ink stayed dark too, making a
+    // receipt unreadable until the text was selected. Every document must
+    // carry its own literal white/black — never null, never a theme colour —
+    // so this can never come back silently.
+
+    private static void AssertPrintSafe(FlowDocument doc)
+    {
+        var background = Assert.IsType<SolidColorBrush>(doc.Background);
+        Assert.Equal(Colors.White, background.Color);
+
+        var foreground = Assert.IsType<SolidColorBrush>(doc.Foreground);
+        Assert.Equal(Colors.Black, foreground.Color);
+    }
+
+    [StaFact]
+    public void A_fee_receipt_is_black_ink_on_a_white_page()
+        => AssertPrintSafe(FeeReceiptDocument.Build(Visit(), Shop()));
+
+    [StaFact]
+    public void A_prescription_is_black_ink_on_a_white_page()
+        => AssertPrintSafe(PrescriptionPrinter.Build(Visit(), Shop()));
+
+    [StaFact]
+    public void A_bill_is_black_ink_on_a_white_page()
+        => AssertPrintSafe(BillPrinter.Build(Sale(), Shop()));
 }

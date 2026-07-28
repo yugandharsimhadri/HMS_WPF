@@ -8,8 +8,36 @@ namespace Pharma.App.Printing;
 /// <summary>Small helpers so the two print templates stay readable.</summary>
 internal static class DocumentBuilder
 {
-    public static readonly Brush Muted = new SolidColorBrush(Color.FromRgb(0x61, 0x70, 0x7E));
-    public static readonly Brush Line = new SolidColorBrush(Color.FromRgb(0xC8, 0xD0, 0xD8));
+    // ── Print-safe palette ───────────────────────────────────────────────
+    //
+    // A printed page and its on-screen preview must read the same way on
+    // every PC regardless of the app's light/dark theme, the Windows theme,
+    // or any future WPF default — paper is white and ink is dark, always.
+    // These four brushes are the only colours a printable document may use;
+    // nothing here is a DynamicResource, and nothing here is looked up from
+    // Theme.xaml, so switching the app's theme cannot repaint a receipt.
+    //
+    // Every FlowDocument built below also sets Background/Foreground on the
+    // document itself (see NewDocument), not just on each Run — so even a
+    // paragraph added later that forgets to set a brush still renders black
+    // on white instead of silently inheriting whatever the page turns out
+    // to default to.
+    public static readonly Brush PrintPageBackground = Frozen(0xFF, 0xFF, 0xFF);
+    public static readonly Brush PrintForeground = Frozen(0x00, 0x00, 0x00);
+    public static readonly Brush PrintSecondaryForeground = Frozen(0x33, 0x33, 0x33);
+    public static readonly Brush PrintBorderBrush = Frozen(0x44, 0x44, 0x44);
+
+    private static Brush Frozen(byte r, byte g, byte b)
+    {
+        var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+        brush.Freeze();
+        return brush;
+    }
+
+    // Old names kept as aliases so every call site below reads the same as
+    // it always has; the values are the print-safe ones above.
+    public static readonly Brush Muted = PrintSecondaryForeground;
+    public static readonly Brush Line = PrintBorderBrush;
 
     /// <summary>
     /// The clinic identity block every printed document opens with. Kept in one
@@ -49,7 +77,11 @@ internal static class DocumentBuilder
         PagePadding = new Thickness(40),
         ColumnWidth = double.MaxValue,
         FontFamily = new FontFamily("Segoe UI"),
-        FontSize = 11
+        FontSize = 11,
+        // Pinned so the page is always paper-white with black ink, whatever
+        // the app's theme is doing — see the print-safe palette above.
+        Background = PrintPageBackground,
+        Foreground = PrintForeground
     };
 
     public static Paragraph Text(string text, double size = 11, FontWeight? weight = null,
@@ -59,7 +91,7 @@ internal static class DocumentBuilder
         {
             FontSize = size,
             FontWeight = weight ?? FontWeights.Normal,
-            Foreground = brush ?? Brushes.Black,
+            Foreground = brush ?? PrintForeground,
             TextAlignment = align,
             Margin = new Thickness(0, topMargin, 0, bottomMargin)
         };
@@ -89,7 +121,7 @@ internal static class DocumentBuilder
                 Margin = new Thickness(4, 3, 4, 3),
                 FontSize = header ? 9.5 : 10.5,
                 FontWeight = header ? FontWeights.SemiBold : FontWeights.Normal,
-                Foreground = header ? Muted : Brushes.Black,
+                Foreground = header ? PrintSecondaryForeground : PrintForeground,
                 // Everything after the first two columns is numeric.
                 TextAlignment = index >= 2 ? TextAlignment.Right : TextAlignment.Left
             };
