@@ -596,8 +596,22 @@
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="RowBackground" Value="{DynamicResource Surface}"/>
         <Setter Property="AlternatingRowBackground" Value="{DynamicResource SurfaceMuted}"/>
+        <!--
+            RowBackground/AlternatingRowBackground above are set for anyone
+            reading the intent, but WPF only applies them by coercing
+            DataGridRow.Background when that property's current value came
+            from a lower-precedence source than they did — and our own
+            DataGridRow style (below) sets Background at the same "Style"
+            precedence, so the coercion never wins and the row falls back to
+            its built-in default (the OS window colour, always near-white).
+            AlternationCount drives the AlternationIndex trigger in that style
+            instead, which is what actually paints the rows.
+        -->
+        <Setter Property="AlternationCount" Value="2"/>
         <Setter Property="FontSize" Value="13"/>
-        <Setter Property="RowHeight" Value="32"/>
+        <!-- Roomy enough that each row reads as its own item rather than a
+             spreadsheet line, matching the pharmacy counter's list. -->
+        <Setter Property="RowHeight" Value="46"/>
         <Setter Property="SelectionMode" Value="Single"/>
         <Setter Property="CanUserAddRows" Value="False"/>
     </Style>
@@ -607,9 +621,12 @@
         <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
         <Setter Property="FontSize" Value="11"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Padding" Value="8,7"/>
+        <Setter Property="Padding" Value="14,10"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
-        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+        <!-- Bottom rule only. The per-column dividers chopped the header into
+             boxes, which is the main thing that made these grids read as a
+             spreadsheet next to the counter's list. -->
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
     </Style>
 
@@ -622,7 +639,11 @@
     -->
     <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Style.Triggers>
+            <Trigger Property="AlternationIndex" Value="1">
+                <Setter Property="Background" Value="{DynamicResource SurfaceMuted}"/>
+            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource HoverFill}"/>
             </Trigger>
@@ -639,18 +660,47 @@
     </Style>
 
     <!--
-        BasedOn the type's default style pulls in its Foreground setter too —
-        that one points at SystemColors.ControlTextBrushKey rather than this
-        app's palette, which otherwise wins over the Ink colour inherited from
-        DataGrid.Foreground and left every cell a fixed OS grey regardless of
-        theme. Overriding it here restores the swap between light and dark.
+        BasedOn the type's default style pulls in its selected-state trigger
+        too — that one paints the cell with the OS highlight colour (opaque),
+        which sat on top of and hid the row's own AccentSoft selection tint
+        from the DataGridRow style above, leaving a near-white cell with
+        near-white text. Backing that out to Transparent lets the row's tint
+        show through; Foreground then just stays Ink, which already reads
+        correctly against AccentSoft in both themes.
     -->
     <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <!--
+            The stock cell template hardcodes its Border with no Padding
+            TemplateBinding, so the Padding above would be ignored without
+            this. Same shape as the default otherwise — the border is what
+            carries the selection/focus setters the base style still drives.
+        -->
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter VerticalAlignment="Center"
+                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <!-- The base style also swaps BorderBrush to the OS highlight
+                     colour here, which drew a light box around every cell of
+                     the selected row. The row's accent bar and tint already
+                     say which row is selected. -->
+                <Setter Property="BorderBrush" Value="Transparent"/>
             </Trigger>
         </Style.Triggers>
     </Style>

@@ -4,7 +4,8 @@
         Title="Data health check" Height="620" Width="1080"
         WindowStartupLocation="CenterOwner"
         FontFamily="{StaticResource UiFont}"
-        Background="{DynamicResource Bg}">
+        Background="{DynamicResource Bg}"
+        Foreground="{DynamicResource Ink}">
 
     <DockPanel Margin="18">
 

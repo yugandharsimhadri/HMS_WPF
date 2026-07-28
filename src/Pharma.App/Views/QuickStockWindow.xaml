@@ -5,7 +5,8 @@
         Title="Add stock" Width="520" SizeToContent="Height" MaxHeight="700"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         FontFamily="{StaticResource UiFont}"
-        Background="{DynamicResource Bg}">
+        Background="{DynamicResource Bg}"
+        Foreground="{DynamicResource Ink}">
 
     <DockPanel Margin="18">
 

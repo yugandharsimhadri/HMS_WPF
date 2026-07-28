@@ -4,7 +4,8 @@
         Title="Import a supplier bill" Height="720" Width="1120"
         WindowStartupLocation="CenterOwner"
         FontFamily="{StaticResource UiFont}"
-        Background="{DynamicResource Bg}">
+        Background="{DynamicResource Bg}"
+        Foreground="{DynamicResource Ink}">
 
     <DockPanel Margin="18">
 

@@ -203,7 +203,7 @@
                             <Grid>
                                 <DataGrid ItemsSource="{Binding Expiring}" AutomationProperties.AutomationId="ReportsExpiringGrid">
                                     <DataGrid.RowStyle>
-                                        <Style TargetType="DataGridRow">
+                                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsExpired}" Value="True">
                                                     <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
