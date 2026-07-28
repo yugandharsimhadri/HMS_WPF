@@ -36,12 +36,18 @@ function findBrowser() {
 }
 
 marked.use({ gfm: true, breaks: false });
-const body = marked.parse(fs.readFileSync(inputPath, 'utf-8'));
+const source = fs.readFileSync(inputPath, 'utf-8');
+const body = marked.parse(source);
+
+// The document names itself. This renders more than the user guide now, and
+// footing every PDF "user guide" mislabels the ones that are not.
+const heading = source.match(/^#\s+(.+)$/m);
+const title = heading ? heading[1].trim() : path.basename(inputPath, '.md');
 
 // Matches the application's own palette so the printed guide and the screen
 // look like the same product.
 const html = `<!doctype html>
-<html><head><meta charset="utf-8"><title>Twinkle Children's Hospital — user guide</title>
+<html><head><meta charset="utf-8"><title>${title}</title>
 <style>
   @page { margin: 18mm 15mm; }
   body {
@@ -100,7 +106,7 @@ try {
     footerTemplate:
       '<div style="width:100%;font-size:8pt;color:#61707E;padding:0 15mm;' +
       'display:flex;justify-content:space-between;">' +
-      "<span>Twinkle Children's Hospital — user guide</span>" +
+      `<span>${title.replace(/[<>&]/g, '')}</span>` +
       '<span class="pageNumber"></span></div>',
     margin: { top: '18mm', bottom: '16mm', left: '15mm', right: '15mm' },
   });
