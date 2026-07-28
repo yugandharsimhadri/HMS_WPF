@@ -245,11 +245,16 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
             await pharmacy.SaveProductAsync(product);
             Status = $"{product.Name} saved.";
 
-            await OfferToRepackAsync(product);
+            // A re-count has far more to say than "saved", so it speaks instead.
+            var repack = await OfferToRepackAsync(product);
+            var saved = product.Name;
 
-            Search = product.Name;
-            await FindAsync();
-            SelectedProduct = Products.FirstOrDefault(p => p.Id == product.Id);
+            // The whole screen goes back to blank, search box included. Leaving
+            // the medicine loaded and the list filtered to it meant the next one
+            // typed in was saved over it instead of being added as a new record.
+            await NewProductAsync();
+
+            Status = $"{repack ?? $"{saved} saved."} The form is clear for the next medicine.";
         }
     }
 
@@ -258,11 +263,14 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     /// medicine on its own leaves stock already on the shelf being sold by the
     /// pack. Offer to re-count it — the packs do not move, only what the
     /// software believes one of them holds.
+    ///
+    /// Returns what to tell the operator, or null when nothing was re-counted.
+    /// The caller clears the screen afterwards and would otherwise write over it.
     /// </summary>
-    private async Task OfferToRepackAsync(Product product)
+    private async Task<string?> OfferToRepackAsync(Product product)
     {
         var preview = await pharmacy.PreviewRepackAsync(product.Id, product.UnitsPerPack);
-        if (!preview.AnythingToDo) return;
+        if (!preview.AnythingToDo) return null;
 
         var packs = preview.QuantityAfter / Math.Max(1, preview.UnitsPerPack);
         var unit = product.DispensingUnit.Name(preview.QuantityAfter);
@@ -276,12 +284,12 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
             $"Every batch is recorded in the correction trail.",
             "Medicines", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-        if (answer != MessageBoxResult.Yes) return;
+        if (answer != MessageBoxResult.Yes) return null;
 
         var repacked = await pharmacy.RepackAsync(product.Id, product.UnitsPerPack, Environment.UserName);
 
-        Status = $"{product.Name} saved. {repacked} batch(es) re-counted at " +
-                 $"{preview.UnitsPerPack} per pack — now {preview.QuantityAfter} {unit} on hand.";
+        return $"{product.Name} saved. {repacked} batch(es) re-counted at " +
+               $"{preview.UnitsPerPack} per pack — now {preview.QuantityAfter} {unit} on hand.";
     }
 
     private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

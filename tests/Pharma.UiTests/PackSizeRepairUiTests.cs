@@ -43,6 +43,20 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         return name;
     }
 
+    /// <summary>
+    /// Picks the medicine on the Inventory screen. Receiving stock clears the
+    /// screen, so anything wanting to look at what it just received has to find
+    /// it again — as the person at the desk does.
+    /// </summary>
+    private void SelectInInventory(string name)
+    {
+        app.Navigate("NavInventory", "Inventory");
+        app.Type("InventorySearch", name);
+        app.Click("InventorySearchButton");
+        AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, $"'{name}' in inventory");
+        app.Grid("InventoryProductsGrid").Rows[0].Select();
+    }
+
     [Fact]
     public void The_pack_size_is_taken_from_what_is_typed()
     {
@@ -60,9 +74,10 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
     public void A_disagreement_is_called_out_where_stock_is_handled()
     {
         var suffix = DateTime.Now.ToString("HHmmssfff");
-        GivenAMedicineSetUpWrongly(suffix);
+        var name = GivenAMedicineSetUpWrongly(suffix);
 
-        // Still on Inventory with the medicine selected.
+        SelectInInventory(name);
+
         AppFixture.WaitUntil(() => app.TextOf("InventoryPackWarning").Contains("15"),
                              "the pack size warning");
 
@@ -76,6 +91,7 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         var name = GivenAMedicineSetUpWrongly(suffix);
 
         // The shelf currently believes 59 sellable units.
+        SelectInInventory(name);
         Assert.Contains("59", app.TextOf("PageSubtitle"));
 
         app.Navigate("NavProducts", "Medicines");
@@ -96,6 +112,11 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         // 59 strips of 15 is 885 tablets. Nothing on the shelf moved.
         Assert.Contains("885", app.TextOf("ProductsStatus"));
+
+        // Saving clears the screen, so find it again to read the shelf count.
+        app.Type("ProductSearch", name);
+        app.Click("ProductsSearchButton");
+        AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine again");
 
         var cells = app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
         Assert.Equal("885", cells[8]);
@@ -120,7 +141,12 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.MainWindow.ModalWindows[0].FindFirstDescendant(cf => cf.ByName("Yes"))?.AsButton().Invoke();
         AppFixture.WaitUntil(() => app.TextOf("ProductsStatus").Contains("re-counted"), "the re-count");
 
-        // The shelf agrees before we go anywhere near the counter.
+        // The shelf agrees before we go anywhere near the counter. The screen
+        // clears on save, so search it out again.
+        app.Type("ProductSearch", name);
+        app.Click("ProductsSearchButton");
+        AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine again");
+
         Assert.Equal("885", app.Grid("ProductsGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray()[8]);
 
         // Two a day for four and a half days.

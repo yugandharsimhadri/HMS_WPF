@@ -461,9 +461,14 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
         log.Ok($"{Lines.Count} line(s) on the bill, net {Net:0.00}");
 
-        // The search and its results stay put, so the next medicine is one click
-        // away and the operator can see what else is on the shelf.
+        // The line is on the bill, so the search that found it goes. Left there,
+        // the previous medicine stays typed and highlighted while the operator
+        // starts on the next one — and pressing Add again re-lays the line they
+        // already have instead of adding the new medicine.
         Quantity = 1;
+        Search = "";
+        await FindAsync();
+        SelectedProduct = null;
     }
 
     [RelayCommand]

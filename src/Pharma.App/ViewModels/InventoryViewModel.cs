@@ -257,16 +257,23 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
 
             var saved = await pharmacy.ReceiveStockAsync(entry, [item]);
 
-            Status = $"{saved.EntryNo}: {item.UnitsReceived} " +
-                     $"{SelectedProduct.DispensingUnit.Name(item.UnitsReceived)} of {SelectedProduct.Name} " +
-                     $"added to batch {item.BatchNo}.";
+            var confirmation = $"{saved.EntryNo}: {item.UnitsReceived} " +
+                               $"{SelectedProduct.DispensingUnit.Name(item.UnitsReceived)} of {SelectedProduct.Name} " +
+                               $"added to batch {item.BatchNo}.";
 
-            BatchNo = "";
-            Packs = FreePacks = 0;
-            PurchaseRate = 0;
-
-            await LoadBatchesAsync(SelectedProduct.Id);
+            // The medicine clears along with the form — the next line of a
+            // supplier's invoice is usually a different medicine, and a batch
+            // received against whichever one happened to be left selected is
+            // stock counted onto the wrong shelf. Clearing the selection empties
+            // the batch, packs, rate and expiry with it.
+            //
+            // The supplier and the invoice number stay: they belong to the
+            // invoice being entered, not to one line of it.
+            SelectedProduct = null;
+            Search = "";
             await FindAsync();
+
+            Status = $"{confirmation} The form is clear for the next line.";
         }, "Receiving stock", m => Status = m);
     }
 
@@ -309,14 +316,21 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
             var adjustment = await pharmacy.AdjustStockAsync(
                 SelectedBatch.Id, CorrectedQuantity, AdjustmentReason, AdjustmentNotes);
 
-            Status = $"{adjustment.ProductName} batch {adjustment.BatchNo}: " +
-                     $"{adjustment.QuantityBefore} → {adjustment.QuantityAfter} ({adjustment.Reason}).";
-
-            AdjustmentNotes = "";
+            var confirmation = $"{adjustment.ProductName} batch {adjustment.BatchNo}: " +
+                               $"{adjustment.QuantityBefore} → {adjustment.QuantityAfter} ({adjustment.Reason}).";
 
             if (SelectedProduct is not null) await LoadBatchesAsync(SelectedProduct.Id);
             await LoadAdjustmentsAsync();
             await FindAsync();
+
+            // The batch clears with the rest. A second correction made against
+            // whichever batch was still selected writes off the wrong stock, and
+            // leaves an audit record saying it was meant.
+            SelectedBatch = null;
+            AdjustmentReason = AdjustmentReason.Recount;
+            AdjustmentNotes = "";
+
+            Status = $"{confirmation} The correction form is clear.";
         }, "Correcting the stock count", m => Status = m);
     }
 

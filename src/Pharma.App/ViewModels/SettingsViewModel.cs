@@ -231,9 +231,15 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
         doctor.IsActive = true;
 
         await opd.SaveDoctorAsync(doctor);
-        Status = $"{doctor.Name} saved.";
 
+        var saved = doctor.Name;
         await LoadDoctorsAsync();
-        SelectedDoctor = Doctors.FirstOrDefault(d => d.Id == doctor.Id);
+
+        // Cleared like every other form on the way out. Left selected, the next
+        // name typed over it saves as an edit to this doctor rather than adding
+        // the new one.
+        NewDoctor();
+
+        Status = $"{saved} saved. The form is clear for the next doctor.";
     }
 }

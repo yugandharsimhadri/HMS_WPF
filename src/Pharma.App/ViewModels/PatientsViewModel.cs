@@ -149,18 +149,34 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
     [RelayCommand]
     private async Task NewPatientAsync()
     {
-        SelectedPatient = null;
-        PatientNo = "(assigned on save)";
-        Name = Phone = Age = Address = Allergies = "";
-        Gender = Gender.Male;
-        History.Clear();
+        await ResetAsync();
 
-        // The search box too, or the list stays filtered and the screen does not
-        // look cleared.
+        PatientNo = "(assigned on save)";
+        Status = "Enter the patient's details and save.";
+    }
+
+    /// <summary>
+    /// Back to how the screen opens: nothing selected, nothing typed, nothing
+    /// left in the search box.
+    ///
+    /// The search box matters as much as the fields. A screen still filtered to
+    /// one patient, with that patient loaded, is a screen where the next name
+    /// typed in overwrites them instead of being added as somebody new.
+    /// </summary>
+    private async Task ResetAsync()
+    {
+        SelectedPatient = null;
+        SelectedVisit = null;
+        SelectedBill = null;
+
+        PatientNo = Name = Phone = Age = Address = Allergies = "";
+        Gender = Gender.Male;
+
+        History.Clear();
+        Bills.Clear();
+
         Search = "";
         await FindAsync();
-
-        Status = "Enter the patient's details and save.";
     }
 
     [RelayCommand]
@@ -185,11 +201,16 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
         try
         {
             var saved = await opd.SavePatientAsync(patient);
-            Status = $"{saved.Name} saved as {saved.PatientNo}.";
 
-            Search = saved.Name;
-            await FindAsync();
-            SelectedPatient = Patients.FirstOrDefault(p => p.Id == saved.Id);
+            // Everything clears, the search box included. This used to leave the
+            // saved patient selected and the list filtered to their name, which
+            // reads as "ready for the next one" but is not: typing the next
+            // person's details into that form saved them over this one.
+            await ResetAsync();
+
+            // The confirmation still names who was saved, so clearing the screen
+            // does not also take away the evidence that the save worked.
+            Status = $"{saved.Name} saved as {saved.PatientNo}. The form is clear for the next patient.";
         }
         catch (Exception ex)
         {
@@ -202,8 +223,10 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
     {
         if (SelectedPatient is null) return;
 
+        var removed = SelectedPatient.Name;
+
         var confirm = MessageBox.Show(
-            $"Remove {SelectedPatient.Name} from the register?",
+            $"Remove {removed} from the register?",
             "Patients", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
         if (confirm != MessageBoxResult.Yes) return;
@@ -215,9 +238,11 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
             return;
         }
 
-        Status = "Patient removed.";
-        SelectedPatient = null;
-        await FindAsync();
+        // Their details have to go off the form as well. Leaving them there means
+        // Save puts the patient straight back, as a second record.
+        await ResetAsync();
+
+        Status = $"{removed} removed from the register.";
     }
 
     private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

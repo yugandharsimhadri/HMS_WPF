@@ -171,6 +171,13 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
             new Note("SaveAndPrint", "Saves the bill, deducts the stock, and opens the print preview."));
 
         // ── Adding stock from the counter ──────────────────────────────────
+        // Adding the line cleared the search along with the selection, so pick the
+        // medicine again — which is what the operator does too, since quick stock
+        // is for whichever medicine they have just failed to find in stock.
+        app.Type("SaleSearch", "Calpol");
+        AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length >= 1, "the medicine again");
+        app.ListBox("SaleMatches").Items[0].Select();
+
         app.Click("SaleQuickStock");
 
         var quickStock = Retry.WhileNull(
