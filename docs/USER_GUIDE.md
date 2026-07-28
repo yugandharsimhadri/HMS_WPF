@@ -117,7 +117,8 @@ once. **Inventory** is where stock arrives, every delivery.
 5. Set **Sold as** — tablet, capsule, bottle, sachet.
 6. Set **Units in one pack** — `15` for a strip of fifteen, `1` for a bottle.
 7. Set **GST %**, **schedule**, **rack** and **reorder level**.
-8. Click **Save medicine**.
+8. Click **Save medicine**. The form empties for the next one — that is normal.
+   The message underneath confirms what was saved.
 
 **Then, put stock on the shelf — Inventory screen**
 
@@ -127,7 +128,11 @@ once. **Inventory** is where stock arrives, every delivery.
 11. In **Receive stock**, enter **batch no**, **expiry**, **packs received**,
     any **free** packs, the **rate** you paid and the **MRP** printed on the pack.
 12. Check the line that appears — *"20 pack(s) × 15 = 300 tablets onto the shelf"*.
-13. Click **Add stock**.
+13. Click **Add stock**. The medicine is let go of and the form clears, ready
+    for the next line of the delivery note.
+
+If you are entering several medicines off one delivery note, repeat steps 9–13
+for each. The **supplier** and **invoice no** stay where you typed them.
 
 ## F. Load a supplier's file instead of typing it
 
@@ -150,9 +155,11 @@ twice.
 3. **Click the medicine** in the results.
 4. Enter **How many**, and check the unit beside it says what you mean —
    *tablets* or *strips of 10*.
-5. Click **Add to bill**. Repeat for each medicine.
-6. Leave the customer as **Cash**, or type their name.
-7. Choose **Payment**, then **Save & print bill**.
+5. Click **Add to bill**. The search box empties and the medicine is let go of —
+   the line is on the bill, so start the next one by typing its name.
+6. Repeat 2–5 for each medicine. The bill builds up; only the search clears.
+7. Leave the customer as **Cash**, or type their name.
+8. Choose **Payment**, then **Save & print bill**.
 
 ## H. Sell part of a strip
 
@@ -193,6 +200,11 @@ strips; it becomes 20 tablets.
 6. Click **Correct count**.
 
 Every correction is recorded underneath with was, now and why.
+
+The batch is let go of afterwards. Correcting a second batch means choosing it
+again — which is the point: a correction made against a batch you had forgotten
+was still selected writes off the wrong stock, and the trail then says you meant
+to.
 
 ## K. Print something again, however long ago
 
@@ -293,7 +305,33 @@ The heading of every screen shows the screen name and a one-line summary
 underneath — for example *"2 waiting · 1 completed · Sun, 26 Jul"*.
 
 At the bottom left it reminds you where the data lives and that a backup is taken
-each day the application is opened.
+each day the application is opened. Under that is who built the software and
+which version you are running:
+
+> Developed by Sivayaan Technologies
+> Version 1.0.0
+
+Read that version number out if you ever ring for help. It is on screen whatever
+page you are on, so nobody has to go looking for it.
+
+## Screens clear themselves when the job is done
+
+Whenever you finish something — save a patient, save a medicine, add a line to
+a bill, put stock on the shelf — the screen empties itself, **including the
+search box**, and the message underneath tells you what was saved.
+
+This is deliberate and it matters. A form that still holds the last record is
+not ready for the next one: typing the next patient's name into it and pressing
+Save would change the person you just entered instead of adding anybody. The
+same at the counter — the medicine you just billed would still be selected, and
+pressing Add again would re-do the line you already have.
+
+So after every save you start from a clean screen. If you want to look at what
+you just saved, search for it again; it is there.
+
+The one thing that stays is the **supplier and invoice number** on the Inventory
+screen, because a delivery note has many medicines on it and you would otherwise
+retype the supplier for every line.
 
 ---
 
@@ -351,7 +389,7 @@ an **Open log folder** button. You need those only if reporting a problem.
 | **Speciality** | Printed under the doctor's name on the prescription |
 | **Registration no** | Printed on the prescription. Required on a real one |
 | **Default consultation fee** | Fills in automatically when booking for this doctor |
-| **Save doctor** | Saves the one being edited |
+| **Save doctor** | Saves the one being edited, then clears the form |
 | **+ New doctor** | Clears the form to add another |
 
 **At least one doctor is needed before any visit can be booked.**
@@ -596,7 +634,8 @@ rack. Typing `paracetamol` finds Calpol; typing `calpol` finds it too.
 | **Units per pack** | **10 for a ten-tablet strip. 1 for a syrup bottle** |
 | **Sell loose units** | Ticked, part of a strip can be sold. Unticked, the counter insists on whole packs |
 | **Active** | Uncheck to hide it from the counter |
-| **Save medicine** | Saves it |
+| **Save medicine** | Saves it, then clears the whole screen — search box included — for the next medicine |
+| **Clear** | Empties the form without saving. Nothing already saved is changed |
 
 > ### Units per pack is what makes loose sale work
 >
@@ -637,8 +676,8 @@ and how much is on hand, so you always know what you are about to change.
 | **Free** | Scheme quantity, the "+1" in 10+1. Adds to stock, costs nothing |
 | **Rate** | What the hospital paid per pack |
 | **MRP** | The price printed on the pack. **The counter prices from this** |
-| **Supplier**, **Supplier bill no** | For your records |
-| **Add stock** | Adds it |
+| **Supplier**, **Supplier bill no** | For your records. These two stay put after each line, since one delivery note covers many medicines |
+| **Add stock** | Adds it, then clears the medicine and the form for the next line |
 
 > ### Packs in, units out
 >
@@ -647,8 +686,10 @@ and how much is on hand, so you always know what you are about to change.
 > strips, the counter sells tablets, and this is the one place the two meet —
 > so it says so out loud rather than leaving you to trust it.
 
-The form clears whenever you pick a different medicine, so a price or expiry
-from the last delivery can never be carried onto the wrong batch.
+The form clears whenever you pick a different medicine, and again once the stock
+has gone on, so a price or expiry from the last delivery can never be carried
+onto the wrong batch — and a second batch can never be received against a
+medicine you had forgotten was still selected.
 
 **Batches on the shelf** lists every batch of the selected medicine with its
 expiry, MRP and quantity left.
@@ -667,7 +708,7 @@ keyed in wrongly.
 | **True count** | What is **actually** on the shelf, in units |
 | **Reason** | `Recount`, `Breakage`, `Expired`, `Lost`, `Entry error`, `Other` |
 | **Notes** | Free text — worth writing for anything unusual |
-| **Correct count** | Applies it |
+| **Correct count** | Applies it, then lets go of the batch |
 | **Recent corrections** | When, what, was, now, change, reason and notes |
 
 > ### Every correction is recorded
@@ -769,8 +810,7 @@ Every control, ringed and explained:
 | **Results list** | Shows pack, maker, rack and stock. Click one |
 | **Batch** | **The nearest-expiry batch with stock is chosen for you** |
 | **Qty (units)** | **Tablets, not strips.** `5` sells five out of a strip |
-| **Disc %** | Discount on this line |
-| **Add to bill** | Adds the line |
+| **Add to bill** | Adds the line, then empties the search and lets go of the medicine. The bill is untouched — type the next medicine's name to carry on |
 | **Stock came in — add it** | Puts stock on the shelf from here. See below |
 
 ## The medicine is in the shop but the screen says none
@@ -883,9 +923,15 @@ Patient no, name, phone, age, sex, allergies. Click a row to select it.
 | **Patient no** | Allocated on save, e.g. `P00012` |
 | **Name**, **Phone**, **Age**, **Sex** | |
 | **Address**, **Allergies** | Optional |
-| **Save patient** | Saves changes |
-| **Remove** | Refused if they have visits on record |
+| **Save patient** | Saves changes, then clears the screen — search box included — for the next patient |
+| **Clear** | Empties the form without saving |
+| **Remove** | Refused if they have visits on record. Clears the screen too |
 | **+ New patient** | Registers someone without booking a visit |
+
+> **The screen clearing after Save is deliberate.** With the patient left loaded,
+> typing the next child's name over it and pressing Save would change the child
+> you just registered instead of adding the new one. To carry on editing the same
+> patient, search for them again and select them.
 
 ## History (bottom left)
 
@@ -976,6 +1022,7 @@ Real situations, start to finish, with the numbers.
 - Bill line: `0 × 10 TAB + 9 tablets`, amount **₹27.00**
 - Shelf: 590 → 581 tablets
 - The opened strip has one tablet left in it, and the next customer gets that first
+- The search box empties, ready for the next medicine. The bill keeps the line
 
 > **Why not ₹270?** Because the medicine says ten tablets per pack, so a tablet
 > costs ₹3.00, not ₹30.00. If it charged ₹270, that medicine has **Units in one
@@ -1111,6 +1158,8 @@ Worth reading once. It is the difference between trusting a number and checking 
 | **A sealed pack that cannot be split** | Untick **Sell loose units** and the counter insists on whole packs, telling you the number to type |
 | **A Schedule H1 medicine** | Cannot be saved without the prescribing doctor. It goes in the register automatically |
 | **Two people on one phone number** | Both appear when you search. You pick which child is here |
+| **Two patients registered one after the other** | The screen clears after each save, so the second is a new record. It cannot overwrite the first |
+| **A batch expiring within a month** | Still sold first, and the counter says so before the customer leaves — batch, month and days remaining |
 | **The same supplier bill loaded twice** | Refused. The invoice number is what stops it |
 | **The same batch delivered again** | **Added** to what is there. Never replaced |
 | **The count on the shelf is wrong** | Correct it with a reason. Every correction is recorded with was, now and why |
@@ -1127,7 +1176,7 @@ Worth reading once. It is the difference between trusting a number and checking 
 | **Purchases balanced against sales** | Will **not** tie out while anything sits in **Reports → Stock to reconcile**. That list is the gap, and it is deliberate |
 | **The rate paid on counter-added stock** | Defaults to zero, so anything added that way looks like pure margin until you fill the real rate in |
 | **No discounts** | The counter charges MRP. There is no discount box, by choice |
-| **A batch that expires next week** | Sold first, correctly, but you are not warned at the till. Watch **Expiring soon** |
+| **A batch more than a month from expiry** | Sold first, correctly, but not flagged. Watch **Expiring soon** for what to return |
 | **Two people billing at once** | One PC, one till. This is not built for two counters on the same data |
 | **Changing units per pack after stock exists** | Offered as a re-count, and you should accept it. Declining leaves the shelf being sold by the pack |
 | **A medicine deleted or made inactive with stock on it** | It disappears from the counter but the stock is still counted in reports |
