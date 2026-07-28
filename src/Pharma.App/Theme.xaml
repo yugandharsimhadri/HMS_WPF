@@ -705,10 +705,77 @@
         </Style.Triggers>
     </Style>
 
+    <!--
+        TabControl's built-in style sets Foreground to the OS control-text
+        colour (black). A theme style's setter outranks property inheritance,
+        so that black won over the Ink inherited from the window and every
+        unstyled TextBlock *inside* a tab came out black on a dark ground —
+        the Reports totals were the visible case, while the figures above the
+        tabs were fine because they sit outside the TabControl. Naming
+        Foreground here puts it back at Style precedence, where it wins.
+
+        The tab headers are unaffected: TabItem's own theme style sets its
+        Foreground, which still applies over what it would inherit from here,
+        and its strip is drawn light in both themes.
+    -->
+    <Style TargetType="TabControl">
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+    </Style>
+
+    <!--
+        Foreground here is the colour the tab's *content* inherits, not the
+        tab's own label: a TabItem's content keeps the TabItem as its logical
+        parent even though the TabControl's template is what displays it, so
+        inheritance comes from here. It was picking up the stock style's
+        black, which is what put black totals on the dark Reports panel.
+
+        The label is coloured inside the template instead, by setting
+        TextElement.Foreground on the header presenter directly, so the two
+        can differ — the strip is drawn light in both themes, and its text
+        has to stay dark to be read.
+    -->
     <Style TargetType="TabItem">
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="Padding" Value="14,7"/>
         <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="Bd"
+                            Background="{DynamicResource BadgeFill}"
+                            BorderBrush="{DynamicResource Border}"
+                            BorderThickness="1,1,1,0"
+                            CornerRadius="6,6,0,0"
+                            Margin="0,0,2,0"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter x:Name="Header"
+                                          ContentSource="Header"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Center"
+                                          TextElement.Foreground="{DynamicResource InkMuted}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Header" Property="TextElement.Foreground" Value="{DynamicResource Ink}"/>
+                        </Trigger>
+                        <!-- Selected reads by fill, weight and colour together,
+                             the same way the doctor tabs and grid rows do. -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Surface}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Bd" Property="BorderThickness" Value="1,3,1,0"/>
+                            <Setter TargetName="Header" Property="TextElement.Foreground" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="Header" Property="TextElement.FontWeight" Value="Bold"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Header" Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Doctor tabs: radio buttons drawn as tabs, so exactly one is ever active. -->
