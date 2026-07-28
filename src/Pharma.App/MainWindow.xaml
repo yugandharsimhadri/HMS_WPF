@@ -80,9 +80,25 @@
                     <TextBlock Text="OPD &amp; Pharmacy" FontSize="{StaticResource FontSmall}" Foreground="{DynamicResource NavInkFaint}" Margin="0,4,0,0"/>
                 </StackPanel>
 
-                <TextBlock DockPanel.Dock="Bottom" Margin="18,0,18,16" FontSize="{StaticResource FontSmall}"
-                           Foreground="{DynamicResource NavInkFaded}" TextWrapping="Wrap"
-                           Text="Data is stored on this PC. A backup is taken each day it is opened."/>
+                <StackPanel DockPanel.Dock="Bottom" Margin="18,0,18,16">
+                    <TextBlock FontSize="{StaticResource FontSmall}"
+                               Foreground="{DynamicResource NavInkFaded}" TextWrapping="Wrap"
+                               Text="Data is stored on this PC. A backup is taken each day it is opened."/>
+
+                    <!-- Who built it and which build it is, where support can read
+                         it out without hunting through menus. -->
+                    <Border BorderBrush="{DynamicResource NavInkFaded}" BorderThickness="0,1,0,0"
+                            Opacity="0.35" Margin="0,12,0,0"/>
+
+                    <TextBlock Margin="0,10,0,0" FontSize="{StaticResource FontSmall}"
+                               Foreground="{DynamicResource NavInkFaint}" TextWrapping="Wrap"
+                               Text="{Binding Credit}"
+                               AutomationProperties.AutomationId="AppCredit"/>
+                    <TextBlock FontSize="{StaticResource FontSmall}"
+                               Foreground="{DynamicResource NavInkFaded}"
+                               Text="{Binding VersionLabel}"
+                               AutomationProperties.AutomationId="AppVersion"/>
+                </StackPanel>
 
                 <StackPanel>
                     <Button Style="{StaticResource NavButton}" Content="OPD"

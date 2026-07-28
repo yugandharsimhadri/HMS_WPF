@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Windows;
 using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
@@ -24,8 +23,7 @@ public partial class App : Application
         // which covers a single clinic. Required before any PDF is generated.
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
-        var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
-        AppLog.Info($"---- {ProductName} starting (v{version}) ----");
+        AppLog.Info($"---- {ProductName} starting (v{AppInfo.Version}, {AppInfo.Developer}) ----");
         AppLog.Info($"Settings: {AppConfig.FilePath}");
         AppLog.Info($"Database: {DbBootstrapper.DatabasePath}");
         AppLog.Info($"Logs:     {AppLog.LogDirectory}");

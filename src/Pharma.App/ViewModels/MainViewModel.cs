@@ -39,6 +39,10 @@ public partial class MainViewModel : ObservableObject
     public bool IsOverlayOpen => Overlay is not null;
     public bool IsShellEnabled => Overlay is null;
 
+    /// <summary>Shown in the foot of the navigation, where it is always to hand.</summary>
+    public string Credit => AppInfo.Credit;
+    public string VersionLabel => AppInfo.VersionLabel;
+
     public MainViewModel(
         OpdViewModel opd,
         PatientsViewModel patients,
