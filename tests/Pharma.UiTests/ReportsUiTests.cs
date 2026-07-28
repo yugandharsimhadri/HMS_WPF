@@ -71,6 +71,32 @@ public class ReportsUiTests(AppFixture app) : IClassFixture<AppFixture>
             "the bill to be numbered");
     }
 
+    /// <summary>
+    /// Every tab shows its own content, not just its own highlight.
+    ///
+    /// The tabs are drawn by the theme rather than by Windows, and a retemplated
+    /// TabControl that loses the part its content is hosted in still selects
+    /// perfectly — it just shows a blank page underneath. Selecting a tab proves
+    /// nothing on its own, so each one is checked for something only it has.
+    /// </summary>
+    [Theory]
+    [InlineData("Day book", "ReportsDayBookGrid")]
+    [InlineData("GST summary", "ReportsGstGrid")]
+    [InlineData("OPD register", "ReportsOpdGrid")]
+    [InlineData("Expiring soon", "ReportsExpiringGrid")]
+    [InlineData("Part packs", "PartPacksGrid")]
+    [InlineData("Stock to reconcile", "ReconcileGrid")]
+    [InlineData("Low stock", "ReportsLowStockGrid")]
+    [InlineData("Stock Register", "ReportsStockGrid")]
+    [InlineData("Schedule H1 register", "ReportsH1Grid")]
+    public void Every_report_tab_shows_its_own_content(string header, string grid)
+    {
+        app.Navigate("NavReports", "Reports");
+        app.SelectTab("ReportsTabs", header);
+
+        AppFixture.WaitUntil(() => app.Find(grid) is not null, $"the {header} report");
+    }
+
     [Fact]
     public void Reports_screen_opens_all_seven_tabs_and_the_stock_register_lists_real_stock()
     {

@@ -237,6 +237,12 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("counter-dark");
 
+        // Reports too: the tabs across the top of it are the one place the
+        // operating system's own chrome used to show through the palette.
+        app.Navigate("NavReports", "Reports");
+        Settle();
+        Capture("reports-dark");
+
         app.Navigate("NavSettings", "Settings");
         app.ComboBox("AppThemeChoice").Select("Light");
         Settle();

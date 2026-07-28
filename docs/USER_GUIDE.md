@@ -353,8 +353,19 @@ Everything here prints on your bills, receipts and prescriptions.
 | **Drug licence no** | Your 20B/21B number. **Required on a chemist's bill** |
 | **Pharmacist** | Printed at the foot of the bill |
 | **OPD queue layout** | `Tiles` or `Rows` — see [section 3](#choosing-tiles-or-rows) |
+| **Appearance** | `Light` or `Dark`. Changes the whole application straight away |
 | **Bill footer** | Free text at the bottom of a bill, e.g. "Get well soon" |
 | **Save shop details** | Applies everything above. New documents use it immediately |
+
+**Appearance** is worth trying if the counter sits under a bright window or, more
+often, in a dim corner in the evening. The change is immediate — you do not have
+to save or restart to see it — but **Save shop details** is what makes it stick
+for next time.
+
+Printed bills, receipts and prescriptions are always black on white whatever you
+choose here. Paper is paper.
+
+![The dark theme](images/counter-dark.png)
 
 Below the button it shows the **database file** and the **activity log** path, with
 an **Open log folder** button. You need those only if reporting a problem.
