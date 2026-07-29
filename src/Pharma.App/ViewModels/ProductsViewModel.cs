@@ -40,7 +40,11 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     [ObservableProperty] private string _storage = "";
     [ObservableProperty] private string _packSize = "";
     [ObservableProperty] private string _hsnCode = "3004";
-    [ObservableProperty] private decimal _gstRate = 12m;
+    // Zero, not twelve: most of what this clinic stocks is nil-rated, and a
+    // rate filled in for the operator is one they stop reading. Getting it
+    // wrong overstates tax on every sale of that medicine until someone
+    // notices, so the blank starts honest and is typed in when it applies.
+    [ObservableProperty] private decimal _gstRate;
     [ObservableProperty] private DrugSchedule _schedule = DrugSchedule.None;
     [ObservableProperty] private string _rackLocation = "";
     [ObservableProperty] private int _reorderLevel;
@@ -158,7 +162,7 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
         Name = GenericName = Manufacturer = PackSize = RackLocation = "";
         Composition = Storage = "";
         HsnCode = "3004";
-        GstRate = 12m;
+        GstRate = 0m;
         Schedule = DrugSchedule.None;
         ReorderLevel = 0;
         IsActive = true;
