@@ -48,15 +48,17 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Packs on the shelf" Style="{StaticResource Label}"/>
+                        <local:RequiredLabel Text="Packs on the shelf"/>
                         <TextBox Text="{Binding Packs, UpdateSourceTrigger=PropertyChanged}"
+                                 local:Field.IsMissing="{Binding PacksMissing}"
                                  local:NumericInput.Mode="Whole" AutomationProperties.AutomationId="QuickStockPacks"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="MRP per pack" Style="{StaticResource Label}"/>
+                        <local:RequiredLabel Text="MRP per pack"/>
                         <TextBox Text="{Binding Mrp, UpdateSourceTrigger=PropertyChanged}"
                                  ToolTip="Printed on the pack. Nothing can be priced without it."
+                                 local:Field.IsMissing="{Binding MrpMissing}"
                                  local:NumericInput.Mode="Money" AutomationProperties.AutomationId="QuickStockMrp"/>
                     </StackPanel>
 

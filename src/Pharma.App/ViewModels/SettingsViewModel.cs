@@ -101,6 +101,14 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
     // Doctor form
     [ObservableProperty] private Doctor? _selectedDoctor;
     [ObservableProperty] private string _doctorName = "";
+
+    /// <summary>Set when a doctor was saved without a name.</summary>
+    [ObservableProperty] private bool _doctorNameMissing;
+
+    partial void OnDoctorNameChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) DoctorNameMissing = false;
+    }
     [ObservableProperty] private string _registrationNo = "";
     [ObservableProperty] private string _speciality = "";
     [ObservableProperty] private decimal _consultationFee;
@@ -219,9 +227,12 @@ public partial class SettingsViewModel(SettingsService settings, OpdService opd)
     {
         if (string.IsNullOrWhiteSpace(DoctorName))
         {
+            DoctorNameMissing = true;
             Dialog.Show("Doctor name is required.", "Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
+
+        DoctorNameMissing = false;
 
         var doctor = SelectedDoctor ?? new Doctor();
         doctor.Name = DoctorName.Trim();

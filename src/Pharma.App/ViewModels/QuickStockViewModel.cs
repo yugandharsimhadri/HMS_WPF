@@ -55,13 +55,27 @@ public partial class QuickStockViewModel : ObservableObject
     [ObservableProperty] private string _batchNo = "";
     [ObservableProperty] private DateTime _expiryDate = DateTime.Today.AddYears(2);
     [ObservableProperty] private string _preview = "";
+
+    // Both are refused by QuickAddStockAsync, so both are marked here rather
+    // than leaving the operator to work out which of the two the message meant.
+    [ObservableProperty] private bool _packsMissing;
+    [ObservableProperty] private bool _mrpMissing;
+
+    partial void OnMrpChanged(decimal value)
+    {
+        if (value > 0) MrpMissing = false;
+    }
     [ObservableProperty] private string _status = "";
 
     public string PackNote => _product.UnitsPerPack > 1
         ? $"One pack is {_product.UnitsPerPack} {_product.DispensingUnit.Name(2)}."
         : $"One pack is one {_product.DispensingUnit.Name(1)}.";
 
-    partial void OnPacksChanged(int value) => UpdatePreview();
+    partial void OnPacksChanged(int value)
+    {
+        if (value > 0) PacksMissing = false;
+        UpdatePreview();
+    }
 
     private void UpdatePreview()
     {
@@ -86,6 +100,13 @@ public partial class QuickStockViewModel : ObservableObject
         AppLog.Trace(
             $"QuickStock.Add product='{_product.Name}' id={_product.Id} packs={Packs} " +
             $"mrp={Mrp} rate={PurchaseRate} batch='{BatchNo}' exp={ExpiryDate:yyyy-MM-dd}");
+
+        // Marked from the same conditions QuickAddStockAsync enforces, rather
+        // than re-checking them here: the service stays the one place that
+        // decides, and its message is still what the operator reads. This only
+        // points at which box that message is about.
+        PacksMissing = Packs <= 0;
+        MrpMissing = Mrp <= 0;
 
         await Safely.RunAsync(async () =>
         {

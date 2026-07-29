@@ -42,6 +42,14 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     [ObservableProperty] private Patient? _selectedPatient;
     [ObservableProperty] private bool _addingPatient;
     [ObservableProperty] private string _newName = "";
+
+    /// <summary>Set when a booking was turned away for want of a patient name.</summary>
+    [ObservableProperty] private bool _newNameMissing;
+
+    partial void OnNewNameChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) NewNameMissing = false;
+    }
     [ObservableProperty] private string _newPhone = "";
     [ObservableProperty] private string _newAge = "";
     [ObservableProperty] private Gender _newGender = Gender.Male;
@@ -195,9 +203,12 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
             {
                 if (string.IsNullOrWhiteSpace(NewName))
                 {
+                    NewNameMissing = true;
                     Warn("Enter the patient's name, or pick an existing patient from the list.");
                     return;
                 }
+
+                NewNameMissing = false;
 
                 int.TryParse(NewAge, out var age);
                 patient = await opd.SavePatientAsync(new Patient

@@ -50,7 +50,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="72"/>
+                        <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="72" ElementStyle="{StaticResource GridText}"/>
                         <DataGridTextColumn Header="MAKER" Binding="{Binding Manufacturer}" Width="86"
                                             ElementStyle="{StaticResource GridMuted}"/>
 
@@ -106,8 +106,9 @@
                     <StackPanel>
                         <TextBlock Text="Medicine details" Style="{StaticResource H2}"/>
 
-                        <TextBlock Text="Brand name" Style="{StaticResource Label}"/>
+                        <local:RequiredLabel Text="Brand name"/>
                         <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                 local:Field.IsMissing="{Binding NameMissing}"
                                  ToolTip="What is printed on the pack, e.g. Calpol"
                                  AutomationProperties.AutomationId="ProductName"/>
 

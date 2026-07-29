@@ -47,8 +47,8 @@
                     <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="200" ElementStyle="{StaticResource GridName}" IsReadOnly="True"/>
                     <DataGridTextColumn Header="PROBLEM" Binding="{Binding Problem}" Width="200" ElementStyle="{StaticResource GridWrap}" IsReadOnly="True"/>
                     <DataGridTextColumn Header="NOW" Binding="{Binding Now}" Width="220" ElementStyle="{StaticResource GridWrap}" IsReadOnly="True"/>
-                    <DataGridTextColumn Header="AFTER" Binding="{Binding After}" Width="150" IsReadOnly="True"/>
-                    <DataGridTextColumn Header="STOCK" Binding="{Binding StockChange}" Width="110" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="AFTER" Binding="{Binding After}" Width="150" IsReadOnly="True" ElementStyle="{StaticResource GridText}"/>
+                    <DataGridTextColumn Header="STOCK" Binding="{Binding StockChange}" Width="110" IsReadOnly="True" ElementStyle="{StaticResource GridText}"/>
 
                     <DataGridTemplateColumn Header="" Width="90">
                         <DataGridTemplateColumn.CellTemplate>

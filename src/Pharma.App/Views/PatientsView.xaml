@@ -1,6 +1,7 @@
 <UserControl x:Class="Pharma.App.Views.PatientsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App">
 
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
@@ -42,7 +43,7 @@
                                                 ElementStyle="{StaticResource GridMuted}"/>
                             <DataGridTextColumn Header="NAME" Binding="{Binding Name}" Width="*" MinWidth="150"
                                                 ElementStyle="{StaticResource GridName}"/>
-                            <DataGridTextColumn Header="PHONE" Binding="{Binding Phone}" Width="130"/>
+                            <DataGridTextColumn Header="PHONE" Binding="{Binding Phone}" Width="130" ElementStyle="{StaticResource GridText}"/>
                             <DataGridTextColumn Header="AGE" Binding="{Binding Age}" Width="60"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
@@ -80,7 +81,7 @@
                                                         ElementStyle="{StaticResource GridMuted}"/>
                                     <DataGridTextColumn Header="VISIT NO" Binding="{Binding VisitNo}" Width="90"
                                                         ElementStyle="{StaticResource GridName}"/>
-                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding Doctor.Name}" Width="150"/>
+                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding Doctor.Name}" Width="150" ElementStyle="{StaticResource GridText}"/>
                                     <DataGridTextColumn Header="DIAGNOSIS" Binding="{Binding Diagnosis}" Width="*" MinWidth="140"
                                                         ElementStyle="{StaticResource GridWrap}"/>
                                     <DataGridTextColumn Header="RX" Binding="{Binding Prescription.Count}" Width="50"
@@ -91,7 +92,7 @@
                                                         HeaderStyle="{StaticResource GridNumberHeader}"/>
                                     <DataGridTextColumn Header="RECEIPT" Binding="{Binding FeeReceiptNo}" Width="100"
                                                         ElementStyle="{StaticResource GridMuted}"/>
-                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="100"/>
+                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="100" ElementStyle="{StaticResource GridText}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>
@@ -114,13 +115,13 @@
                                     <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}" Width="60"
                                                         ElementStyle="{StaticResource GridNumber}"
                                                         HeaderStyle="{StaticResource GridNumberHeader}"/>
-                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="*" MinWidth="120"/>
+                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridText}"/>
                                     <DataGridTextColumn Header="NET" Binding="{Binding NetAmount, StringFormat=N2}" Width="100"
                                                         ElementStyle="{StaticResource GridAmount}"
                                                         HeaderStyle="{StaticResource GridNumberHeader}"/>
                                     <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"
                                                         ElementStyle="{StaticResource GridMuted}"/>
-                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="90"/>
+                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="90" ElementStyle="{StaticResource GridText}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>
@@ -138,8 +139,9 @@
                 <TextBlock Text="{Binding PatientNo}" Style="{StaticResource Muted}" Margin="0,0,0,10"
                            AutomationProperties.AutomationId="PatientNo"/>
 
-                <TextBlock Text="Name" Style="{StaticResource Label}"/>
+                <local:RequiredLabel Text="Name"/>
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                         local:Field.IsMissing="{Binding NameMissing}"
                          AutomationProperties.AutomationId="PatientName"/>
 
                 <Grid>

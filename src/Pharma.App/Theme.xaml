@@ -114,6 +114,33 @@
         <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
     </Style>
 
+    <!--
+        The label for a field that will not save empty. Same typography as the
+        Label style above so the two sit level in a column; the asterisk is the
+        only difference, and it is described to a screen reader rather than left
+        as a punctuation mark nobody announces.
+    -->
+    <Style TargetType="local:RequiredLabel">
+        <Setter Property="Margin" Value="0,0,0,3"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:RequiredLabel">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{TemplateBinding Text}"
+                                   FontSize="{StaticResource FontLabel}"
+                                   Foreground="{DynamicResource InkMuted}"/>
+                        <TextBlock Text="*" Margin="3,0,0,0"
+                                   FontSize="{StaticResource FontLabel}"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource Danger}"
+                                   ToolTip="Required"
+                                   AutomationProperties.Name="required"/>
+                    </StackPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ── Text box ──────────────────────────────────────────────────────── -->
 
     <Style TargetType="TextBox">
@@ -162,6 +189,14 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource InputFillDisabled}"/>
                             <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
+                        </Trigger>
+                        <!-- Last, so a field the save just refused stays marked
+                             even while it is hovered or focused — the operator
+                             is looking straight at it and the reason has to
+                             still be on screen. Cleared as soon as they type. -->
+                        <Trigger Property="local:Field.IsMissing" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Danger}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerFill}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -267,6 +302,10 @@
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource InputFillDisabled}"/>
                         </Trigger>
+                        <Trigger Property="local:Field.IsMissing" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Danger}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerFill}"/>
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -301,6 +340,15 @@
                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource InputFillDisabled}"/>
                 <Setter TargetName="Arrow" Property="Stroke" Value="{DynamicResource ArrowInk}"/>
             </Trigger>
+            <!-- The combo's chrome is drawn by this toggle rather than by the
+                 ComboBox itself, so the flag has to be read off the ComboBox
+                 above it — a plain Trigger here would only see the toggle. -->
+            <DataTrigger Value="True"
+                         Binding="{Binding (local:Field.IsMissing),
+                                   RelativeSource={RelativeSource AncestorType=ComboBox}}">
+                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Danger}"/>
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerFill}"/>
+            </DataTrigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
@@ -586,6 +634,18 @@
 
     <Style TargetType="DataGrid">
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+        <!--
+            DataGridTextColumn builds its own TextBlock and pushes the column's
+            own Foreground onto it, and a column sits outside the visual tree,
+            so it never picks up the Ink set just above. Its default is the OS
+            control-text colour — black, unreadable on every dark surface here.
+            Template columns were unaffected, which is why one row could hold
+            readable and unreadable cells side by side.
+
+            Fixed by giving every text column the GridText element style below,
+            rather than by a Resources setter here: setting Resources from a
+            Style throws when the grid's template is applied.
+        -->
         <Setter Property="AutoGenerateColumns" Value="False"/>
         <Setter Property="IsReadOnly" Value="True"/>
         <Setter Property="HeadersVisibility" Value="Column"/>
@@ -658,7 +718,19 @@
         below it without reading both. Right-aligned, with tabular figures so
         every digit takes the same width whatever the typeface would rather do.
     -->
+    <!--
+        The plain text cell. Only reason it exists is Foreground: without an
+        element style of its own a DataGridTextColumn renders black, whatever
+        the grid, the row and the cell around it say. Every text column needs
+        this or one of the styles based on it.
+    -->
+    <Style x:Key="GridText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
     <Style x:Key="GridNumber" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="TextAlignment" Value="Right"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -682,6 +754,7 @@
     <!-- The column that says which row this is: the medicine, the patient, the
          bill. One per grid, and it carries the weight. -->
     <Style x:Key="GridName" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -698,6 +771,7 @@
     <!-- Anything that would otherwise be cut off mid-word. A composition or an
          address is worth reading, and "Dextromethorphar" is not. -->
     <Style x:Key="GridWrap" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>

@@ -54,7 +54,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="72"/>
+                            <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="72" ElementStyle="{StaticResource GridText}"/>
                             <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="76"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
@@ -105,7 +105,7 @@
                             <DataGridTextColumn Header="CHANGE" Binding="{Binding Direction}" Width="75"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
-                            <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="100"/>
+                            <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="100" ElementStyle="{StaticResource GridText}"/>
                             <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="170"
                                                 ElementStyle="{StaticResource GridMuted}"/>
                         </DataGrid.Columns>
@@ -142,13 +142,15 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Batch no" Style="{StaticResource Label}"/>
+                                <local:RequiredLabel Text="Batch no"/>
                                 <TextBox Text="{Binding BatchNo, UpdateSourceTrigger=PropertyChanged}"
+                                         local:Field.IsMissing="{Binding BatchNoMissing}"
                                          AutomationProperties.AutomationId="StockBatchNo"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Expiry" Style="{StaticResource Label}"/>
+                                <local:RequiredLabel Text="Expiry"/>
                                 <DatePicker SelectedDate="{Binding ExpiryDate, Mode=TwoWay}"
+                                            local:Field.IsMissing="{Binding ExpiryMissing}"
                                             AutomationProperties.AutomationId="StockExpiry"/>
                             </StackPanel>
                         </Grid>
@@ -164,9 +166,10 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Packs" Style="{StaticResource Label}"/>
+                                <local:RequiredLabel Text="Packs"/>
                                 <TextBox Text="{Binding Packs, UpdateSourceTrigger=PropertyChanged}"
                                          ToolTip="Strips, boxes or bottles — not individual tablets"
+                                         local:Field.IsMissing="{Binding PacksMissing}"
                                          local:NumericInput.Mode="Whole" AutomationProperties.AutomationId="StockQuantity"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
@@ -181,8 +184,9 @@
                                          local:NumericInput.Mode="Money" AutomationProperties.AutomationId="StockPurchaseRate"/>
                             </StackPanel>
                             <StackPanel Grid.Column="6">
-                                <TextBlock Text="MRP" Style="{StaticResource Label}"/>
+                                <local:RequiredLabel Text="MRP"/>
                                 <TextBox Text="{Binding Mrp, UpdateSourceTrigger=PropertyChanged}"
+                                         local:Field.IsMissing="{Binding MrpMissing}"
                                          local:NumericInput.Mode="Money" AutomationProperties.AutomationId="StockMrp"/>
                             </StackPanel>
                         </Grid>

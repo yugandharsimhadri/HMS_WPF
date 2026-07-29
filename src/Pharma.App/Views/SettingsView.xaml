@@ -1,6 +1,7 @@
 <UserControl x:Class="Pharma.App.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App">
 
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
@@ -142,8 +143,9 @@
                          DisplayMemberPath="Name" Height="150" Margin="0,0,0,12"
                          BorderBrush="{DynamicResource Border}"/>
 
-                <TextBlock Text="Name" Style="{StaticResource Label}"/>
-                <TextBox Text="{Binding DoctorName, UpdateSourceTrigger=PropertyChanged}"/>
+                <local:RequiredLabel Text="Name"/>
+                <TextBox Text="{Binding DoctorName, UpdateSourceTrigger=PropertyChanged}"
+                         local:Field.IsMissing="{Binding DoctorNameMissing}"/>
 
                 <Grid>
                     <Grid.ColumnDefinitions>

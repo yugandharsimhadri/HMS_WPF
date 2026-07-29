@@ -26,6 +26,14 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
 
     // The medicine itself
     [ObservableProperty] private string _name = "";
+
+    /// <summary>Set when a save was turned away for want of a brand name.</summary>
+    [ObservableProperty] private bool _nameMissing;
+
+    partial void OnNameChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) NameMissing = false;
+    }
     [ObservableProperty] private string _genericName = "";
     [ObservableProperty] private string _manufacturer = "";
     [ObservableProperty] private string _composition = "";
@@ -180,9 +188,12 @@ public partial class ProductsViewModel(PharmacyService pharmacy) : ObservableObj
     {
         if (string.IsNullOrWhiteSpace(Name))
         {
+            NameMissing = true;
             Warn("The brand name is required.");
             return;
         }
+
+        NameMissing = false;
 
         // Caught inside the guarded block and dealt with after it, because a
         // duplicate is not a failure — it is a wrong turn worth offering a way out of.

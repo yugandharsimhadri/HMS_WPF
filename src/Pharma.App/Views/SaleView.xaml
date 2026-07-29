@@ -96,9 +96,10 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="How many" Style="{StaticResource Label}"/>
+                            <local:RequiredLabel Text="How many"/>
                             <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0"
+                                     local:Field.IsMissing="{Binding QuantityMissing}"
                                      local:NumericInput.Mode="Whole" AutomationProperties.AutomationId="SaleQuantity">
                                 <TextBox.InputBindings>
                                     <KeyBinding Key="Enter" Command="{Binding AddLineCommand}"/>

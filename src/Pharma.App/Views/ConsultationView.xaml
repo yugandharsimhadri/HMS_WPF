@@ -108,13 +108,14 @@
                     <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceMuted}" BorderBrush="{DynamicResource Border}"
                             BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock Text="Medicine" Style="{StaticResource Label}"/>
+                            <local:RequiredLabel Text="Medicine"/>
 
                             <!-- The suggestions hang directly off the bottom of the
                                  box, like a dropdown, so the eye stays in one place. -->
                             <TextBox Text="{Binding MedicineSearch, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0"
                                      ToolTip="Type to search our pharmacy. Anything not stocked can still be prescribed."
+                                     local:Field.IsMissing="{Binding MedicineMissing}"
                                      AutomationProperties.AutomationId="RxMedicine"/>
 
                             <ItemsControl ItemsSource="{Binding Matches}"
@@ -198,9 +199,10 @@
                                              local:NumericInput.Mode="Whole" AutomationProperties.AutomationId="RxDays"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="6">
-                                    <TextBlock Text="Qty (units)" Style="{StaticResource Label}"/>
+                                    <local:RequiredLabel Text="Qty (units)"/>
                                     <TextBox Text="{Binding NewQuantity, UpdateSourceTrigger=PropertyChanged}"
                                              ToolTip="Individual tablets. Worked out from frequency and days"
+                                             local:Field.IsMissing="{Binding QuantityMissing}"
                                              local:NumericInput.Mode="Whole" AutomationProperties.AutomationId="RxQuantity"/>
                                 </StackPanel>
                             </Grid>
@@ -231,12 +233,12 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="*" MinWidth="140"
                                                 ElementStyle="{StaticResource GridName}"/>
-                            <DataGridTextColumn Header="DOSE" Binding="{Binding Dosage}" Width="80"/>
-                            <DataGridTextColumn Header="FREQUENCY" Binding="{Binding Frequency}" Width="95"/>
+                            <DataGridTextColumn Header="DOSE" Binding="{Binding Dosage}" Width="80" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="FREQUENCY" Binding="{Binding Frequency}" Width="95" ElementStyle="{StaticResource GridText}"/>
                             <DataGridTextColumn Header="DAYS" Binding="{Binding Days}" Width="55"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
-                            <DataGridTextColumn Header="DISPENSE" Binding="{Binding Course}" Width="150"/>
+                            <DataGridTextColumn Header="DISPENSE" Binding="{Binding Course}" Width="150" ElementStyle="{StaticResource GridText}"/>
                             <DataGridTextColumn Header="INSTRUCTIONS" Binding="{Binding Instructions}" Width="150"
                                                 ElementStyle="{StaticResource GridMuted}"/>
                             <DataGridTemplateColumn Width="34">

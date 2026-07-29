@@ -104,6 +104,16 @@ public partial class ConsultationViewModel : ObservableObject
         RecalculateCourse();
     }
     [ObservableProperty] private int _newQuantity;
+
+    // A prescription line needs a medicine and a number of units before it can
+    // be added; both are marked so the message names a box rather than a rule.
+    [ObservableProperty] private bool _medicineMissing;
+    [ObservableProperty] private bool _quantityMissing;
+
+    partial void OnNewQuantityChanged(int value)
+    {
+        if (value > 0) QuantityMissing = false;
+    }
     [ObservableProperty] private string _newInstructions = "";
     [ObservableProperty] private string _courseHint = "";
 
@@ -183,6 +193,8 @@ public partial class ConsultationViewModel : ObservableObject
     /// </summary>
     partial void OnMedicineSearchChanged(string value)
     {
+        if (!string.IsNullOrWhiteSpace(value)) MedicineMissing = false;
+
         // Typing on after choosing one means they are choosing something else.
         if (NewMedicine is not null &&
             !string.Equals(NewMedicine.Name, value, StringComparison.OrdinalIgnoreCase))
@@ -279,15 +291,21 @@ public partial class ConsultationViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(name))
         {
+            MedicineMissing = true;
             Status = "Choose a medicine, or type its name.";
             return;
         }
 
+        MedicineMissing = false;
+
         if (NewQuantity <= 0)
         {
+            QuantityMissing = true;
             Status = "Enter how many units to dispense.";
             return;
         }
+
+        QuantityMissing = false;
 
         Lines.Add(new PrescriptionRow
         {

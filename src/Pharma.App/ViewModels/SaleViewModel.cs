@@ -69,6 +69,14 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     // "9" on its own is what turned nine tablets into nine strips.
     [ObservableProperty] private int _quantity = 1;
 
+    /// <summary>Set when a line was refused for a quantity below one.</summary>
+    [ObservableProperty] private bool _quantityMissing;
+
+    partial void OnQuantityChanged(int value)
+    {
+        if (value > 0) QuantityMissing = false;
+    }
+
     /// <summary>What the number in the quantity box counts.</summary>
     public ObservableCollection<string> QuantityUnits { get; } = [];
 
@@ -355,10 +363,13 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
         if (Quantity <= 0)
         {
+            QuantityMissing = true;
             log.Skip($"quantity {Quantity} is not sellable");
             Warn("Quantity must be at least 1.");
             return;
         }
+
+        QuantityMissing = false;
 
         var product = SelectedProduct;
 

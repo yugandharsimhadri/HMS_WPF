@@ -367,8 +367,9 @@
                             Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
 
                     <StackPanel Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}}">
-                        <TextBlock Text="Name" Style="{StaticResource Label}"/>
+                        <local:RequiredLabel Text="Name"/>
                         <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}"
+                                 local:Field.IsMissing="{Binding NewNameMissing}"
                                  AutomationProperties.AutomationId="OpdNewName"/>
 
                         <Grid>

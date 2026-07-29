@@ -37,6 +37,30 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     [ObservableProperty] private int _freePacks;
     [ObservableProperty] private decimal _purchaseRate;
     [ObservableProperty] private decimal _mrp;
+    // Set when receiving was turned away for want of one of these, cleared the
+    // moment the value is put right. Expiry is here too: a date in the past is
+    // as much a stopper as a blank batch number, and the box is the only place
+    // to say which of the six fields the message was about.
+    [ObservableProperty] private bool _batchNoMissing;
+    [ObservableProperty] private bool _packsMissing;
+    [ObservableProperty] private bool _mrpMissing;
+    [ObservableProperty] private bool _expiryMissing;
+
+    partial void OnBatchNoChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) BatchNoMissing = false;
+    }
+
+    partial void OnMrpChanged(decimal value)
+    {
+        if (value > 0) MrpMissing = false;
+    }
+
+    partial void OnExpiryDateChanged(DateTime value)
+    {
+        if (value.Date > DateTime.Today) ExpiryMissing = false;
+    }
+
     [ObservableProperty] private string _supplierName = "";
     [ObservableProperty] private string _supplierInvoiceNo = "";
     [ObservableProperty] private string _intakePreview = "";
@@ -171,8 +195,18 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
 
     // ── Receiving ──────────────────────────────────────────────────────────
 
-    partial void OnPacksChanged(int value) => UpdateIntakePreview();
-    partial void OnFreePacksChanged(int value) => UpdateIntakePreview();
+    // Either box satisfies "how many packs arrived", so both clear the mark.
+    partial void OnPacksChanged(int value)
+    {
+        if (value > 0 || FreePacks > 0) PacksMissing = false;
+        UpdateIntakePreview();
+    }
+
+    partial void OnFreePacksChanged(int value)
+    {
+        if (value > 0 || Packs > 0) PacksMissing = false;
+        UpdateIntakePreview();
+    }
 
     /// <summary>
     /// Spells out packs in, units out. "Qty" alone is the single most misread
@@ -212,27 +246,33 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
 
         if (string.IsNullOrWhiteSpace(BatchNo))
         {
+            BatchNoMissing = true;
             Warn("Batch number is printed on the pack and has to appear on the bill.");
             return;
         }
 
         if (Packs <= 0 && FreePacks <= 0)
         {
+            PacksMissing = true;
             Warn("Enter how many packs arrived.");
             return;
         }
 
         if (Mrp <= 0)
         {
+            MrpMissing = true;
             Warn("Enter the MRP printed on the pack — the counter prices from it.");
             return;
         }
 
         if (ExpiryDate.Date <= DateTime.Today)
         {
+            ExpiryMissing = true;
             Warn("Expiry must be in the future.");
             return;
         }
+
+        BatchNoMissing = PacksMissing = MrpMissing = ExpiryMissing = false;
 
         await Safely.RunAsync(async () =>
         {

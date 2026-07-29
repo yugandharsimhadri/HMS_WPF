@@ -36,6 +36,15 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
     [ObservableProperty] private string _patientNo = "";
     [ObservableProperty] private string _status = "";
 
+    /// <summary>Set when a save was turned away for want of a name; cleared the
+    /// moment one is typed, so the field is never left red once it is right.</summary>
+    [ObservableProperty] private bool _nameMissing;
+
+    partial void OnNameChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) NameMissing = false;
+    }
+
     public Array Genders => Enum.GetValues<Gender>();
 
     public async Task LoadAsync() => await FindAsync();
@@ -170,6 +179,7 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
         SelectedBill = null;
 
         PatientNo = Name = Phone = Age = Address = Allergies = "";
+        NameMissing = false;
         Gender = Gender.Male;
 
         History.Clear();
@@ -184,9 +194,12 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
     {
         if (string.IsNullOrWhiteSpace(Name))
         {
+            NameMissing = true;
             Warn("Patient name is required.");
             return;
         }
+
+        NameMissing = false;
 
         int.TryParse(Age, out var age);
 
