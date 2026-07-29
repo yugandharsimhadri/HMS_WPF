@@ -1,6 +1,7 @@
 # Twinkle — building the installer
 
-How to turn the source code into the one file you hand to a clinic.
+How to turn the source code into something you can hand to a clinic - either one
+self-contained setup file, or a ClickOnce deployment that updates itself.
 
 Handing it over and installing it are a separate job, written up in
 [INSTALLING.md](INSTALLING.md). This document stops when the file exists.
@@ -17,6 +18,9 @@ Handing it over and installing it are a separate job, written up in
 
 Nothing else. No Inno Setup, no WiX, no Visual Studio. The whole thing is one
 PowerShell script and a tool Windows already has.
+
+> Visual Studio *is* needed for the ClickOnce route at the end of this
+> document, which is the one exception.
 
 ---
 
@@ -157,24 +161,125 @@ wider distribution, buy a code-signing certificate and sign both
 
 ---
 
-## The other two ways to publish
+## Building it with ClickOnce instead
 
-Both still work. Neither produces something you can hand to somebody.
+The other supported route. Worth it for one reason: **it can update itself.**
 
-**`scripts/publish.ps1`** installs straight into `C:\HMS\App` on *this* machine
-and makes a desktop shortcut. For the development PC.
+### Which to use
 
-**ClickOnce**, from Visual Studio or:
+| | Setup file | ClickOnce |
+|---|---|---|
+| Files to send | **One** | Three, which must stay together |
+| Needs .NET on the clinic PC | No, it is inside | **Yes** — the bootstrapper fetches it, which needs internet that first time |
+| Needs an administrator | Yes, once | **No** — it installs per user |
+| Desktop shortcut | Yes | **Start menu only** |
+| Automatic updates | No | **Yes**, from a shared folder |
+| Needs Visual Studio to build | No | **Yes** |
 
-```bash
-msbuild src\Pharma.App\Pharma.App.csproj -t:Publish -p:PublishProfile=ClickOnceProfile -p:Configuration=Release
+One PC and a pen drive: use the setup file. Several PCs on a clinic network, or
+you expect to ship fixes often: ClickOnce earns its extra pieces.
+
+### You need Visual Studio
+
+Not just the SDK. ClickOnce builds `setup.exe` with a task called
+`GenerateBootstrapper`, which only exists in the .NET Framework MSBuild that
+ships with Visual Studio:
+
+```
+error MSB4803: The task "GenerateBootstrapper" is not supported on the
+.NET Core version of MSBuild.
 ```
 
-It produces `setup.exe`, `TwinkleHMS.application` and an `Application Files`
-folder. **All three have to travel together** — the `setup.exe` is only a
-bootstrapper and fails on its own, which is exactly why it is not what we hand
-over. Its strength is automatic updates from a shared folder, worth revisiting
-if the clinic ever runs more than one PC.
+So `dotnet msbuild` and `dotnet publish` cannot do it, whatever arguments you
+give them.
+
+### Build it
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts\publish-clickonce.ps1
+```
+
+The script finds Visual Studio's MSBuild for you, publishes, and zips the
+result so there is one file to send:
+
+```
+Published to src\Pharma.App\bin\publish
+     Application Files
+     setup.exe
+     TwinkleHMS.application
+
+2/2  Zipping ...
+     version 1.0.0.1
+     1 older version(s) in the publish folder left out of the zip
+
+One file to send:  C:\HMS\Setup\TwinkleHMS-ClickOnce.zip  (69.5 MB)
+```
+
+From Visual Studio instead: right-click **Pharma.App → Publish → ClickOnceProfile
+→ Publish**. Same output, same folder.
+
+`-NoZip` leaves the three pieces loose, which is what you want when publishing
+to a shared folder rather than carrying it.
+
+> **`Application Files` keeps every revision you have ever published.** Each one
+> is a full copy of the application. Two publishes and the folder holds 330 MB.
+> That is correct for a shared folder — a PC part-way through an update still
+> needs the version it is coming from — but it is dead weight in a zip somebody
+> carries once, so the script packs only the version the manifest points at.
+> Delete the folder occasionally if you publish a lot.
+
+### Installing it at the clinic
+
+1. Copy the zip over and **unzip it**.
+2. Run **`setup.exe` from the unzipped folder**. Running it from inside the zip
+   viewer fails — the files it needs are still zipped, and the error does not
+   say so.
+3. If .NET 10 Desktop Runtime is missing, the bootstrapper offers to download
+   it. **That needs internet on the clinic PC.** On a machine with none, install
+   the runtime by hand first, or use the setup file instead.
+4. No administrator prompt. It installs per user, under
+   `%LocalAppData%\Apps\2.0\`.
+5. The shortcut is in the **Start menu** only, under Twinkle Children's
+   Hospital. There is no desktop icon — ClickOnce does not make one.
+
+`C:\HMS\DB` is untouched, exactly as with the setup file. The database never
+lives beside the program, which is what makes either route safe to re-run.
+
+### Turning on automatic updates
+
+This is the reason to choose ClickOnce, and it is off in the profile today.
+
+In `src/Pharma.App/Properties/PublishProfiles/ClickOnceProfile.pubxml`:
+
+```xml
+<UpdateEnabled>True</UpdateEnabled>
+<UpdateMode>Foreground</UpdateMode>
+<InstallFrom>Unc</InstallFrom>
+<PublishUrl>\\clinic-server\twinkle\</PublishUrl>
+```
+
+Publish to that share once. Every PC installed from it then checks the share at
+launch and updates itself. Publish a fix in the morning and the counter has it
+by the afternoon, with nobody carrying anything.
+
+Leave the old versions in `Application Files` when you do this — that is what
+they are for.
+
+### Two things to know before you rely on it
+
+- **`appsettings.json` is replaced on every update.** It sits in the versioned
+  folder, and an update installs a new one. A clinic that edited its paths would
+  lose them. The defaults are `C:\HMS\DB` and `C:\HMS\DBBackup`, so this only
+  bites if someone has changed them.
+- **The manifests are not signed.** `SignManifests` is `False`, so the same
+  unknown-publisher warnings apply as to the setup file.
+
+---
+
+## Publishing to this machine
+
+`scripts/publish.ps1` installs straight into `C:\HMS\App` on the machine you run
+it on and makes a desktop shortcut. For the development PC — not for handover.
 
 ---
 
