@@ -3,7 +3,9 @@ using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Pharma.App.ViewModels;
+using Pharma.Core.Licensing;
 using Pharma.Data;
+using Pharma.Data.Licensing;
 
 namespace Pharma.App;
 
@@ -55,6 +57,14 @@ public partial class App : Application
         services.AddSingleton<DataHealthService>();
         services.AddSingleton<Pharma.Data.Import.PurchaseImportService>();
 
+        // Licensing. Each piece is registered against its interface, so the day
+        // a signed licence file or an activation server arrives, only the
+        // provider line changes — nothing that consumes ILicenseService moves.
+        services.AddSingleton<ISystemClock, SystemClock>();
+        services.AddSingleton<ILicenseStore, LicenseStorage>();
+        services.AddSingleton<ILicenseProvider, EmbeddedEvaluationLicenseProvider>();
+        services.AddSingleton<ILicenseService, LicenseService>();
+
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<OpdViewModel>();
         services.AddSingleton<PatientsViewModel>();
@@ -69,6 +79,12 @@ public partial class App : Application
 
     private async Task StartAsync()
     {
+        // Before anything else opens. The database is not touched, the theme is
+        // not read and no window is shown until this copy is entitled to run —
+        // a licence check that happens after the user is already working is a
+        // licence check nobody trusts.
+        if (!LicenceAllowsStartup()) return;
+
         try
         {
             await DbBootstrapper.InitialiseAsync(Services.GetRequiredService<IDbContextFactory<AppDbContext>>());
@@ -102,6 +118,8 @@ public partial class App : Application
             window.Show();
             AppLog.Info("Main window shown.");
 
+            StartLicenceWatch();
+
             CheckDataHealthAsync(window).Forget("Checking the data at startup");
         }
         catch (Exception ex)
@@ -112,6 +130,90 @@ public partial class App : Application
                 ProductName, MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
+    }
+
+    /// <summary>
+    /// The startup gate: may this copy run at all?
+    /// </summary>
+    /// <returns><see langword="true"/> to carry on starting. When it returns
+    /// false the reason has been shown and shutdown is already under way.</returns>
+    private bool LicenceAllowsStartup()
+    {
+        try
+        {
+            var result = Services.GetRequiredService<ILicenseService>().Validate();
+            if (result.IsValid) return true;
+
+            Dialog.Show(result.Message, ProductName, MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(2);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            // A licence check that throws must not be a way in. It refuses,
+            // says so plainly, and leaves the detail in the log.
+            AppLog.Error("Licence: validation failed unexpectedly.", ex);
+
+            Dialog.Show(LicenseConstants.UnreadableMessage, ProductName,
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(2);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Re-checks the licence while the application is open, so a copy left
+    /// running for weeks does not outlive its evaluation.
+    /// </summary>
+    /// <remarks>
+    /// The application is not closed from under whoever is using it. Billing a
+    /// patient is a poor moment to lose a window, and there is no global
+    /// autosave to fall back on — every screen saves on its own explicit
+    /// action. So the user is told what has happened and the application closes
+    /// when they acknowledge it, which gives them the chance to finish and save
+    /// the one thing they had open.
+    /// </remarks>
+    private void StartLicenceWatch()
+    {
+        var licence = Services.GetRequiredService<ILicenseService>();
+
+        var timer = new DispatcherTimer { Interval = LicenseConstants.ValidationInterval };
+
+        timer.Tick += (_, _) =>
+        {
+            LicenseValidationResult result;
+
+            try
+            {
+                result = licence.Validate();
+            }
+            catch (Exception ex)
+            {
+                // Unlike the startup gate, a failure here leaves the clinic
+                // working. Log it and try again at the next tick rather than
+                // closing a window over something that may be transient.
+                AppLog.Error("Licence: periodic validation failed.", ex);
+                return;
+            }
+
+            if (result.IsValid) return;
+
+            timer.Stop();
+
+            AppLog.Warn($"Licence: became invalid while running ({result.Status}). Closing.");
+
+            var message = result.Status == LicenseStatus.Expired
+                ? LicenseConstants.ExpiredWhileRunningMessage
+                : result.Message;
+
+            Dialog.Show(message, ProductName, MessageBoxButton.OK, MessageBoxImage.Warning);
+            Shutdown(2);
+        };
+
+        timer.Start();
+
+        AppLog.Info(
+            $"Licence: re-checking every {LicenseConstants.ValidationInterval.TotalMinutes:N0} minutes.");
     }
 
     /// <summary>

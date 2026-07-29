@@ -3,6 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Pharma.App">
 
+    <!--
+        Scrolls, because these cards are taller than the window on a laptop and
+        were simply cut off: the log folder and licence buttons at the foot of
+        the left card could not be reached at all on a 768-high screen, with no
+        scrollbar to say anything was missing.
+    -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <Grid Margin="20">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -130,6 +137,18 @@
                 <Button Content="Open log folder" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
                         Command="{Binding OpenLogFolderCommand}"
                         AutomationProperties.AutomationId="OpenLogFolder"/>
+
+                <!-- The application has a navigation column rather than a menu
+                     bar, so About lives here beside the other things support
+                     asks people to read out. -->
+                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,14,0,12"/>
+
+                <TextBlock Text="Licence" Style="{StaticResource Label}"/>
+                <TextBlock Text="{Binding LicenceSummary}" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                           Margin="0,0,0,8" AutomationProperties.AutomationId="LicenceSummary"/>
+                <Button Content="About" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
+                        Command="{Binding ShowAboutCommand}"
+                        AutomationProperties.AutomationId="ShowAbout"/>
             </StackPanel>
         </Border>
 
@@ -180,4 +199,5 @@
             </StackPanel>
         </Border>
     </Grid>
+    </ScrollViewer>
 </UserControl>

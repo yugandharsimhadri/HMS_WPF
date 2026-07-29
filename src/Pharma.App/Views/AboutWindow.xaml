@@ -1,0 +1,85 @@
+<Window x:Class="Pharma.App.Views.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About" Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        FontFamily="{StaticResource UiFont}"
+        Background="{DynamicResource Bg}"
+        Foreground="{DynamicResource Ink}">
+
+    <DockPanel Margin="18">
+
+        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,12">
+            <StackPanel>
+                <TextBlock Text="{Binding ProductName}" Style="{StaticResource H2}"
+                           AutomationProperties.AutomationId="AboutProduct"/>
+                <TextBlock Text="{Binding Vendor}" Style="{StaticResource Muted}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Shown only when the licence has run out or the clock has moved.
+             Silent the rest of the time, so it means something when it appears. -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource WarnFill}" BorderBrush="{DynamicResource WarnStroke}"
+                BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,12"
+                Visibility="{Binding NeedsAttention, Converter={StaticResource BoolToVisible}}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="!" FontWeight="Bold"
+                           Foreground="{DynamicResource WarnInk}" Margin="0,0,8,0"
+                           VerticalAlignment="Top"/>
+                <TextBlock Text="{Binding AttentionMessage}" TextWrapping="Wrap"
+                           Foreground="{DynamicResource WarnInk}"
+                           FontSize="{StaticResource FontLabel}"
+                           AutomationProperties.AutomationId="AboutWarning"/>
+            </DockPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <Button Content="Close" Style="{StaticResource BtnGhost}" MinWidth="90"
+                    HorizontalAlignment="Right" Click="Close_Click"
+                    AutomationProperties.AutomationId="AboutClose"/>
+        </Border>
+
+        <Border Style="{StaticResource Card}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="140"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Edition" Style="{StaticResource Label}"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Edition}" Margin="0,0,0,6"
+                           FontWeight="SemiBold" AutomationProperties.AutomationId="AboutEdition"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Licensed to" Style="{StaticResource Label}"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LicensedTo}" Margin="0,0,0,6"
+                           FontWeight="SemiBold" AutomationProperties.AutomationId="AboutLicensedTo"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Customer ID" Style="{StaticResource Label}"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding CustomerId}" Margin="0,0,0,6"
+                           AutomationProperties.AutomationId="AboutCustomerId"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Expiry date" Style="{StaticResource Label}"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ExpiryDate}" Margin="0,0,0,6"
+                           FontWeight="SemiBold" AutomationProperties.AutomationId="AboutExpiry"/>
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="Remaining" Style="{StaticResource Label}"/>
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding RemainingDays}" Margin="0,0,0,6"
+                           AutomationProperties.AutomationId="AboutRemaining"/>
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="Build version" Style="{StaticResource Label}"/>
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding BuildVersion}"
+                           AutomationProperties.AutomationId="AboutBuild"/>
+            </Grid>
+        </Border>
+
+    </DockPanel>
+</Window>

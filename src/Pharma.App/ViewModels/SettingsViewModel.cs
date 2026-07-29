@@ -3,15 +3,44 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pharma.Core;
+using Pharma.Core.Licensing;
 using Pharma.Data;
 
 namespace Pharma.App.ViewModels;
 
 /// <summary>Shop identity (printed on every bill) and the doctor list.</summary>
-public partial class SettingsViewModel(SettingsService settings, OpdService opd) : ObservableObject, IPage
+public partial class SettingsViewModel(
+    SettingsService settings, OpdService opd, ILicenseService licence) : ObservableObject, IPage
 {
     public string Title => "Settings";
     public string Subtitle => "Shop details printed on bills and prescriptions";
+
+    /// <summary>One line about the licence, so the state is visible without
+    /// opening the dialog.</summary>
+    public string LicenceSummary
+    {
+        get
+        {
+            var info = licence.GetLicenseInfo();
+
+            if (info.IsClockTampered) return "The system clock needs attention.";
+            if (info.IsExpired) return $"{info.Edition} — expired.";
+
+            return $"{info.Edition}, licensed to {info.CustomerName} · " +
+                   $"{info.DaysRemaining:N0} day(s) remaining.";
+        }
+    }
+
+    /// <summary>Opens the About dialog.</summary>
+    [RelayCommand]
+    private void ShowAbout()
+    {
+        var about = new Views.AboutWindow { Owner = Application.Current?.MainWindow };
+        about.ShowDialog();
+
+        // The remaining days move while the application is open.
+        OnPropertyChanged(nameof(LicenceSummary));
+    }
 
     public ObservableCollection<Doctor> Doctors { get; } = [];
 
