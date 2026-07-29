@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Navigation;
 using Pharma.App.ViewModels;
 
 namespace Pharma.App;
@@ -51,6 +52,13 @@ public partial class MainWindow : Window
 
         if (dialog.WindowState == WindowState.Minimized) dialog.WindowState = WindowState.Normal;
         dialog.Activate();
+    }
+
+    /// <summary>Opens the developer's site from the credit line in the sidebar.</summary>
+    private void Vendor_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        Web.Open(e.Uri.AbsoluteUri);
+        e.Handled = true;
     }
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)

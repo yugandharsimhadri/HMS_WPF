@@ -13,7 +13,10 @@
             <StackPanel>
                 <TextBlock Text="{Binding ProductName}" Style="{StaticResource H2}"
                            AutomationProperties.AutomationId="AboutProduct"/>
-                <TextBlock Text="{Binding Vendor}" Style="{StaticResource Muted}"/>
+                <TextBlock Style="{StaticResource Muted}"
+                           AutomationProperties.AutomationId="AboutVendor"><Hyperlink NavigateUri="{Binding VendorUrl}"
+                                      RequestNavigate="Vendor_RequestNavigate"
+                                      ToolTip="{Binding VendorUrl}"><Run Text="{Binding Vendor, Mode=OneWay}"/></Hyperlink></TextBlock>
             </StackPanel>
         </Border>
 

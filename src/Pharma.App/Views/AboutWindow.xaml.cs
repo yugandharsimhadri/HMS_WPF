@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Pharma.App.ViewModels;
 using Pharma.Core.Licensing;
@@ -17,6 +18,13 @@ public partial class AboutWindow : Window
         InitializeComponent();
 
         DataContext = new AboutViewModel(App.Services.GetRequiredService<ILicenseService>());
+    }
+
+    /// <summary>Opens the developer's site from the name under the product title.</summary>
+    private void Vendor_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        Web.Open(e.Uri.AbsoluteUri);
+        e.Handled = true;
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

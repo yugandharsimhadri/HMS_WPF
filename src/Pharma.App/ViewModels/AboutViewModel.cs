@@ -54,6 +54,9 @@ public sealed class AboutViewModel(ILicenseService licence)
     /// <summary>Who wrote it.</summary>
     public string Vendor => LicenseConstants.Vendor;
 
+    /// <summary>Where the vendor's name links to.</summary>
+    public string VendorUrl => AppInfo.DeveloperUrl;
+
     /// <summary>True when the licence needs attention, which the dialog says loudly.</summary>
     public bool NeedsAttention => _info.IsExpired || _info.IsClockTampered;
 

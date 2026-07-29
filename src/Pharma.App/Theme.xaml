@@ -141,6 +141,29 @@
         </Setter>
     </Style>
 
+    <!--
+        A link out of the application. Accent rather than the browser blue,
+        which belongs to no palette here and reads as a foreign object on a
+        dark panel; underlined only on hover, so a line of small print does not
+        arrive already decorated.
+    -->
+    <Style TargetType="Hyperlink">
+        <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+        <Setter Property="TextDecorations" Value="{x:Null}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="TextDecorations" Value="Underline"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Same link on the navigation column, which stays dark in both themes
+         and so needs its own ink rather than the page accent. -->
+    <Style x:Key="NavLink" TargetType="Hyperlink" BasedOn="{StaticResource {x:Type Hyperlink}}">
+        <Setter Property="Foreground" Value="{DynamicResource NavInkBright}"/>
+    </Style>
+
     <!-- ── Text box ──────────────────────────────────────────────────────── -->
 
     <Style TargetType="TextBox">

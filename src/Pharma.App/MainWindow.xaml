@@ -112,10 +112,16 @@
                     <Border BorderBrush="{DynamicResource NavInkFaded}" BorderThickness="0,1,0,0"
                             Opacity="0.35" Margin="0,12,0,0"/>
 
+                    <!-- Written as two inlines rather than one bound string so
+                         only the name is the link. The text either side must
+                         stay exactly as it reads: "Developed by " and the name,
+                         with the single space between them. -->
                     <TextBlock Margin="0,10,0,0" FontSize="{StaticResource FontSmall}"
                                Foreground="{DynamicResource NavInkFaint}" TextWrapping="Wrap"
-                               Text="{Binding Credit}"
-                               AutomationProperties.AutomationId="AppCredit"/>
+                               AutomationProperties.AutomationId="AppCredit"><Run Text="Developed by "/><Hyperlink Style="{StaticResource NavLink}"
+                                   NavigateUri="{Binding DeveloperUrl}"
+                                   RequestNavigate="Vendor_RequestNavigate"
+                                   ToolTip="{Binding DeveloperUrl}"><Run Text="{Binding Developer, Mode=OneWay}"/></Hyperlink></TextBlock>
                     <TextBlock FontSize="{StaticResource FontSmall}"
                                Foreground="{DynamicResource NavInkFaded}"
                                Text="{Binding VersionLabel}"

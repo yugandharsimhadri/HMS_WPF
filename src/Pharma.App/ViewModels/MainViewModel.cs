@@ -41,6 +41,13 @@ public partial class MainViewModel : ObservableObject
 
     /// <summary>Shown in the foot of the navigation, where it is always to hand.</summary>
     public string Credit => AppInfo.Credit;
+
+    /// <summary>The developer's name on its own, so the sidebar can make just
+    /// that part of the credit line a link.</summary>
+    public string Developer => AppInfo.Developer;
+
+    /// <summary>Where that link goes.</summary>
+    public string DeveloperUrl => AppInfo.DeveloperUrl;
     public string VersionLabel => AppInfo.VersionLabel;
 
     public MainViewModel(

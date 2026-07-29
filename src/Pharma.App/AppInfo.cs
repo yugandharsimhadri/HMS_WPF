@@ -13,6 +13,10 @@ public static class AppInfo
 {
     public const string Developer = "Sivayaan Technologies";
 
+    /// <summary>Where the developer's name links to, on the sidebar and the
+    /// About dialog.</summary>
+    public const string DeveloperUrl = "https://sivayaantechnologies.com";
+
     /// <summary>
     /// "1.0.0". The fourth part of an assembly version is always zero here and
     /// says nothing to the person reading it off the screen.
