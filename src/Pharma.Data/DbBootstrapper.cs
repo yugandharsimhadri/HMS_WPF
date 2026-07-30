@@ -117,7 +117,21 @@ public static class DbBootstrapper
         await using var db = await factory.CreateDbContextAsync();
 
         var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
-        if (pending.Count > 0) AppLog.Info($"Applying migrations: {string.Join(", ", pending)}");
+
+        if (pending.Count > 0)
+        {
+            AppLog.Info($"Applying migrations: {string.Join(", ", pending)}");
+
+            // A copy of the file as it was, before the schema is touched.
+            //
+            // BackupOnce is not enough on the day of an upgrade: it takes one
+            // backup per day and skips if today's already exists, so a clinic
+            // that opened the application before installing the new version has
+            // already spent it. And the daily ones are pruned on a rotation, so
+            // the only copy of the old shape could be deleted a week later —
+            // which is exactly when somebody asks for it.
+            if (existed) BackupBeforeUpgrade(pending[^1]);
+        }
 
         await db.Database.MigrateAsync();
         await SeedAsync(db);
@@ -177,6 +191,30 @@ public static class DbBootstrapper
         catch (IOException)
         {
             // A backup that could not be pruned is still a backup.
+        }
+    }
+
+    /// <summary>
+    /// Copies the database before any migration runs, under a name the daily
+    /// rotation never touches. Kept for good: it is the only thing that can put
+    /// a clinic back where it was if an upgrade goes wrong.
+    /// </summary>
+    private static void BackupBeforeUpgrade(string upgradingTo)
+    {
+        // Not "twinkle-*.db": that is the pattern Prune() deletes on a rotation
+        // and LastBackup reports as the newest ordinary backup. This is neither.
+        var target = Path.Combine(BackupDirectory, $"pre-upgrade-{DateTime.Now:yyyyMMdd-HHmmss}.db");
+
+        try
+        {
+            File.Copy(DatabasePath, target);
+            AppLog.Info($"Backed up before upgrading to {upgradingTo}: {target}");
+        }
+        catch (IOException ex)
+        {
+            // Said loudly, because carrying on means migrating a database with
+            // no copy of how it looked beforehand.
+            AppLog.Error($"Could not back up before upgrading to {upgradingTo}. The upgrade will still be attempted.", ex);
         }
     }
 
