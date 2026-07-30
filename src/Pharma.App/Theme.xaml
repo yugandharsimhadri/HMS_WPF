@@ -656,6 +656,29 @@
     </Style>
 
     <Style TargetType="DataGrid">
+        <!-- Anything narrowed past its text ends in an ellipsis rather than
+             being chopped mid-character. Reaches the plain columns that name no
+             ElementStyle of their own, and the TextBlocks inside the badge and
+             chip templates, where it does no harm.
+
+             First in the style because a property element cannot sit between
+             setters. -->
+        <!--
+            No horizontal scrollbar, ever.
+
+            Every column in this application is star-weighted, so the columns
+            divide whatever width the grid is given rather than adding up to
+            some total of their own — which means there is nothing to scroll to.
+            Disabled here is the guarantee: it hands the grid a finite width to
+            divide, and makes a column that somehow still does not fit trim with
+            an ellipsis instead of hiding behind a scrollbar the operator has to
+            find.
+
+            A grid the operator has to scroll sideways is a grid where the
+            AMOUNT column is off screen while they are reading it out to a
+            customer.
+        -->
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <!--
             DataGridTextColumn builds its own TextBlock and pushes the column's
@@ -750,6 +773,7 @@
     <Style x:Key="GridText" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
 
     <Style x:Key="GridNumber" TargetType="TextBlock">

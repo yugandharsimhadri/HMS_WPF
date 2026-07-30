@@ -39,20 +39,20 @@
                     <DataGrid ItemsSource="{Binding Patients}" SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
                               AutomationProperties.AutomationId="PatientsGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="PATIENT NO" Binding="{Binding PatientNo}" Width="110"
+                            <DataGridTextColumn Header="PATIENT NO" Binding="{Binding PatientNo}" Width="Auto"
                                                 ElementStyle="{StaticResource GridMuted}"/>
-                            <DataGridTextColumn Header="NAME" Binding="{Binding Name}" Width="*" MinWidth="150"
+                            <DataGridTextColumn Header="NAME" Binding="{Binding Name}" Width="220*" MinWidth="105"
                                                 ElementStyle="{StaticResource GridName}"/>
-                            <DataGridTextColumn Header="PHONE" Binding="{Binding Phone}" Width="130" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="AGE" Binding="{Binding Age}" Width="60"
+                            <DataGridTextColumn Header="PHONE" Binding="{Binding Phone}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="AGE" Binding="{Binding Age}" Width="Auto"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
-                            <DataGridTextColumn Header="SEX" Binding="{Binding Gender}" Width="80"
+                            <DataGridTextColumn Header="SEX" Binding="{Binding Gender}" Width="Auto"
                                                 ElementStyle="{StaticResource GridMuted}"/>
                             <!-- An allergy is the one thing on this row that can
                                  hurt somebody, so it wraps rather than being cut
                                  off at whatever the column happens to fit. -->
-                            <DataGridTextColumn Header="ALLERGIES" Binding="{Binding Allergies}" Width="190"
+                            <DataGridTextColumn Header="ALLERGIES" Binding="{Binding Allergies}" Width="Auto"
                                                 ElementStyle="{StaticResource GridWrap}"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -74,10 +74,27 @@
                                         AutomationProperties.AutomationId="PatientPrintReceipt"/>
                             </StackPanel>
 
+                            <!--
+                                The one grid that keeps fixed widths and its own
+                                scrollbar.
+
+                                Eight columns of real content do not fit the width
+                                this card gets, and no sizing mode changes that:
+                                auto, star and a suppressed scrollbar all end the
+                                same way, with STATUS pushed off the end. A column
+                                that silently is not there is worse than one you
+                                scroll to — nobody looks for what they cannot see
+                                is missing.
+
+                                So this grid opts out: fixed widths, and a
+                                scrollbar when it needs one. Everything else in
+                                the application sizes to fit.
+                            -->
                             <DataGrid ItemsSource="{Binding History}" SelectedItem="{Binding SelectedVisit, Mode=TwoWay}"
+                                      HorizontalScrollBarVisibility="Auto"
                                       AutomationProperties.AutomationId="PatientHistoryGrid">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="DATE" Binding="{Binding ScheduledOn, StringFormat='dd MMM yyyy HH:mm'}" Width="150"
+                                    <DataGridTextColumn Header="DATE" Binding="{Binding ScheduledOn, StringFormat='dd MMM yy HH:mm'}" Width="130"
                                                         ElementStyle="{StaticResource GridMuted}"/>
                                     <DataGridTextColumn Header="VISIT NO" Binding="{Binding VisitNo}" Width="90"
                                                         ElementStyle="{StaticResource GridName}"/>
@@ -108,20 +125,20 @@
                             <DataGrid ItemsSource="{Binding Bills}" SelectedItem="{Binding SelectedBill, Mode=TwoWay}"
                                       AutomationProperties.AutomationId="PatientBillsGrid">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="DATE" Binding="{Binding BillDate, StringFormat='dd MMM yyyy HH:mm'}" Width="150"
+                                    <DataGridTextColumn Header="DATE" Binding="{Binding BillDate, StringFormat='dd MMM yy HH:mm'}" Width="Auto"
                                                         ElementStyle="{StaticResource GridMuted}"/>
-                                    <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110"
+                                    <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="Auto"
                                                         ElementStyle="{StaticResource GridName}"/>
-                                    <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}" Width="60"
+                                    <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}" Width="Auto"
                                                         ElementStyle="{StaticResource GridNumber}"
                                                         HeaderStyle="{StaticResource GridNumberHeader}"/>
-                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridText}"/>
-                                    <DataGridTextColumn Header="NET" Binding="{Binding NetAmount, StringFormat=N2}" Width="100"
+                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="220*" MinWidth="105" ElementStyle="{StaticResource GridText}"/>
+                                    <DataGridTextColumn Header="NET" Binding="{Binding NetAmount, StringFormat=N2}" Width="Auto"
                                                         ElementStyle="{StaticResource GridAmount}"
                                                         HeaderStyle="{StaticResource GridNumberHeader}"/>
-                                    <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="80"
+                                    <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="Auto"
                                                         ElementStyle="{StaticResource GridMuted}"/>
-                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="90" ElementStyle="{StaticResource GridText}"/>
+                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>

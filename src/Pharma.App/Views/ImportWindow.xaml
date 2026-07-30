@@ -88,19 +88,19 @@
                 <DataGrid ItemsSource="{Binding Lines}" IsReadOnly="False"
                           AutomationProperties.AutomationId="ImportLinesGrid">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="105" IsReadOnly="True" ElementStyle="{StaticResource GridText}"/>
-                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*" MinWidth="150" ElementStyle="{StaticResource GridName}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="PACK" Binding="{Binding Source.PackSize}" Width="70" IsReadOnly="True" ElementStyle="{StaticResource GridText}"/>
+                        <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="Auto" IsReadOnly="True" ElementStyle="{StaticResource GridText}"/>
+                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="220*" MinWidth="105" ElementStyle="{StaticResource GridName}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="PACK" Binding="{Binding Source.PackSize}" Width="Auto" IsReadOnly="True" ElementStyle="{StaticResource GridText}"/>
                         <!-- Editable: the file rarely says how many are in a pack. -->
-                        <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="80" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
-                        <DataGridTextColumn Header="BATCH" Binding="{Binding Source.BatchNo}" Width="105" ElementStyle="{StaticResource GridMuted}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="EXPIRY" Binding="{Binding Source.Expiry, StringFormat='MM/yyyy'}" Width="75" ElementStyle="{StaticResource GridMuted}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="QTY" Binding="{Binding Source.Quantity}" Width="55" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="FREE" Binding="{Binding Source.FreeQuantity}" Width="55" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="UNITS" Binding="{Binding UnitsReceived}" Width="70" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="RATE" Binding="{Binding Source.Rate, StringFormat=N2}" Width="80" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="MRP" Binding="{Binding Source.Mrp, StringFormat=N2}" Width="80" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="GST" Binding="{Binding Source.GstPercent, StringFormat=N1}" Width="55" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                        <DataGridTextColumn Header="BATCH" Binding="{Binding Source.BatchNo}" Width="Auto" ElementStyle="{StaticResource GridMuted}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="EXPIRY" Binding="{Binding Source.Expiry, StringFormat='MM/yyyy'}" Width="Auto" ElementStyle="{StaticResource GridMuted}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="QTY" Binding="{Binding Source.Quantity}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="FREE" Binding="{Binding Source.FreeQuantity}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="UNITS" Binding="{Binding UnitsReceived}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="RATE" Binding="{Binding Source.Rate, StringFormat=N2}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="MRP" Binding="{Binding Source.Mrp, StringFormat=N2}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="GST" Binding="{Binding Source.GstPercent, StringFormat=N1}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Border>
@@ -111,10 +111,10 @@
                     <DataGrid ItemsSource="{Binding Issues}"
                               AutomationProperties.AutomationId="ImportIssuesGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="SEVERITY" Binding="{Binding Severity}" Width="80" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="LINE" Binding="{Binding Line}" Width="55" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
-                            <DataGridTextColumn Header="FIELD" Binding="{Binding Field}" Width="120" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="DETAIL" Binding="{Binding Message}" Width="*" MinWidth="160" ElementStyle="{StaticResource GridWrap}"/>
+                            <DataGridTextColumn Header="SEVERITY" Binding="{Binding Severity}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="LINE" Binding="{Binding Line}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                            <DataGridTextColumn Header="FIELD" Binding="{Binding Field}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="DETAIL" Binding="{Binding Message}" Width="220*" MinWidth="105" ElementStyle="{StaticResource GridWrap}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>

@@ -231,17 +231,17 @@
                     <DataGrid ItemsSource="{Binding Lines}" RowHeight="30"
                               AutomationProperties.AutomationId="RxGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="*" MinWidth="140"
+                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding Medicine}" Width="220*" MinWidth="105"
                                                 ElementStyle="{StaticResource GridName}"/>
-                            <DataGridTextColumn Header="DOSE" Binding="{Binding Dosage}" Width="80" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="FREQUENCY" Binding="{Binding Frequency}" Width="95" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="DAYS" Binding="{Binding Days}" Width="55"
+                            <DataGridTextColumn Header="DOSE" Binding="{Binding Dosage}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="FREQUENCY" Binding="{Binding Frequency}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="DAYS" Binding="{Binding Days}" Width="Auto"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
-                            <DataGridTextColumn Header="DISPENSE" Binding="{Binding Course}" Width="150" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="INSTRUCTIONS" Binding="{Binding Instructions}" Width="150"
+                            <DataGridTextColumn Header="DISPENSE" Binding="{Binding Course}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="INSTRUCTIONS" Binding="{Binding Instructions}" Width="Auto"
                                                 ElementStyle="{StaticResource GridMuted}"/>
-                            <DataGridTemplateColumn Width="34">
+                            <DataGridTemplateColumn Width="Auto">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="✕" BorderThickness="0" Background="Transparent"

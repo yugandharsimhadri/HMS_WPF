@@ -17,6 +17,19 @@ public class RequiredLabel : Control
     {
         DefaultStyleKeyProperty.OverrideMetadata(
             typeof(RequiredLabel), new FrameworkPropertyMetadata(typeof(RequiredLabel)));
+
+        // A TextBlock is not focusable; a Control is, and this is one. Left at
+        // the default, every required-field label sat in the tab order, so
+        // tabbing from Batch no to Expiry stopped twice on the way and the
+        // second press appeared to do nothing.
+        //
+        // Both are needed: Focusable keeps it out of the tab order, IsTabStop
+        // keeps it out even if something re-enables focus for accessibility.
+        FocusableProperty.OverrideMetadata(
+            typeof(RequiredLabel), new FrameworkPropertyMetadata(false));
+
+        IsTabStopProperty.OverrideMetadata(
+            typeof(RequiredLabel), new FrameworkPropertyMetadata(false));
     }
 
     public static readonly DependencyProperty TextProperty =

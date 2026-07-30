@@ -40,7 +40,7 @@
                         <DataGrid.Columns>
                             <!-- Brand with the drug name under it, as on the
                                  Medicines screen: one medicine, said two ways. -->
-                            <DataGridTemplateColumn Header="MEDICINE" Width="*" MinWidth="160" ClipboardContentBinding="{Binding Name}">
+                            <DataGridTemplateColumn Header="MEDICINE" Width="220*" MinWidth="105" ClipboardContentBinding="{Binding Name}">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel VerticalAlignment="Center">
@@ -54,12 +54,12 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="72" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="76"
+                            <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="Auto"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
 
-                            <DataGridTemplateColumn Header="ON HAND" Width="95" ClipboardContentBinding="{Binding StockOnHand}"
+                            <DataGridTemplateColumn Header="ON HAND" Width="Auto" ClipboardContentBinding="{Binding StockOnHand}"
                                                     HeaderStyle="{StaticResource GridNumberHeader}">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
@@ -69,7 +69,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="RACK" Width="56" ClipboardContentBinding="{Binding RackLocation}">
+                            <DataGridTemplateColumn Header="RACK" Width="Auto" ClipboardContentBinding="{Binding RackLocation}">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border Style="{StaticResource GridChip}"
@@ -90,23 +90,23 @@
                     <DataGrid ItemsSource="{Binding Adjustments}"
                               AutomationProperties.AutomationId="AdjustmentsGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="WHEN" Binding="{Binding AdjustedOn, StringFormat='dd MMM HH:mm'}" Width="105"
+                            <DataGridTextColumn Header="WHEN" Binding="{Binding AdjustedOn, StringFormat='dd MMM HH:mm'}" Width="Auto"
                                                 ElementStyle="{StaticResource GridMuted}"/>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*" MinWidth="140"
+                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="220*" MinWidth="105"
                                                 ElementStyle="{StaticResource GridName}"/>
-                            <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="95"
+                            <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="Auto"
                                                 ElementStyle="{StaticResource GridMuted}"/>
-                            <DataGridTextColumn Header="WAS" Binding="{Binding QuantityBefore}" Width="60"
+                            <DataGridTextColumn Header="WAS" Binding="{Binding QuantityBefore}" Width="Auto"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
-                            <DataGridTextColumn Header="NOW" Binding="{Binding QuantityAfter}" Width="60"
+                            <DataGridTextColumn Header="NOW" Binding="{Binding QuantityAfter}" Width="Auto"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
-                            <DataGridTextColumn Header="CHANGE" Binding="{Binding Direction}" Width="75"
+                            <DataGridTextColumn Header="CHANGE" Binding="{Binding Direction}" Width="Auto"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
-                            <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="100" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="170"
+                            <DataGridTextColumn Header="REASON" Binding="{Binding Reason}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                            <DataGridTextColumn Header="NOTES" Binding="{Binding Notes}" Width="Auto"
                                                 ElementStyle="{StaticResource GridMuted}"/>
                         </DataGrid.Columns>
                     </DataGrid>

@@ -301,14 +301,19 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
                                $"{SelectedProduct.DispensingUnit.Name(item.UnitsReceived)} of {SelectedProduct.Name} " +
                                $"added to batch {item.BatchNo}.";
 
-            // The medicine clears along with the form — the next line of a
-            // supplier's invoice is usually a different medicine, and a batch
-            // received against whichever one happened to be left selected is
-            // stock counted onto the wrong shelf. Clearing the selection empties
-            // the batch, packs, rate and expiry with it.
+            // Everything goes, supplier and invoice number included.
             //
-            // The supplier and the invoice number stay: they belong to the
-            // invoice being entered, not to one line of it.
+            // Those two used to be kept, on the reasoning that one delivery note
+            // covers many medicines and retyping the supplier each time is the
+            // sort of friction that stops people filling it in. In use that was
+            // the wrong trade: a supplier left in the box is a supplier silently
+            // attached to the next delivery, and a wrong supplier on a batch is
+            // worse than a blank one — it is wrong in the reconciliation report
+            // rather than merely missing from it.
+            //
+            // Clearing the medicine empties the batch, packs, rate and expiry
+            // with it, so this is the whole form.
+            SupplierName = SupplierInvoiceNo = "";
             SelectedProduct = null;
             Search = "";
             await FindAsync();

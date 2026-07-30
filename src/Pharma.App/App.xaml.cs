@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Threading;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +20,10 @@ public partial class App : Application
         base.OnStartup(e);
 
         HookGlobalExceptionHandlers();
+
+        // Before any window exists, so every text box in the application is
+        // covered including the ones inside dialogs.
+        SelectOnFocus.Register();
 
         // Community licence: free for organisations under ~$1M USD annual revenue,
         // which covers a single clinic. Required before any PDF is generated.
@@ -59,7 +63,7 @@ public partial class App : Application
 
         // Licensing. Each piece is registered against its interface, so the day
         // a signed licence file or an activation server arrives, only the
-        // provider line changes — nothing that consumes ILicenseService moves.
+        // provider line changes â€” nothing that consumes ILicenseService moves.
         services.AddSingleton<ISystemClock, SystemClock>();
         services.AddSingleton<ILicenseStore, LicenseStorage>();
         services.AddSingleton<ILicenseProvider, EmbeddedEvaluationLicenseProvider>();
@@ -80,7 +84,7 @@ public partial class App : Application
     private async Task StartAsync()
     {
         // Before anything else opens. The database is not touched, the theme is
-        // not read and no window is shown until this copy is entitled to run —
+        // not read and no window is shown until this copy is entitled to run â€”
         // a licence check that happens after the user is already working is a
         // licence check nobody trusts.
         if (!LicenceAllowsStartup()) return;
@@ -168,7 +172,7 @@ public partial class App : Application
     /// <remarks>
     /// The application is not closed from under whoever is using it. Billing a
     /// patient is a poor moment to lose a window, and there is no global
-    /// autosave to fall back on — every screen saves on its own explicit
+    /// autosave to fall back on â€” every screen saves on its own explicit
     /// action. So the user is told what has happened and the application closes
     /// when they acknowledge it, which gives them the chance to finish and save
     /// the one thing they had open.
@@ -217,7 +221,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Says so, once, when the medicine records cannot be right — a pack size
+    /// Says so, once, when the medicine records cannot be right â€” a pack size
     /// that disagrees with its units-per-pack sells strips to people asking for
     /// tablets and reports no error, so something has to raise it.
     ///
