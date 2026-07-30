@@ -32,6 +32,16 @@
 
     <!-- The window icon, as well as the one on the exe. -->
     <Resource Include="twinkle.ico" />
+
+    <!-- The letterhead printed at the top of every document. Compiled in
+         rather than copied beside the exe: the installer ships a single file,
+         and a header that can go missing is a header that will.
+
+         EmbeddedResource, not Resource: it is read through the assembly rather
+         than a pack:// URI, so it loads the same way inside the application and
+         inside the test host, which has no WPF Application to resolve pack
+         URIs against. -->
+    <EmbeddedResource Include="Assets\Header.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -47,13 +47,30 @@ internal static class DocumentBuilder
     public static void AddClinicHeader(
         FlowDocument doc, Pharma.Data.ShopProfile shop, string? documentTitle, bool showGstin = true)
     {
-        doc.Blocks.Add(Text(shop.Name, 18, FontWeights.Bold, align: TextAlignment.Center));
+        // The letterhead goes first, full width, and the document starts
+        // directly under it.
+        var letterhead = DocumentHeaderImage.TryCreateBlock();
+        if (letterhead is not null) doc.Blocks.Add(letterhead);
 
-        var contact = new List<string>();
-        if (!string.IsNullOrWhiteSpace(shop.AddressLine)) contact.Add(shop.AddressLine);
-        if (!string.IsNullOrWhiteSpace(shop.Phone)) contact.Add($"Ph {shop.Phone}");
-        if (contact.Count > 0)
-            doc.Blocks.Add(Text(string.Join("  ·  ", contact), 10, brush: Muted, align: TextAlignment.Center));
+        // The letterhead already carries the hospital's name, both phone
+        // numbers, the email, the website and the full address, so printing
+        // those again underneath it would say everything twice on a page that
+        // has little room to spare. They are still printed when there is no
+        // letterhead, which is what a document with no image at all needs.
+        //
+        // The licence numbers below are a different matter: the GSTIN and the
+        // drug licence are not on the letterhead and a tax invoice has to show
+        // them, so they are printed either way.
+        if (letterhead is null)
+        {
+            doc.Blocks.Add(Text(shop.Name, 18, FontWeights.Bold, align: TextAlignment.Center));
+
+            var contact = new List<string>();
+            if (!string.IsNullOrWhiteSpace(shop.AddressLine)) contact.Add(shop.AddressLine);
+            if (!string.IsNullOrWhiteSpace(shop.Phone)) contact.Add($"Ph {shop.Phone}");
+            if (contact.Count > 0)
+                doc.Blocks.Add(Text(string.Join("  ·  ", contact), 10, brush: Muted, align: TextAlignment.Center));
+        }
 
         var licences = new List<string>();
 

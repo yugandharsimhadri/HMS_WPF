@@ -27,6 +27,17 @@ public class PrintDocumentTests
     private static string TextOf(FlowDocument doc)
         => new TextRange(doc.ContentStart, doc.ContentEnd).Text;
 
+    /// <summary>
+    /// True when the document opens with the letterhead image, stretched to the
+    /// page width rather than pinned to a size that would crop or distort it.
+    /// </summary>
+    internal static bool HasLetterhead(FlowDocument doc)
+        => doc.Blocks.FirstOrDefault() is BlockUIContainer { Child: System.Windows.Controls.Image image }
+           && image.Source is not null
+           && image.Stretch == Stretch.Uniform
+           && double.IsNaN(image.Width)
+           && double.IsNaN(image.Height);
+
     private static Visit Visit(bool paid = true) => new()
     {
         VisitNo = "V00007",
@@ -97,9 +108,13 @@ public class PrintDocumentTests
             Instructions = "Dissolve in 200 ml water"
         });
 
-        var text = TextOf(PrescriptionPrinter.Build(visit, Shop()));
+        var doc = PrescriptionPrinter.Build(visit, Shop());
+        var text = TextOf(doc);
 
-        Assert.Contains("Twinkle Children's Hospital", text);
+        // The hospital is named by the letterhead at the top of the page rather
+        // than by a line of text under it — see LetterheadTests below.
+        Assert.True(HasLetterhead(doc));
+
         Assert.Contains("Reg. No: REG-4471", text);
         Assert.Contains("Acute pharyngitis", text);
         Assert.Contains("Paracetamol 250mg", text);
