@@ -36,26 +36,16 @@ public static class ReportPdfBuilder
                 page.Margin(24);
                 page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Segoe UI"));
 
+                // No letterhead here. It belongs on what a patient is handed —
+                // a receipt, a prescription, a bill — and these are the
+                // clinic's own working reports: a day book, a GST summary, a
+                // stock register. Spending a third of every page of a
+                // twenty-page register on a letterhead nobody outside the
+                // clinic will read is paper and toner for nothing.
                 page.Header().Column(col =>
                 {
-                    // The same letterhead the printed receipts carry, scaled to
-                    // the page width with its aspect ratio kept. FitWidth is
-                    // QuestPDF's equivalent of the FlowDocument's Uniform
-                    // stretch: full width, height to match, nothing cropped.
-                    var letterhead = Printing.DocumentHeaderImage.TryGetBytes();
-
-                    if (letterhead is not null)
-                    {
-                        col.Item().PaddingBottom(8).Image(letterhead).FitWidth();
-                    }
-                    else
-                    {
-                        // No letterhead: name the hospital in text instead, or
-                        // the report goes out with nothing identifying it.
-                        col.Item().AlignCenter().Text(shop.Name).FontSize(16).Bold();
-                        col.Item().AlignCenter().Text("OPD & Pharmacy").FontSize(10).FontColor(Colors.Grey.Darken2);
-                    }
-
+                    col.Item().AlignCenter().Text(shop.Name).FontSize(16).Bold();
+                    col.Item().AlignCenter().Text("OPD & Pharmacy").FontSize(10).FontColor(Colors.Grey.Darken2);
                     col.Item().PaddingTop(6).AlignCenter().Text(ReportNaming.Title(kind)).FontSize(13).SemiBold();
                     col.Item().AlignCenter()
                         .Text(ReportNaming.DateLabel(kind, vm.Date, vm.FromDate, vm.ToDate))

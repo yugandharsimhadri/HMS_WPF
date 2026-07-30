@@ -89,7 +89,7 @@
                           AutomationProperties.AutomationId="ImportLinesGrid">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="105" IsReadOnly="True" ElementStyle="{StaticResource GridText}"/>
-                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*" ElementStyle="{StaticResource GridName}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="*" MinWidth="150" ElementStyle="{StaticResource GridName}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="PACK" Binding="{Binding Source.PackSize}" Width="70" IsReadOnly="True" ElementStyle="{StaticResource GridText}"/>
                         <!-- Editable: the file rarely says how many are in a pack. -->
                         <DataGridTextColumn Header="PER PACK" Binding="{Binding UnitsPerPack}" Width="80" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
@@ -114,7 +114,7 @@
                             <DataGridTextColumn Header="SEVERITY" Binding="{Binding Severity}" Width="80" ElementStyle="{StaticResource GridText}"/>
                             <DataGridTextColumn Header="LINE" Binding="{Binding Line}" Width="55" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
                             <DataGridTextColumn Header="FIELD" Binding="{Binding Field}" Width="120" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="DETAIL" Binding="{Binding Message}" Width="*" ElementStyle="{StaticResource GridWrap}"/>
+                            <DataGridTextColumn Header="DETAIL" Binding="{Binding Message}" Width="*" MinWidth="160" ElementStyle="{StaticResource GridWrap}"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>

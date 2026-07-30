@@ -29,6 +29,16 @@ public partial class MainWindow : Window
     /// footer — Save, Save &amp; complete — below the desktop where it cannot be
     /// clicked, so shrink to what the screen actually has and re-centre.
     /// </summary>
+    /// <remarks>
+    /// This only ever shrinks the window, never grows it, so the same layout
+    /// serves every screen size.
+    ///
+    /// The minimums in XAML are deliberately below 1024x768 for the same reason
+    /// this method exists: a 1366x768 screen has roughly 728 usable height once
+    /// the taskbar is there, and a 768 minimum would put the footer buttons back
+    /// under the desktop edge. They exist only to stop the window being dragged
+    /// down to a size where controls overlap.
+    /// </remarks>
     private void FitToScreen()
     {
         var work = SystemParameters.WorkArea;

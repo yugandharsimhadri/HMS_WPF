@@ -8,15 +8,16 @@ using System.Windows.Media.Imaging;
 namespace Pharma.App.Printing;
 
 /// <summary>
-/// The hospital letterhead that goes at the top of every printed document.
+/// The hospital letterhead that goes at the top of everything a patient is
+/// handed — the consultation receipt, the prescription, the pharmacy bill.
 /// </summary>
 /// <remarks>
 /// <para>
-/// One implementation for both ways this application puts ink on paper: the
-/// FlowDocument templates (prescription, receipt, invoice) and the QuestPDF
-/// report exports. A future template gets the letterhead by calling
-/// <see cref="DocumentBuilder.AddClinicHeader"/> like the others, or
-/// <see cref="TryGetBytes"/> if it builds a PDF.
+/// Deliberately not on the clinic's own working reports. A day book, a GST
+/// summary or a stock register is read across a desk, not taken home, and
+/// giving a third of every page of a twenty-page register to a letterhead is
+/// paper and toner spent on nobody. Any new patient-facing document gets it by
+/// calling <see cref="DocumentBuilder.AddClinicHeader"/> like the other three.
 /// </para>
 /// <para>
 /// The image is compiled into the executable as a resource rather than read
@@ -37,13 +38,11 @@ internal static class DocumentHeaderImage
     /// </summary>
     private const string ResourceName = "Pharma.App.Assets.Header.png";
 
-    // Loaded once. Both fields are set together by EnsureLoaded and never
-    // reset: a letterhead that could not be read will not start working later
-    // in the same session, and retrying it per document would mean a failed
-    // decode on every line of a busy day's printing.
+    // Loaded once, and never reset: a letterhead that could not be read will
+    // not start working later in the same session, and retrying it per document
+    // would mean a failed decode on every line of a busy day's printing.
     private static bool _loaded;
     private static BitmapImage? _image;
-    private static byte[]? _bytes;
 
     /// <summary>
     /// The letterhead as a block that fills the width of whatever page it is
@@ -84,16 +83,6 @@ internal static class DocumentHeaderImage
         };
     }
 
-    /// <summary>
-    /// The letterhead as PNG bytes, for the PDF exports, or
-    /// <see langword="null"/> when the image is unavailable.
-    /// </summary>
-    public static byte[]? TryGetBytes()
-    {
-        EnsureLoaded();
-        return _bytes;
-    }
-
     private static BitmapImage? TryGetImage()
     {
         EnsureLoaded();
@@ -113,9 +102,6 @@ internal static class DocumentHeaderImage
 
             using var memory = new MemoryStream();
             stream.CopyTo(memory);
-
-            _bytes = memory.ToArray();
-
             memory.Position = 0;
 
             var image = new BitmapImage();
@@ -135,14 +121,12 @@ internal static class DocumentHeaderImage
             _image = image;
 
             AppLog.Info(
-                $"Print letterhead loaded ({image.PixelWidth}x{image.PixelHeight}, {_bytes.Length / 1024:N0} KB).");
+                $"Print letterhead loaded ({image.PixelWidth}x{image.PixelHeight}, {memory.Length / 1024:N0} KB).");
         }
         catch (Exception ex)
         {
-            // Requirement, and the right call anyway: no letterhead must never
-            // stop a document printing.
+            // No letterhead must never stop a document printing.
             _image = null;
-            _bytes = null;
 
             AppLog.Warn($"Print letterhead unavailable; printing without it ({ex.Message}).");
         }

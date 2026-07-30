@@ -52,15 +52,29 @@ public enum PaymentMode
 /// 10, 15 or any other number of tablets, and that count lives on the product and
 /// on each batch, not here.
 /// </summary>
+/// <remarks>
+/// Every member is numbered explicitly. These numbers are what is written to the
+/// database, so inserting a new one in the middle would silently turn every
+/// tube on the shelf into a vial. New kinds are appended, never interleaved.
+/// </remarks>
 public enum DispensingUnit
 {
     Tablet = 1,
-    Capsule,
-    Bottle,
-    Sachet,
-    Tube,
-    Vial,
-    Piece
+    Capsule = 2,
+    Bottle = 3,
+    Sachet = 4,
+    Tube = 5,
+    Vial = 6,
+    Piece = 7,
+
+    // A children's clinic sells more than tablets: cough syrup by the bottle,
+    // moisturiser and medicated soap over the counter.
+    Syrup = 8,
+    Moisturizer = 9,
+    Soap = 10,
+
+    /// <summary>Anything the list above does not cover.</summary>
+    Others = 11
 }
 
 public static class DispensingUnits
@@ -68,6 +82,10 @@ public static class DispensingUnits
     /// <summary>"tablet" or "tablets", for labels and printed lines.</summary>
     public static string Name(this DispensingUnit unit, int count = 2)
     {
+        // "Others" is already plural and is not the name of a thing you can
+        // hand over, so it reads as a unit rather than as "3 otherss".
+        if (unit == DispensingUnit.Others) return count == 1 ? "unit" : "units";
+
         // Rows written before this column existed hold 0, which is not a member
         // and printed as "0s" — "59 0s in stock". Read as a plain unit instead,
         // so bad data reads oddly rather than looking broken.

@@ -105,7 +105,7 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}"  Width="110" ElementStyle="{StaticResource GridName}"/>
                                         <DataGridTextColumn Header="TIME" Binding="{Binding BillDate, StringFormat=HH:mm}"  Width="70" ElementStyle="{StaticResource GridMuted}"/>
-                                        <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="*" ElementStyle="{StaticResource GridText}"/>
+                                        <DataGridTextColumn Header="CUSTOMER" Binding="{Binding CustomerName}" Width="*" MinWidth="130" ElementStyle="{StaticResource GridText}"/>
                                         <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="160" ElementStyle="{StaticResource GridText}"/>
                                         <DataGridTextColumn Header="ITEMS" Binding="{Binding Items.Count}"  Width="60" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
                                         <DataGridTextColumn Header="TAXABLE" Binding="{Binding TaxableAmount, StringFormat=N2}"  Width="90" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
@@ -150,7 +150,7 @@
                                         <DataGridTextColumn Header="TAXABLE VALUE" Binding="{Binding Taxable, StringFormat=N2}"  Width="160" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
                                         <DataGridTextColumn Header="CGST" Binding="{Binding Cgst, StringFormat=N2}"  Width="140" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
                                         <DataGridTextColumn Header="SGST" Binding="{Binding Sgst, StringFormat=N2}"  Width="140" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
-                                        <DataGridTextColumn Header="INVOICE VALUE" Binding="{Binding Total, StringFormat=N2}"  Width="*" ElementStyle="{StaticResource GridAmount}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                        <DataGridTextColumn Header="INVOICE VALUE" Binding="{Binding Total, StringFormat=N2}"  Width="*" MinWidth="110" ElementStyle="{StaticResource GridAmount}" HeaderStyle="{StaticResource GridNumberHeader}"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
                                 <TextBlock Text="No records found for the selected date range." Style="{StaticResource Muted}" FontSize="{StaticResource FontSubheading}"
@@ -176,7 +176,7 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="VISIT NO" Binding="{Binding VisitNo}" Width="100" ElementStyle="{StaticResource GridText}"/>
                                         <DataGridTextColumn Header="TIME" Binding="{Binding ScheduledOn, StringFormat=HH:mm}"  Width="70" ElementStyle="{StaticResource GridMuted}"/>
-                                        <DataGridTextColumn Header="PATIENT" Binding="{Binding Patient.Name}"  Width="*" ElementStyle="{StaticResource GridName}"/>
+                                        <DataGridTextColumn Header="PATIENT" Binding="{Binding Patient.Name}"  Width="*" MinWidth="140" ElementStyle="{StaticResource GridName}"/>
                                         <DataGridTextColumn Header="AGE" Binding="{Binding Patient.Age}"  Width="60" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
                                         <DataGridTextColumn Header="GENDER" Binding="{Binding Patient.Gender}" Width="90" ElementStyle="{StaticResource GridText}"/>
                                         <DataGridTextColumn Header="DOCTOR" Binding="{Binding Doctor.Name}" Width="160" ElementStyle="{StaticResource GridText}"/>
@@ -216,7 +216,7 @@
                                         <!-- Spelled out in words, not left to the row's red tint to
                                              say alone — the tint still reinforces it for sighted users. -->
                                         <DataGridTextColumn Header="STATUS" Binding="{Binding StatusLabel}" Width="170" ElementStyle="{StaticResource GridText}"/>
-                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Batch.Product.Name}"  Width="*" ElementStyle="{StaticResource GridName}"/>
+                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Batch.Product.Name}"  Width="*" MinWidth="150" ElementStyle="{StaticResource GridName}"/>
                                         <DataGridTextColumn Header="BATCH" Binding="{Binding Batch.BatchNo}" Width="130" ElementStyle="{StaticResource GridText}"/>
                                         <DataGridTextColumn Header="EXPIRY" Binding="{Binding Batch.ExpiryDate, StringFormat=dd MMM yyyy}"  Width="120" ElementStyle="{StaticResource GridMuted}"/>
                                         <DataGridTextColumn Header="QTY LEFT" Binding="{Binding Batch.QtyOnHand}"  Width="90" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
@@ -243,7 +243,7 @@
                         <DataGrid ItemsSource="{Binding PartPacks}"
                                   AutomationProperties.AutomationId="PartPacksGrid">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}"  Width="*" ElementStyle="{StaticResource GridName}"/>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}"  Width="*" MinWidth="150" ElementStyle="{StaticResource GridName}"/>
                                 <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="130" ElementStyle="{StaticResource GridText}"/>
                                 <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=MMM yyyy}"  Width="110" ElementStyle="{StaticResource GridMuted}"/>
                                 <DataGridTextColumn Header="LEFT" Binding="{Binding QtyOnHand}"  Width="80" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
@@ -263,7 +263,7 @@
                                   AutomationProperties.AutomationId="ReconcileGrid">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="ADDED" Binding="{Binding ReceivedOn, StringFormat=dd MMM yyyy}"  Width="110" ElementStyle="{StaticResource GridMuted}"/>
-                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}"  Width="*" ElementStyle="{StaticResource GridName}"/>
+                                <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}"  Width="*" MinWidth="150" ElementStyle="{StaticResource GridName}"/>
                                 <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}"  Width="150" ElementStyle="{StaticResource GridMuted}"/>
                                 <DataGridTextColumn Header="EXPIRY" Binding="{Binding ExpiryDate, StringFormat=MMM yyyy}"  Width="100" ElementStyle="{StaticResource GridMuted}"/>
                                 <DataGridTextColumn Header="ON HAND" Binding="{Binding QtyOnHand}"  Width="90" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
@@ -280,7 +280,7 @@
                         <Grid Margin="0,10,0,0">
                             <DataGrid ItemsSource="{Binding LowStock}" AutomationProperties.AutomationId="ReportsLowStockGrid">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}"  Width="*" ElementStyle="{StaticResource GridName}"/>
+                                    <DataGridTextColumn Header="MEDICINE" Binding="{Binding Name}"  Width="*" MinWidth="150" ElementStyle="{StaticResource GridName}"/>
                                     <DataGridTextColumn Header="PACK" Binding="{Binding PackSize}" Width="100" ElementStyle="{StaticResource GridText}"/>
                                     <DataGridTextColumn Header="RACK" Binding="{Binding RackLocation}" Width="80" ElementStyle="{StaticResource GridText}"/>
                                     <DataGridTextColumn Header="IN STOCK" Binding="{Binding StockOnHand}"  Width="90" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
@@ -322,7 +322,7 @@
                             <Grid>
                                 <DataGrid ItemsSource="{Binding StockRegister}" AutomationProperties.AutomationId="ReportsStockGrid">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}"  Width="*" ElementStyle="{StaticResource GridName}"/>
+                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding Product.Name}"  Width="*" MinWidth="150" ElementStyle="{StaticResource GridName}"/>
                                         <DataGridTextColumn Header="MANUFACTURER" Binding="{Binding Product.Manufacturer}" Width="130" ElementStyle="{StaticResource GridText}"/>
                                         <DataGridTextColumn Header="PACK" Binding="{Binding Product.PackSize}" Width="90" ElementStyle="{StaticResource GridText}"/>
                                         <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="110" ElementStyle="{StaticResource GridText}"/>
@@ -366,7 +366,7 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="DATE" Binding="{Binding SoldOn, StringFormat='dd MMM yyyy HH:mm'}"  Width="160" ElementStyle="{StaticResource GridMuted}"/>
                                         <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="110" ElementStyle="{StaticResource GridText}"/>
-                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}"  Width="*" ElementStyle="{StaticResource GridName}"/>
+                                        <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}"  Width="*" MinWidth="150" ElementStyle="{StaticResource GridName}"/>
                                         <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}"  Width="120" ElementStyle="{StaticResource GridMuted}"/>
                                         <DataGridTextColumn Header="QTY" Binding="{Binding Quantity}"  Width="70" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
                                         <DataGridTextColumn Header="PATIENT" Binding="{Binding PatientName}" Width="180" ElementStyle="{StaticResource GridText}"/>
