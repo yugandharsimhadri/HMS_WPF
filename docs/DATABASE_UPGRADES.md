@@ -121,6 +121,38 @@ reinstalling the previous version.
 
 ---
 
+## Finding out which version a clinic's database is on
+
+Get a **copy** of their `C:\HMS\DB\twinkle.db` — the whole file, they can email
+it or put it on a pen drive — and point the tools at the copy:
+
+```bash
+$env:CLINICDESK_DB = "C:\Temp\their-copy.db"
+dotnet ef migrations list --project src\Pharma.Data --startup-project src\Pharma.Data
+```
+
+Every migration their file has had prints plain. Anything it has not yet had
+prints `(Pending)`:
+
+```
+20260726181238_ProductSearchKey
+20260727014127_BatchSupplyAndMedicineDetail (Pending)
+```
+
+That is the whole diagnosis: eleven applied, one to go. The same list is in
+their `C:\HMS\Logs` from the launch that applied them, if you would rather read
+that than ask for the file.
+
+`CLINICDESK_DB` is the same variable the application honours, so it also runs
+the app itself against a copy — useful for reproducing something without
+touching their data.
+
+> **Always a copy, never the original.** `migrations list` only reads, but
+> `database update` and the rest of the commands do not, and they are one
+> mistyped word apart.
+
+---
+
 ## Rules that keep this working
 
 **Never change a migration that has shipped.** The clinic's database has already
