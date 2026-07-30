@@ -3,19 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Pharma.App">
 
+    <!-- The register and everything behind it. Adding or editing a patient opens
+         over the shell, which is what lets this have the whole window. -->
     <Grid Margin="20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="18"/>
-            <ColumnDefinition Width="360"/>
-        </Grid.ColumnDefinitions>
 
-        <!-- Register + history -->
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="14"/>
-                <RowDefinition Height="240"/>
+                <RowDefinition Height="280"/>
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Style="{StaticResource Card}">
@@ -24,6 +20,16 @@
                         <Button DockPanel.Dock="Right" Content="+ New patient" Style="{StaticResource BtnPrimary}"
                                 Margin="8,0,0,0" Command="{Binding NewPatientCommand}"
                                 AutomationProperties.AutomationId="PatientsNew"/>
+                        <Button DockPanel.Dock="Right" Content="Edit" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,0" MinWidth="80"
+                                Command="{Binding EditPatientCommand}"
+                                IsEnabled="{Binding HasPatient}"
+                                ToolTip="Opens the highlighted patient. Double-clicking a row does the same."
+                                AutomationProperties.AutomationId="PatientsEdit"/>
+                        <Button DockPanel.Dock="Right" Content="Clear" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,0" MinWidth="80" Command="{Binding ClearCommand}"
+                                ToolTip="Empties the search and puts the selection down"
+                                AutomationProperties.AutomationId="PatientClear"/>
                         <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
                                 Margin="8,0,0,0" Command="{Binding FindCommand}"
                                 AutomationProperties.AutomationId="PatientsSearchButton"/>
@@ -36,8 +42,17 @@
                         </TextBox>
                     </DockPanel>
 
+                    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Style="{StaticResource Muted}"
+                               TextWrapping="Wrap" Margin="2,10,2,0"
+                               AutomationProperties.AutomationId="PatientsStatus"/>
+
                     <DataGrid ItemsSource="{Binding Patients}" SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
                               AutomationProperties.AutomationId="PatientsGrid">
+                        <!-- Double-click is what people do to a row without being
+                             told; the Edit button is what tells them. -->
+                        <DataGrid.InputBindings>
+                            <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditPatientCommand}"/>
+                        </DataGrid.InputBindings>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="PATIENT NO" Binding="{Binding PatientNo}" Width="Auto"
                                                 ElementStyle="{StaticResource GridMuted}"/>
@@ -146,72 +161,5 @@
                 </TabControl>
             </Border>
         </Grid>
-
-        <!-- Editor -->
-        <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
-            <StackPanel>
-                <TextBlock Text="Patient details" Style="{StaticResource H2}"/>
-
-                <TextBlock Text="Patient no" Style="{StaticResource Label}"/>
-                <TextBlock Text="{Binding PatientNo}" Style="{StaticResource Muted}" Margin="0,0,0,10"
-                           AutomationProperties.AutomationId="PatientNo"/>
-
-                <local:RequiredLabel Text="Name"/>
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                         local:Field.IsMissing="{Binding NameMissing}"
-                         AutomationProperties.AutomationId="PatientName"/>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="70"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="90"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Phone" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.AutomationId="PatientPhone"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Age" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}"
-                                 AutomationProperties.AutomationId="PatientAge"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="4">
-                        <TextBlock Text="Sex" Style="{StaticResource Label}"/>
-                        <ComboBox ItemsSource="{Binding Genders}" SelectedItem="{Binding Gender, Mode=TwoWay}"
-                                  AutomationProperties.AutomationId="PatientGender"/>
-                    </StackPanel>
-                </Grid>
-
-                <TextBlock Text="Address" Style="{StaticResource Label}"/>
-                <TextBox Text="{Binding Address, UpdateSourceTrigger=PropertyChanged}"
-                         AcceptsReturn="True" Height="52" TextWrapping="Wrap"
-                         AutomationProperties.AutomationId="PatientAddress"/>
-
-                <TextBlock Text="Allergies" Style="{StaticResource Label}"/>
-                <TextBox Text="{Binding Allergies, UpdateSourceTrigger=PropertyChanged}"
-                         AutomationProperties.AutomationId="PatientAllergies"/>
-
-                <StackPanel Orientation="Horizontal">
-                    <Button Content="Save patient" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
-                            Command="{Binding SavePatientCommand}"
-                            AutomationProperties.AutomationId="PatientSave"/>
-                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,0,8,0" MinWidth="80"
-                            Command="{Binding NewPatientCommand}"
-                            ToolTip="Empties the form. Nothing already saved is changed."
-                            AutomationProperties.AutomationId="PatientClear"/>
-                    <Button Content="Remove" Style="{StaticResource BtnDanger}"
-                            Command="{Binding DeletePatientCommand}"
-                            AutomationProperties.AutomationId="PatientDelete"/>
-                </StackPanel>
-
-                <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"
-                           TextWrapping="Wrap" Margin="0,12,0,0"
-                           AutomationProperties.AutomationId="PatientsStatus"/>
-            </StackPanel>
-        </Border>
     </Grid>
 </UserControl>

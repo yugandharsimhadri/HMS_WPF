@@ -32,6 +32,7 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("InventorySearchButton");
         AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine");
         app.Grid("InventoryProductsGrid").Rows[0].Select();
+        app.Click("InventoryReceive");
 
         app.Type("StockBatchNo", $"R{suffix}");
         app.Type("StockQuantity", "59");
@@ -68,6 +69,10 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         // fact stated twice — the second one fills itself in.
         AppFixture.WaitUntil(() => app.TextBox("ProductUnitsPerPack").Text == "15",
                              "units per pack to follow the pack size");
+
+        // The editor sits over the shell, so leaving it open leaves the next
+        // test in this class unable to reach the navigation behind it.
+        app.Click("MedicineEditorCancel");
     }
 
     [Fact]
@@ -99,6 +104,9 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductsSearchButton");
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine");
         app.Grid("ProductsGrid").Rows[0].Select();
+
+        // The editor is over the shell now, so open it before typing into it.
+        app.Click("ProductsEdit");
 
         app.Type("ProductUnitsPerPack", "15");
         app.Click("ProductSave");
@@ -132,6 +140,9 @@ public class PackSizeRepairUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("ProductsSearchButton");
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine");
         app.Grid("ProductsGrid").Rows[0].Select();
+
+        // The editor is over the shell now, so open it before typing into it.
+        app.Click("ProductsEdit");
 
         app.Type("ProductUnitsPerPack", "15");
         app.Click("ProductSave");

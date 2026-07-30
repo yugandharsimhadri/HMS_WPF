@@ -3,20 +3,22 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Pharma.App">
 
+    <!-- The catalogue, and nothing else. Adding or editing opens over the shell,
+         which is what lets this grid have the whole window. -->
     <Grid Margin="20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="18"/>
-            <ColumnDefinition Width="380"/>
-        </Grid.ColumnDefinitions>
 
-        <!-- Catalogue -->
-        <Border Grid.Column="0" Style="{StaticResource Card}">
+        <Border Style="{StaticResource Card}">
             <DockPanel>
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                     <Button DockPanel.Dock="Right" Content="+ New medicine" Style="{StaticResource BtnPrimary}"
                             Margin="8,0,0,0" Command="{Binding NewProductCommand}"
                             AutomationProperties.AutomationId="ProductsNew"/>
+                    <Button DockPanel.Dock="Right" Content="Edit" Style="{StaticResource BtnGhost}"
+                            Margin="8,0,0,0" MinWidth="80"
+                            Command="{Binding EditProductCommand}"
+                            IsEnabled="{Binding HasProduct}"
+                            ToolTip="Opens the highlighted medicine. Double-clicking a row does the same."
+                            AutomationProperties.AutomationId="ProductsEdit"/>
                     <Button DockPanel.Dock="Right" Content="Search" Style="{StaticResource BtnGhost}"
                             Margin="8,0,0,0" Command="{Binding FindCommand}"
                             AutomationProperties.AutomationId="ProductsSearchButton"/>
@@ -29,8 +31,17 @@
                     </TextBox>
                 </DockPanel>
 
+                <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Style="{StaticResource Muted}"
+                           TextWrapping="Wrap" Margin="2,10,2,0"
+                           AutomationProperties.AutomationId="ProductsStatus"/>
+
                 <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct, Mode=TwoWay}" RowHeight="48"
                           AutomationProperties.AutomationId="ProductsGrid">
+                    <!-- Double-click is what people do to a row without being
+                         told; the Edit button is what tells them. -->
+                    <DataGrid.InputBindings>
+                        <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditProductCommand}"/>
+                    </DataGrid.InputBindings>
                     <DataGrid.Columns>
                         <!-- The drug name used to have a column of its own, 140px
                              wide, which cut "Dextromethorphan" off mid-word. It
@@ -97,144 +108,5 @@
                 </DataGrid>
             </DockPanel>
         </Border>
-
-        <!-- Editor -->
-        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-
-                <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-                    <StackPanel>
-                        <TextBlock Text="Medicine details" Style="{StaticResource H2}"/>
-
-                        <local:RequiredLabel Text="Brand name"/>
-                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                 local:Field.IsMissing="{Binding NameMissing}"
-                                 ToolTip="What is printed on the pack, e.g. Calpol"
-                                 AutomationProperties.AutomationId="ProductName"/>
-
-                        <TextBlock Text="Drug / generic name" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding GenericName, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="The drug itself, e.g. Paracetamol 250mg. Searched too."
-                                 AutomationProperties.AutomationId="ProductGenericName"/>
-
-                        <TextBlock Text="Composition" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Composition, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="The salts and strengths, e.g. Paracetamol 500mg + Caffeine 30mg. Used when substituting a brand that has run out."
-                                 AutomationProperties.AutomationId="ProductComposition"/>
-
-                        <TextBlock Text="Storage" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Storage, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="e.g. Below 25°C, or 2–8°C do not freeze. Matters for vaccines and some syrups."
-                                 AutomationProperties.AutomationId="ProductStorage"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Manufacturer" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding Manufacturer, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Pack size" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding PackSize, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="As printed, e.g. 10 TAB"
-                                         AutomationProperties.AutomationId="ProductPackSize"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="HSN" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding HsnCode, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="GST %" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding GstRate, UpdateSourceTrigger=PropertyChanged}"
-                                         local:NumericInput.Mode="Money" AutomationProperties.AutomationId="ProductGstRate"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="4">
-                                <TextBlock Text="Schedule" Style="{StaticResource Label}"/>
-                                <ComboBox ItemsSource="{Binding Schedules}" SelectedItem="{Binding Schedule, Mode=TwoWay}"
-                                          AutomationProperties.AutomationId="ProductSchedule"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Rack" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding RackLocation, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Reorder level" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding ReorderLevel, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Width="90">
-                                <TextBlock Text="Sold as" Style="{StaticResource Label}"/>
-                                <ComboBox ItemsSource="{Binding DispensingUnitOptions}"
-                                          SelectedItem="{Binding DispensingUnit, Mode=TwoWay}"
-                                          ToolTip="What one unit is that a customer can buy"
-                                          AutomationProperties.AutomationId="ProductDispensingUnit"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,8,0,10">
-                                <CheckBox Content="Sell loose units" IsChecked="{Binding AllowLooseSale, Mode=TwoWay}"
-                                          ToolTip="Allows part of a strip to be sold"
-                                          AutomationProperties.AutomationId="ProductAllowLoose"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <TextBlock Text="Units in one pack" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding UnitsPerPack, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="There is no standard: 1, 3, 5, 10, 15 all occur. 1 for a bottle."
-                                 local:NumericInput.Mode="Whole" AutomationProperties.AutomationId="ProductUnitsPerPack"/>
-
-                        <CheckBox Content="Active" IsChecked="{Binding IsActive, Mode=TwoWay}" Margin="0,0,0,12"/>
-
-                        <!-- Reads back what a pack means, so 15-per-strip is obvious. -->
-                        <TextBlock Text="{Binding PackHint}" Style="{StaticResource Muted}"
-                                   TextWrapping="Wrap" Margin="0,0,0,10"
-                                   AutomationProperties.AutomationId="ProductPackHint"/>
-
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right" Content="Clear" Style="{StaticResource BtnGhost}"
-                                    Margin="8,0,0,0" MinWidth="80"
-                                    Command="{Binding NewProductCommand}"
-                                    ToolTip="Empties the form. Nothing already saved is changed."
-                                    AutomationProperties.AutomationId="ProductClear"/>
-                            <Button Content="Save medicine" Style="{StaticResource BtnPrimary}"
-                                    Command="{Binding SaveProductCommand}"
-                                    AutomationProperties.AutomationId="ProductSave"/>
-                        </DockPanel>
-
-                        <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"
-                                   TextWrapping="Wrap" Margin="0,12,0,0"
-                                   AutomationProperties.AutomationId="ProductsStatus"/>
-                    </StackPanel>
-                </Border>
-
-            </StackPanel>
-        </ScrollViewer>
     </Grid>
 </UserControl>

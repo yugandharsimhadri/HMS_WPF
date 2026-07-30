@@ -23,7 +23,6 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
     public ObservableCollection<Visit> Waiting { get; } = [];
     public ObservableCollection<Visit> Completed { get; } = [];
-    public ObservableCollection<Patient> Matches { get; } = [];
     public ObservableCollection<Doctor> Doctors { get; } = [];
 
     /// <summary>Null means every doctor — the "All" tab.</summary>
@@ -36,31 +35,8 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     [ObservableProperty] private bool _useTiles = true;
     [ObservableProperty] private PaymentMode _feePaymentMode = PaymentMode.Cash;
 
-    // Booking is a panel now, not a permanent third of the screen.
-    [ObservableProperty] private bool _isBooking;
-    [ObservableProperty] private string _search = "";
-    [ObservableProperty] private Patient? _selectedPatient;
-    [ObservableProperty] private bool _addingPatient;
-    [ObservableProperty] private string _newName = "";
-
-    /// <summary>Set when a booking was turned away for want of a patient name.</summary>
-    [ObservableProperty] private bool _newNameMissing;
-
-    partial void OnNewNameChanged(string value)
-    {
-        if (!string.IsNullOrWhiteSpace(value)) NewNameMissing = false;
-    }
-    [ObservableProperty] private string _newPhone = "";
-    [ObservableProperty] private string _newAge = "";
-    [ObservableProperty] private Gender _newGender = Gender.Male;
-    [ObservableProperty] private Doctor? _selectedDoctor;
-    [ObservableProperty] private string _time = DateTime.Now.ToString("HH:mm");
-    [ObservableProperty] private string _complaint = "";
-    [ObservableProperty] private decimal _fee;
-
     private readonly List<Visit> _all = [];
 
-    public Array Genders => Enum.GetValues<Gender>();
     public Array PaymentModes => Enum.GetValues<PaymentMode>();
 
     public async Task LoadAsync()
@@ -69,7 +45,6 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
         Doctors.Clear();
         foreach (var d in await opd.GetDoctorsAsync()) Doctors.Add(d);
-        SelectedDoctor ??= Doctors.FirstOrDefault();
 
         await RefreshAsync();
     }
@@ -77,11 +52,6 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     partial void OnDateChanged(DateTime value) => RefreshAsync().Forget("Refreshing the OPD queue");
 
     partial void OnDoctorTabChanged(Doctor? value) => Regroup();
-
-    partial void OnSelectedDoctorChanged(Doctor? value)
-    {
-        if (value is not null && Fee == 0) Fee = value.ConsultationFee;
-    }
 
     [RelayCommand]
     private async Task RefreshAsync()
@@ -114,159 +84,28 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
     // ── Booking ────────────────────────────────────────────────────────────
 
-    [RelayCommand]
-    private void NewVisit()
-    {
-        IsBooking = true;
-        Status = "";
-        Fee = SelectedDoctor?.ConsultationFee ?? 0;
-
-        // Booking from a doctor's tab should default to that doctor.
-        if (DoctorTab is not null) SelectedDoctor = DoctorTab;
-    }
-
-    [RelayCommand]
-    private void CloseBooking()
-    {
-        IsBooking = false;
-        ResetBookingPanel();
-    }
-
-    [RelayCommand]
-    private async Task FindAsync()
-    {
-        Matches.Clear();
-        foreach (var p in await opd.SearchPatientsAsync(Search, 25)) Matches.Add(p);
-
-        if (Matches.Count == 0 && !string.IsNullOrWhiteSpace(Search))
-        {
-            AddingPatient = true;
-
-            if (OpdService.LooksLikePhone(Search)) NewPhone = Search.Trim();
-            else NewName = Search.Trim();
-
-            Status = $"No one matches '{Search}'. Add them as a new patient.";
-            return;
-        }
-
-        AddingPatient = false;
-
-        // One number, several children — say so, because the operator has to pick.
-        Status = Matches.Count switch
-        {
-            0 => "",
-            1 => $"{Matches[0].Name} found. Select and book.",
-            _ when OpdService.LooksLikePhone(Search) =>
-                $"{Matches.Count} people are registered on this number. Select which one is here.",
-            _ => $"{Matches.Count} matches. Select which one is here."
-        };
-    }
-
-    [RelayCommand]
-    private void StartNewPatient()
-    {
-        AddingPatient = true;
-        SelectedPatient = null;
-    }
-
-    [RelayCommand]
-    private void CancelNewPatient()
-    {
-        AddingPatient = false;
-        NewName = NewPhone = NewAge = "";
-    }
-
-    [RelayCommand]
-    private async Task BookAsync()
-    {
-        using var log = AppLog.Enter(
-            "Opd.Book",
-            $"patient={SelectedPatient?.Id} new={AddingPatient} doctor={SelectedDoctor?.Id} " +
-            $"date={Date:yyyy-MM-dd} time={Time} fee={Fee}");
-
-        try
-        {
-            var patient = SelectedPatient;
-
-            // Siblings share a phone number, so a search can return several people.
-            // Creating a new record because none was picked would quietly duplicate
-            // a child who is already registered.
-            if (patient is null && !AddingPatient && Matches.Count > 0)
-            {
-                Warn(Matches.Count == 1
-                    ? $"Select {Matches[0].Name} from the list, or choose + New patient."
-                    : $"{Matches.Count} people match that. Select which one, or choose + New patient.");
-                return;
-            }
-
-            if (AddingPatient || patient is null)
-            {
-                if (string.IsNullOrWhiteSpace(NewName))
-                {
-                    NewNameMissing = true;
-                    Warn("Enter the patient's name, or pick an existing patient from the list.");
-                    return;
-                }
-
-                NewNameMissing = false;
-
-                int.TryParse(NewAge, out var age);
-                patient = await opd.SavePatientAsync(new Patient
-                {
-                    Name = NewName.Trim(),
-                    Phone = NewPhone.Trim(),
-                    Age = age,
-                    Gender = NewGender
-                });
-            }
-
-            if (SelectedDoctor is null)
-            {
-                Warn("Add a doctor under Settings before booking a visit.");
-                return;
-            }
-
-            var scheduled = Date.Date;
-            if (TimeSpan.TryParse(Time, out var t)) scheduled = scheduled.Add(t);
-
-            var visit = await opd.BookVisitAsync(
-                patient.Id, SelectedDoctor.Id, scheduled,
-                string.IsNullOrWhiteSpace(Complaint) ? null : Complaint.Trim(),
-                Fee);
-
-            ResetBookingPanel();
-            IsBooking = false;
-            await RefreshAsync();
-
-            // Set last: refreshing writes its own status, and the confirmation is
-            // what the operator needs left on screen.
-            Status = $"Token {visit.TokenNo} booked for {patient.Name}.";
-        }
-        catch (Exception ex)
-        {
-            Warn(ex.Message);
-        }
-    }
-
     /// <summary>
-    /// Empties the booking form without closing it. Nothing is booked until
-    /// Book visit is pressed, so this loses only what was typed.
+    /// Opens the booking form over the shell and waits for it to close.
+    ///
+    /// A fresh view model per booking, so nothing survives to the next one. That
+    /// matters most for the patient: a visit booked against whoever happened to
+    /// be still selected sends the wrong child in to the doctor.
     /// </summary>
     [RelayCommand]
-    private void ClearBooking()
+    private async Task NewVisitAsync()
     {
-        ResetBookingPanel();
-        Status = "";
-    }
+        var booking = new BookVisitViewModel(opd, Doctors, DoctorTab ?? Doctors.FirstOrDefault(), Date);
+        var shell = App.Services.GetRequiredService<MainViewModel>();
 
-    private void ResetBookingPanel()
-    {
-        AddingPatient = false;
-        Search = NewName = NewPhone = NewAge = Complaint = "";
-        SelectedPatient = null;
-        Matches.Clear();
-        Fee = SelectedDoctor?.ConsultationFee ?? 0;
-        Time = DateTime.Now.ToString("HH:mm");
+        await shell.ShowOverlayAsync(booking, close => booking.RequestClose += () => close());
+
+        // Refresh either way: the form may have added a patient before being
+        // closed, and the queue should agree with the register.
+        await RefreshAsync();
+
+        // Set last — refreshing writes its own status, and the confirmation is
+        // what the operator needs left on screen.
+        if (booking.Outcome is { } outcome) Status = outcome;
     }
 
     // ── Tile actions ───────────────────────────────────────────────────────
@@ -416,11 +255,5 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
         var shop = await settings.GetAsync();
         PrintService.Preview(() => PrescriptionPrinter.Build(full, shop), $"Prescription {full.VisitNo}");
-    }
-
-    private void Warn(string message)
-    {
-        Status = message;
-        Dialog.Show(message, "OPD", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 }

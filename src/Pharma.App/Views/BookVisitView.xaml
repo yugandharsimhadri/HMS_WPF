@@ -1,0 +1,159 @@
+<UserControl x:Class="Pharma.App.Views.BookVisitView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App"
+             Background="{DynamicResource Bg}"
+             Width="760">
+
+    <!-- Two columns: who is here on the left, when and why on the right. In one
+         column this needed scrolling to reach Book visit, which is the step
+         people abandon. -->
+    <DockPanel Margin="18">
+
+        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14" Padding="16,12">
+            <TextBlock Text="{Binding Header}" Style="{StaticResource H2}" Margin="0"
+                       AutomationProperties.AutomationId="BookVisitHeader"/>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Margin="0,14,0,0">
+            <DockPanel>
+                <Button DockPanel.Dock="Left" Content="Clear" Style="{StaticResource BtnGhost}"
+                        MinWidth="90"
+                        Command="{Binding ClearCommand}"
+                        ToolTip="Empties this form. No visit is booked until you press Book visit."
+                        AutomationProperties.AutomationId="OpdClearBooking"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
+                            MinWidth="100" IsCancel="True"
+                            Command="{Binding CancelCommand}"
+                            AutomationProperties.AutomationId="OpdCloseBooking"/>
+                    <Button Content="Book visit" Style="{StaticResource BtnPrimaryLarge}"
+                            MinWidth="150" IsDefault="True"
+                            Command="{Binding BookCommand}"
+                            AutomationProperties.AutomationId="OpdBook"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Style="{StaticResource Muted}"
+                   TextWrapping="Wrap" Margin="2,10,2,0"
+                   AutomationProperties.AutomationId="BookVisitStatus"/>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 1 — who is here -->
+            <Border Grid.Column="0" Style="{StaticResource Card}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="1 — Find the patient by name or phone number"
+                               Style="{StaticResource Label}" Margin="0,0,0,4"/>
+
+                    <DockPanel DockPanel.Dock="Top">
+                        <Button DockPanel.Dock="Right" Content="Find" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,10" Command="{Binding FindCommand}"
+                                AutomationProperties.AutomationId="OpdFind"/>
+                        <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Type a name, or a phone number in any format — 98765 00011, +91 9876500011 and 9876500011 all find the same family"
+                                 AutomationProperties.AutomationId="OpdPatientSearch">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding FindCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                    </DockPanel>
+
+                    <!-- Siblings share a number, so this is a list to pick from
+                         rather than a box that fills itself in. -->
+                    <ListBox DockPanel.Dock="Top" ItemsSource="{Binding Matches}"
+                             SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
+                             DisplayMemberPath="Display" Height="150" Margin="0,0,0,8"
+                             AutomationProperties.AutomationId="OpdMatches"
+                             Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+
+                    <Button DockPanel.Dock="Top" Content="+ New patient" Style="{StaticResource BtnGhost}"
+                            HorizontalAlignment="Left" Margin="0,0,0,10"
+                            Command="{Binding StartNewPatientCommand}"
+                            Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+
+                    <StackPanel Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}}">
+                        <local:RequiredLabel Text="Name"/>
+                        <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}"
+                                 local:Field.IsMissing="{Binding NewNameMissing}"
+                                 AutomationProperties.AutomationId="OpdNewName"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="88"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Phone" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding NewPhone, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="OpdNewPhone"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Age" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding NewAge, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="OpdNewAge"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Sex" Style="{StaticResource Label}"/>
+                                <ComboBox ItemsSource="{Binding Genders}" SelectedItem="{Binding NewGender, Mode=TwoWay}"
+                                          AutomationProperties.AutomationId="OpdNewGender"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Button Content="Back to search" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
+                                Margin="0,0,0,10" Command="{Binding CancelNewPatientCommand}"
+                                AutomationProperties.AutomationId="OpdBackToSearch"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- 2 and 3 — when, and what is wrong -->
+            <Border Grid.Column="2" Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="2 — Doctor and time" Style="{StaticResource Label}" Margin="0,0,0,4"/>
+                    <ComboBox ItemsSource="{Binding Doctors}" SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="OpdDoctor">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Time" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding Time, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="OpdTime"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Fee" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding Fee, UpdateSourceTrigger=PropertyChanged}"
+                                     local:NumericInput.Mode="Money"
+                                     AutomationProperties.AutomationId="OpdFee"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="3 — Complaint (optional)" Style="{StaticResource Label}" Margin="0,8,0,4"/>
+                    <TextBox Text="{Binding Complaint, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True" Height="118" TextWrapping="Wrap"
+                             ToolTip="What the parent said at the door. The doctor reads this first."
+                             AutomationProperties.AutomationId="OpdComplaint"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </DockPanel>
+</UserControl>

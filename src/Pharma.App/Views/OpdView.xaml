@@ -4,8 +4,6 @@
              xmlns:local="clr-namespace:Pharma.App">
 
     <UserControl.Resources>
-        <local:BoolToVisibilityConverter x:Key="BoolVis"/>
-
         <!-- A waiting patient. Token first and large: it is what the desk calls out. -->
         <DataTemplate x:Key="WaitingTile">
             <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
@@ -243,13 +241,8 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
-
         <!-- Doctor tabs. One per doctor plus All, so the doctor never repeats on a tile. -->
-        <Border Grid.Row="0" Grid.ColumnSpan="2" BorderBrush="{DynamicResource Border}"
+        <Border Grid.Row="0" BorderBrush="{DynamicResource Border}"
                 BorderThickness="0,0,0,1" Margin="0,0,0,14">
             <DockPanel>
                 <DatePicker DockPanel.Dock="Right" Width="140" Margin="8,0,0,6"
@@ -258,6 +251,12 @@
                 <Button DockPanel.Dock="Right" Content="+ New visit" Style="{StaticResource BtnPrimary}"
                         Margin="8,0,0,6" Command="{Binding NewVisitCommand}"
                         AutomationProperties.AutomationId="OpdNewVisit"/>
+                <!-- Belongs to the Fee button on a tile, not to booking, which is
+                     where it used to live and where nobody looked for it. -->
+                <ComboBox DockPanel.Dock="Right" Width="110" Margin="8,0,0,6" VerticalAlignment="Center"
+                          ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding FeePaymentMode, Mode=TwoWay}"
+                          ToolTip="How the consultation fee is taken when you press Fee on a tile"
+                          AutomationProperties.AutomationId="OpdFeeMode"/>
 
                 <StackPanel Orientation="Horizontal">
                     <RadioButton Content="All doctors" GroupName="DoctorTab" IsChecked="True"
@@ -283,12 +282,13 @@
             </DockPanel>
         </Border>
 
-        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Status}" Style="{StaticResource Muted}"
+        <TextBlock Grid.Row="1" Text="{Binding Status}" Style="{StaticResource Muted}"
                    TextWrapping="Wrap" Margin="0,0,0,10"
                    AutomationProperties.AutomationId="OpdStatus"/>
 
-        <!-- Waiting and completed, side by side on one page. -->
-        <Grid Grid.Row="2" Grid.Column="0">
+        <!-- Waiting and completed, side by side across the whole page. Booking
+             opens over the shell now rather than taking a column here. -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="14"/>
@@ -328,122 +328,5 @@
             </Border>
         </Grid>
 
-        <!-- Booking, only while it is being used. -->
-        <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource Card}" Width="330" Margin="14,0,0,0"
-                Visibility="{Binding IsBooking, Converter={StaticResource BoolVis}}">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel>
-                    <DockPanel Margin="0,0,0,8">
-                        <TextBlock Text="Book a visit" Style="{StaticResource H2}" Margin="0"/>
-                        <Button Content="✕" DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                Background="Transparent" BorderThickness="0" Cursor="Hand"
-                                Foreground="{DynamicResource InkMuted}"
-                                Command="{Binding CloseBookingCommand}"
-                                AutomationProperties.AutomationId="OpdCloseBooking"/>
-                    </DockPanel>
-
-                    <TextBlock Text="1 — Find the patient by name or phone number"
-                               Style="{StaticResource Label}" Margin="0,0,0,4"/>
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="Find" Style="{StaticResource BtnGhost}"
-                                Margin="8,0,0,10" Command="{Binding FindCommand}"
-                                AutomationProperties.AutomationId="OpdFind"/>
-                        <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="Type a name, or a phone number in any format — 98765 00011, +91 9876500011 and 9876500011 all find the same family"
-                                 AutomationProperties.AutomationId="OpdPatientSearch">
-                            <TextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding FindCommand}"/>
-                            </TextBox.InputBindings>
-                        </TextBox>
-                    </DockPanel>
-
-                    <ListBox ItemsSource="{Binding Matches}" SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
-                             DisplayMemberPath="Display" Height="132" Margin="0,0,0,8"
-                             AutomationProperties.AutomationId="OpdMatches"
-                             Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
-
-                    <Button Content="+ New patient" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
-                            Margin="0,0,0,10" Command="{Binding StartNewPatientCommand}"
-                            Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
-
-                    <StackPanel Visibility="{Binding AddingPatient, Converter={StaticResource BoolVis}}">
-                        <local:RequiredLabel Text="Name"/>
-                        <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}"
-                                 local:Field.IsMissing="{Binding NewNameMissing}"
-                                 AutomationProperties.AutomationId="OpdNewName"/>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="60"/>
-                                <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="88"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Phone" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding NewPhone, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.AutomationId="OpdNewPhone"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Age" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding NewAge, UpdateSourceTrigger=PropertyChanged}"
-                                         AutomationProperties.AutomationId="OpdNewAge"/>
-                            </StackPanel>
-                            <StackPanel Grid.Column="4">
-                                <TextBlock Text="Sex" Style="{StaticResource Label}"/>
-                                <ComboBox ItemsSource="{Binding Genders}" SelectedItem="{Binding NewGender, Mode=TwoWay}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Button Content="Back to search" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
-                                Margin="0,0,0,10" Command="{Binding CancelNewPatientCommand}"/>
-                    </StackPanel>
-
-                    <TextBlock Text="2 — Doctor and time" Style="{StaticResource Label}" Margin="0,4,0,4"/>
-                    <ComboBox ItemsSource="{Binding Doctors}" SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
-                              AutomationProperties.AutomationId="OpdDoctor">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Time" Style="{StaticResource Label}"/>
-                            <TextBox Text="{Binding Time, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Fee" Style="{StaticResource Label}"/>
-                            <TextBox Text="{Binding Fee, UpdateSourceTrigger=PropertyChanged}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <TextBlock Text="3 — Complaint (optional)" Style="{StaticResource Label}" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding Complaint, UpdateSourceTrigger=PropertyChanged}"
-                             AcceptsReturn="True" Height="50" TextWrapping="Wrap"/>
-
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="Clear" Style="{StaticResource BtnGhost}"
-                                MinHeight="44" MinWidth="80" Margin="8,0,0,0"
-                                Command="{Binding ClearBookingCommand}"
-                                ToolTip="Empties this form. No visit is booked until you press Book visit."
-                                AutomationProperties.AutomationId="OpdClearBooking"/>
-                        <Button Content="Book visit" Style="{StaticResource BtnPrimaryLarge}"
-                                Command="{Binding BookCommand}"
-                                AutomationProperties.AutomationId="OpdBook"/>
-                    </DockPanel>
-
-                    <TextBlock Text="Fee taken as" Style="{StaticResource Label}" Margin="0,12,0,3"/>
-                    <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding FeePaymentMode, Mode=TwoWay}"
-                              AutomationProperties.AutomationId="OpdFeeMode"/>
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
     </Grid>
 </UserControl>

@@ -12,6 +12,11 @@
          grid throw a XamlParseException as its template loaded. -->
     <BooleanToVisibilityConverter x:Key="BoolToVisible"/>
 
+    <!-- The same, but it understands ConverterParameter=invert. Global for the
+         same reason: the booking and patient forms are shown over the shell, so
+         a key declared on one page is not in scope where they are rendered. -->
+    <local:BoolToVisibilityConverter x:Key="BoolVis"/>
+
     <!-- The palette lives in Theme.Light.xaml and Theme.Dark.xaml, merged at
          startup and swapped when the theme changes. -->
 

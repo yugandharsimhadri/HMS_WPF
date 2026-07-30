@@ -1,11 +1,13 @@
 namespace Pharma.UiTests;
 
 /// <summary>
-/// Finding a patient at the OPD desk, by name and by phone.
+/// Finding a patient while booking, by name and by phone.
 ///
 /// A phone number is matched on its digits alone, so the spacing and the +91 a
-/// receptionist types — or does not — make no difference. A family shares one
-/// number, so it returns all of them rather than the first.
+/// receptionist types — or does not — make no difference. A paediatric clinic
+/// registers several children against one parent's number, so a search returns
+/// all of them rather than the first, and booking must never quietly invent a
+/// fourth child because nobody was picked.
 /// </summary>
 public class OpdSearchUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
@@ -13,6 +15,7 @@ public class OpdSearchUiTests(AppFixture app) : IClassFixture<AppFixture>
     {
         app.Navigate("NavOpd", "OPD");
         app.Click("OpdNewVisit");
+        AppFixture.WaitUntil(() => app.Find("OpdPatientSearch") is not null, "the booking form");
     }
 
     private void Search(string term)
@@ -23,19 +26,21 @@ public class OpdSearchUiTests(AppFixture app) : IClassFixture<AppFixture>
     }
 
     /// <summary>
-    /// Two children on one number — and a number of its own per test, because
+    /// Three children on one number — and a number of its own per test, because
     /// these all share one running application and one database, so a shared
     /// number would leave each test finding the families the others booked.
     /// </summary>
-    private (string Suffix, string Phone) GivenAFamily()
+    private (string Suffix, string Phone, string[] Names) GivenAFamily()
     {
         var suffix = DateTime.Now.ToString("HHmmssfff");
         var phone = $"9{suffix}";
 
-        OpdUiTests.BookWalkIn(app, $"Aarav {suffix}", phone, "4");
-        OpdUiTests.BookWalkIn(app, $"Diya {suffix}", phone, "7");
+        string[] names = [$"Aarav {suffix}", $"Diya {suffix}", $"Kabir {suffix}"];
 
-        return (suffix, phone);
+        foreach (var (name, age) in names.Zip(new[] { "4", "7", "9" }))
+            OpdUiTests.BookWalkIn(app, name, phone, age);
+
+        return (suffix, phone, names);
     }
 
     /// <summary>The same number as a receptionist might type it.</summary>
@@ -50,7 +55,7 @@ public class OpdSearchUiTests(AppFixture app) : IClassFixture<AppFixture>
     [Fact]
     public void A_patient_is_found_by_name()
     {
-        var (suffix, _) = GivenAFamily();
+        var (suffix, _, _) = GivenAFamily();
 
         Search($"Aarav {suffix}");
 
@@ -61,22 +66,23 @@ public class OpdSearchUiTests(AppFixture app) : IClassFixture<AppFixture>
     }
 
     [Fact]
-    public void A_phone_number_finds_everyone_on_it()
+    public void A_phone_number_finds_everyone_on_it_and_says_to_pick_one()
     {
-        var (_, phone) = GivenAFamily();
+        var (_, phone, names) = GivenAFamily();
 
         Search(phone);
 
-        // Both children, because a family shares the number and the desk has to
-        // pick which one is actually here.
-        AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length == 2, "the whole family");
+        // All three children, because a family shares the number and the desk
+        // has to pick which one is actually here.
+        AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length == 3, "the whole family");
 
-        var names = app.ListBox("OpdMatches").Items.Select(i => i.Text ?? "").ToList();
+        var listed = app.ListBox("OpdMatches").Items.Select(i => i.Text ?? "").ToList();
+        foreach (var name in names) Assert.Contains(listed, entry => entry.Contains(name));
 
-        Assert.Contains(names, n => n.Contains("Aarav"));
-        Assert.Contains(names, n => n.Contains("Diya"));
-
-        Assert.Contains("registered on this number", app.TextOf("OpdStatus"));
+        // And it says so, rather than leaving the operator to notice.
+        var said = app.TextOf("BookVisitStatus");
+        Assert.Contains("registered on this number", said);
+        Assert.Contains("Select which one is here", said);
 
         app.Click("OpdCloseBooking");
     }
@@ -87,12 +93,12 @@ public class OpdSearchUiTests(AppFixture app) : IClassFixture<AppFixture>
     [InlineData("dashed")]      // 98765-12345
     public void A_phone_number_is_found_however_it_is_typed(string style)
     {
-        var (_, phone) = GivenAFamily();
+        var (_, phone, _) = GivenAFamily();
         var typed = Format(phone, style);
 
         Search(typed);
 
-        AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length == 2,
+        AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length == 3,
                              $"the family from '{typed}'");
 
         app.Click("OpdCloseBooking");
@@ -101,11 +107,11 @@ public class OpdSearchUiTests(AppFixture app) : IClassFixture<AppFixture>
     [Fact]
     public void Part_of_a_phone_number_still_narrows_it_down()
     {
-        var (_, phone) = GivenAFamily();
+        var (_, phone, _) = GivenAFamily();
 
         Search(phone[4..]);
 
-        AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length >= 2, "the family from the last digits");
+        AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length >= 3, "the family from the last digits");
 
         app.Click("OpdCloseBooking");
     }
@@ -116,8 +122,42 @@ public class OpdSearchUiTests(AppFixture app) : IClassFixture<AppFixture>
         Search($"Nobody {DateTime.Now:HHmmssfff}");
 
         AppFixture.WaitUntil(() => app.Find("OpdNewName") is not null, "the new-patient form");
-        Assert.Contains("No one matches", app.TextOf("OpdStatus"));
+        Assert.Contains("No one matches", app.TextOf("BookVisitStatus"));
 
         app.Click("OpdCloseBooking");
+    }
+
+    /// <summary>
+    /// The one that matters most: siblings share a number, and booking with
+    /// nobody selected must refuse rather than register a child who is already
+    /// on the books a second time.
+    /// </summary>
+    [Fact]
+    public void Booking_without_choosing_a_sibling_is_refused_rather_than_duplicating()
+    {
+        var (_, phone, _) = GivenAFamily();
+
+        app.Navigate("NavOpd", "OPD");
+        var before = app.TileCount("OpdWaitingList");
+
+        Search(phone);
+        AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length == 3, "the family to be listed");
+
+        // Book with nobody selected. A modal warning appears; dismiss it.
+        app.Click("OpdBook");
+
+        var warning = FlaUI.Core.Tools.Retry.WhileNull(
+            () => app.MainWindow.ModalWindows.FirstOrDefault(),
+            TimeSpan.FromSeconds(10)).Result;
+
+        Assert.NotNull(warning);
+        Assert.Contains("Select which one", string.Join(" ", warning!.FindAllDescendants().Select(d => d.Name ?? "")));
+
+        app.DismissModals();
+        app.Click("OpdCloseBooking");
+
+        // Nothing was booked and no fourth child was invented.
+        app.Navigate("NavOpd", "OPD");
+        Assert.Equal(before, app.TileCount("OpdWaitingList"));
     }
 }

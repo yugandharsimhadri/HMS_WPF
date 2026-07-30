@@ -8,6 +8,7 @@
         Icon="twinkle.ico"
         Height="820" Width="1360"
         MinHeight="620" MinWidth="1000"
+        WindowState="Maximized"
         WindowStartupLocation="Manual"
         FontFamily="{StaticResource UiFont}"
         Background="{DynamicResource Bg}"
@@ -19,6 +20,26 @@
 
         <DataTemplate DataType="{x:Type vm:ConsultationViewModel}">
             <views:ConsultationView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MedicineEditorViewModel}">
+            <views:MedicineEditorView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:PatientEditorViewModel}">
+            <views:PatientEditorView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:BookVisitViewModel}">
+            <views:BookVisitView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:ReceiveStockViewModel}">
+            <views:ReceiveStockView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:CorrectStockViewModel}">
+            <views:CorrectStockView/>
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:OpdViewModel}">
@@ -194,9 +215,24 @@
 
         <!-- Anything opened over the shell. Nothing else can be running at the
              same time, so it can be neither lost nor duplicated. -->
-        <Border Background="#8C0B1F24" Visibility="{Binding IsOverlayOpen, Converter={StaticResource BoolToVisible}}">
-            <Border Margin="28" Background="{DynamicResource Bg}" CornerRadius="10"
+        <Border x:Name="OverlayBackdrop" Background="#8C0B1F24"
+                Visibility="{Binding IsOverlayOpen, Converter={StaticResource BoolToVisible}}">
+
+            <!--
+                Centred and sized to whatever is inside it, rather than stretched
+                to the window. A form is the size of its fields; a panel padded
+                out to the full screen leaves the operator hunting for the two
+                controls in an acre of empty grey.
+
+                The maximums stop a large overlay — the consultation — from
+                growing past the window, and are what the margin used to do
+                before this stopped stretching.
+            -->
+            <Border Background="{DynamicResource Bg}" CornerRadius="10"
                     BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MaxWidth="{Binding ActualWidth, ElementName=OverlayBackdrop}"
+                    MaxHeight="{Binding ActualHeight, ElementName=OverlayBackdrop}"
                     AutomationProperties.AutomationId="Overlay">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.45" Color="#000000"/>

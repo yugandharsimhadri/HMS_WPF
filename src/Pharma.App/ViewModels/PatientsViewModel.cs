@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Pharma.App.Printing;
 using Pharma.Core;
 using Pharma.Data;
@@ -9,7 +9,10 @@ using Pharma.Data;
 namespace Pharma.App.ViewModels;
 
 /// <summary>
-/// Patient register: search, edit, and the visit history behind each patient.
+/// Patient register: search, the visit history behind each patient, and
+/// reprinting any of it. Adding and editing open over the shell, which is what
+/// lets the register and the history have the whole window.
+///
 /// Booking still happens on the OPD screen — this is the record, not the queue.
 /// </summary>
 public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy, SettingsService settings)
@@ -23,29 +26,15 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
     public ObservableCollection<Sale> Bills { get; } = [];
 
     [ObservableProperty] private string _search = "";
-    [ObservableProperty] private Patient? _selectedPatient;
     [ObservableProperty] private Visit? _selectedVisit;
     [ObservableProperty] private Sale? _selectedBill;
-
-    [ObservableProperty] private string _name = "";
-    [ObservableProperty] private string _phone = "";
-    [ObservableProperty] private string _age = "";
-    [ObservableProperty] private Gender _gender = Gender.Male;
-    [ObservableProperty] private string _address = "";
-    [ObservableProperty] private string _allergies = "";
-    [ObservableProperty] private string _patientNo = "";
     [ObservableProperty] private string _status = "";
 
-    /// <summary>Set when a save was turned away for want of a name; cleared the
-    /// moment one is typed, so the field is never left red once it is right.</summary>
-    [ObservableProperty] private bool _nameMissing;
+    [NotifyPropertyChangedFor(nameof(HasPatient))]
+    [ObservableProperty] private Patient? _selectedPatient;
 
-    partial void OnNameChanged(string value)
-    {
-        if (!string.IsNullOrWhiteSpace(value)) NameMissing = false;
-    }
-
-    public Array Genders => Enum.GetValues<Gender>();
+    /// <summary>Drives Edit: there is nothing to open without a patient.</summary>
+    public bool HasPatient => SelectedPatient is not null;
 
     public async Task LoadAsync() => await FindAsync();
 
@@ -69,14 +58,6 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
             Bills.Clear();
             return;
         }
-
-        PatientNo = value.PatientNo;
-        Name = value.Name;
-        Phone = value.Phone;
-        Age = value.Age > 0 ? value.Age.ToString() : "";
-        Gender = value.Gender;
-        Address = value.Address ?? "";
-        Allergies = value.Allergies ?? "";
 
         LoadHistoryAsync(value.Id).Forget("Loading patient history");
     }
@@ -155,114 +136,59 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
                              $"Bill {sale.BillNo} (duplicate)");
     }
 
-    [RelayCommand]
-    private async Task NewPatientAsync()
-    {
-        await ResetAsync();
+    // ── Adding and editing ─────────────────────────────────────────────────
 
-        PatientNo = "(assigned on save)";
-        Status = "Enter the patient's details and save.";
-    }
+    [RelayCommand]
+    private Task NewPatientAsync() => EditAsync(null);
+
+    [RelayCommand]
+    private Task EditPatientAsync() => EditAsync(SelectedPatient);
 
     /// <summary>
-    /// Back to how the screen opens: nothing selected, nothing typed, nothing
-    /// left in the search box.
+    /// Opens one patient over the shell and waits for it to close.
     ///
-    /// The search box matters as much as the fields. A screen still filtered to
-    /// one patient, with that patient loaded, is a screen where the next name
-    /// typed in overwrites them instead of being added as somebody new.
+    /// A fresh view model each time, holding that patient and nothing else. It
+    /// is what retired a whole family of bugs on this screen: the register and
+    /// the form used to share a selection, so the next child typed in was saved
+    /// on top of whoever was still loaded.
     /// </summary>
-    private async Task ResetAsync()
+    private async Task EditAsync(Patient? existing)
     {
+        var editor = new PatientEditorViewModel(opd, existing);
+        var shell = App.Services.GetRequiredService<MainViewModel>();
+
+        await shell.ShowOverlayAsync(editor, close => editor.RequestClose += () => close());
+
+        // Cancelling says nothing, so the message from whatever happened before
+        // is left where it was.
+        if (editor.Outcome is not { } outcome) return;
+
+        // Everything clears, the search box included. Leaving the register
+        // filtered to the patient just saved reads as "ready for the next one"
+        // and is not.
         SelectedPatient = null;
         SelectedVisit = null;
         SelectedBill = null;
-
-        PatientNo = Name = Phone = Age = Address = Allergies = "";
-        NameMissing = false;
-        Gender = Gender.Male;
-
         History.Clear();
         Bills.Clear();
 
         Search = "";
         await FindAsync();
+
+        Status = $"{outcome} The register is clear for the next patient.";
     }
 
+    /// <summary>Empties the search and puts the selection down.</summary>
     [RelayCommand]
-    private async Task SavePatientAsync()
+    private async Task ClearAsync()
     {
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            NameMissing = true;
-            Warn("Patient name is required.");
-            return;
-        }
+        SelectedPatient = null;
+        SelectedVisit = null;
+        SelectedBill = null;
 
-        NameMissing = false;
+        Search = "";
+        await FindAsync();
 
-        int.TryParse(Age, out var age);
-
-        var patient = SelectedPatient ?? new Patient();
-        patient.Name = Name.Trim();
-        patient.Phone = Phone.Trim();
-        patient.Age = age;
-        patient.Gender = Gender;
-        patient.Address = Empty(Address);
-        patient.Allergies = Empty(Allergies);
-
-        try
-        {
-            var saved = await opd.SavePatientAsync(patient);
-
-            // Everything clears, the search box included. This used to leave the
-            // saved patient selected and the list filtered to their name, which
-            // reads as "ready for the next one" but is not: typing the next
-            // person's details into that form saved them over this one.
-            await ResetAsync();
-
-            // The confirmation still names who was saved, so clearing the screen
-            // does not also take away the evidence that the save worked.
-            Status = $"{saved.Name} saved as {saved.PatientNo}. The form is clear for the next patient.";
-        }
-        catch (Exception ex)
-        {
-            Warn(ex.Message);
-        }
-    }
-
-    [RelayCommand]
-    private async Task DeletePatientAsync()
-    {
-        if (SelectedPatient is null) return;
-
-        var removed = SelectedPatient.Name;
-
-        var confirm = Dialog.Show(
-            $"Remove {removed} from the register?",
-            "Patients", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-        if (confirm != MessageBoxResult.Yes) return;
-
-        var error = await opd.DeletePatientAsync(SelectedPatient.Id);
-        if (error is not null)
-        {
-            Warn(error);
-            return;
-        }
-
-        // Their details have to go off the form as well. Leaving them there means
-        // Save puts the patient straight back, as a second record.
-        await ResetAsync();
-
-        Status = $"{removed} removed from the register.";
-    }
-
-    private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-
-    private void Warn(string message)
-    {
-        Status = message;
-        Dialog.Show(message, "Patients", MessageBoxButton.OK, MessageBoxImage.Warning);
+        Status = "";
     }
 }

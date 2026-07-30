@@ -28,6 +28,7 @@ public class CounterQuantityUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("InventorySearchButton");
         AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine");
         app.Grid("InventoryProductsGrid").Rows[0].Select();
+        app.Click("InventoryReceive");
 
         app.Type("StockBatchNo", $"Q{suffix}");
         app.Type("StockQuantity", packs.ToString());
@@ -151,6 +152,7 @@ public class CounterQuantityUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("InventorySearchButton");
         AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine");
         app.Grid("InventoryProductsGrid").Rows[0].Select();
+        app.Click("InventoryReceive");
 
         app.Type("StockBatchNo", $"Q{suffix}B");
         app.Type("StockQuantity", "3");

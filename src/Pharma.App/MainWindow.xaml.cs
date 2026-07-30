@@ -25,9 +25,14 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Clinic PCs are often 1366x768. A window taller than the screen puts its
-    /// footer — Save, Save &amp; complete — below the desktop where it cannot be
-    /// clicked, so shrink to what the screen actually has and re-centre.
+    /// Sets the size the window returns to when it is un-maximised.
+    ///
+    /// It opens maximised — the screens this runs on are small, and every pixel
+    /// spent on desktop around the edge is a pixel not spent on the queue. But
+    /// restoring from maximised has to land somewhere sensible, and on a
+    /// 1366x768 clinic PC the designed 1360x820 is taller than the screen, which
+    /// would put the footer — Save, Save &amp; complete — below the desktop edge
+    /// where it cannot be clicked.
     /// </summary>
     /// <remarks>
     /// This only ever shrinks the window, never grows it, so the same layout

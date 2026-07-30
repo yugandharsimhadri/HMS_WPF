@@ -2,8 +2,13 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Pharma.App"
-             Background="{DynamicResource Bg}">
+             Background="{DynamicResource Bg}"
+             MinWidth="980" MinHeight="600">
 
+    <!-- The overlay sizes itself to its content now, and a consultation wants
+         the room: notes on the left, the prescription on the right. The
+         minimums keep it that size; the overlay clamps them to the window on a
+         screen too small to honour them. -->
     <DockPanel Margin="18">
 
         <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14" Padding="16,12">

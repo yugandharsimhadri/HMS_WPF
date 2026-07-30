@@ -44,8 +44,9 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("opd-tiles");
 
-        // The booking panel, open.
+        // The booking form, over the shell.
         app.Click("OpdNewVisit");
+        AppFixture.WaitUntil(() => app.Find("OpdPatientSearch") is not null, "the booking form");
         app.Type("OpdPatientSearch", "9008007001");
         app.Click("OpdFind");
         AppFixture.WaitUntil(() => app.ListBox("OpdMatches").Items.Length >= 2, "the family list");
@@ -91,6 +92,17 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("medicines");
 
+        // The editor, over the shell. Three columns, so the whole medicine is on
+        // one screen at the resolutions this runs on.
+        app.SelectRowByText("ProductsGrid", "Calpol");
+        app.Click("ProductsEdit");
+        AppFixture.WaitUntil(() => app.Find("ProductName") is not null, "the medicine editor");
+        Settle();
+        Capture("medicine-editor");
+
+        app.Click("MedicineEditorCancel");
+        AppFixture.WaitUntil(() => app.Find("ProductName") is null, "the editor to close");
+
         // ── Inventory ──────────────────────────────────────────────────────
         app.Navigate("NavInventory", "Inventory");
         app.Type("InventorySearch", "Calpol");
@@ -103,13 +115,43 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "inventory-annotated.png"),
             new Note("InventorySearch", "Find the medicine you are receiving. Brand, drug, maker or rack."),
             new Note("InventoryProductsGrid", "Click it. The heading then names it and says how much is on hand."),
+            new Note("InventoryBatches", "What is on the shelf for it right now, batch by batch."),
+            new Note("InventoryReceive", "Opens the delivery form for that medicine. Double-clicking the row does the same."),
+            new Note("InventoryCorrect", "For when the shelf and the system disagree. It keeps a record of why."));
+
+        // ── Receiving stock ────────────────────────────────────────────────
+        // A form of its own now, over the shell, so nothing from the last
+        // delivery is left in it.
+        app.Click("InventoryReceive");
+        AppFixture.WaitUntil(() => app.Find("StockBatchNo") is not null, "the receiving form");
+        Settle();
+        Capture("receive-stock");
+
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "receive-stock-annotated.png"),
             new Note("StockBatchNo", "Printed on the pack. Required — it has to appear on the bill by law."),
             new Note("StockExpiry", "The pack is good until the END of that month."),
             new Note("StockQuantity", "How many PACKS arrived — strips, boxes or bottles. Not tablets."),
             new Note("StockFreeQuantity", "Scheme quantity: the +1 in 10+1. Goes on the shelf, costs nothing."),
             new Note("StockMrp", "The price printed on the pack. The counter prices everything from this."),
-            new Note("StockIntakePreview", "Reads back what you typed, in tablets. Check this before adding."),
             new Note("StockAdd", "Adds to the shelf. It never replaces what is already there."));
+
+        app.Click("ReceiveStockCancel");
+        AppFixture.WaitUntil(() => app.Find("StockBatchNo") is null, "the receiving form to close");
+
+        // ── Correcting a count ─────────────────────────────────────────────
+        app.Click("InventoryCorrect");
+        AppFixture.WaitUntil(() => app.Find("CorrectQuantity") is not null, "the correction form");
+        Settle();
+        Capture("correct-stock");
+
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "correct-stock-annotated.png"),
+            new Note("CorrectBatch", "Which batch is wrong. A count is only ever wrong for one of them."),
+            new Note("CorrectQuantity", "What is ACTUALLY on the shelf, in tablets. Not the difference."),
+            new Note("CorrectReason", "Why they disagree. This is kept, and it is what an inspection asks for."),
+            new Note("CorrectStock", "Writes the correction and a record of it. Nothing here is silent."));
+
+        app.Click("CorrectStockCancel");
+        AppFixture.WaitUntil(() => app.Find("CorrectQuantity") is null, "the correction form to close");
 
         // ── Importing a supplier bill ──────────────────────────────────────
         app.Click("InventoryImport");
@@ -293,6 +335,7 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         app.Click("InventorySearchButton");
         AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine in inventory");
         app.Grid("InventoryProductsGrid").Rows[0].Select();
+        app.Click("InventoryReceive");
 
         app.Type("StockBatchNo", batch);
         app.Type("StockQuantity", quantity.ToString());

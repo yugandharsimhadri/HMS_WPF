@@ -28,6 +28,7 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("InventorySearchButton");
         AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, "the medicine in inventory");
         app.Grid("InventoryProductsGrid").Rows[0].Select();
+        app.Click("InventoryReceive");
 
         app.Type("StockBatchNo", $"B{suffix}");
         app.Type("StockQuantity", quantity.ToString());
@@ -42,21 +43,10 @@ public class PharmacyUiTests(AppFixture app) : IClassFixture<AppFixture>
         return name;
     }
 
-    [Fact]
-    public void A_new_medicine_can_be_created_and_stocked()
-    {
-        var suffix = DateTime.Now.ToString("HHmmssfff");
-        var name = CreateMedicineWithStock(suffix, gstRate: 12m, quantity: 100, mrp: 50m);
-
-        app.Navigate("NavProducts", "Medicines");
-        app.Type("ProductSearch", name);
-        app.Click("ProductsSearchButton");
-
-        AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine to be listed");
-
-        Assert.Equal(name, app.CellOf("ProductsGrid", "MEDICINE"));
-        Assert.Equal("100", app.CellOf("ProductsGrid", "STOCK"));
-    }
+    // "A medicine can be created and stocked" used to be a test of its own here.
+    // It is what CreateMedicineWithStock does before every test in this class,
+    // and what InventoryPopupUiTests checks directly, so asserting it a third
+    // time only cost a minute of everyone's afternoon.
 
     [Fact]
     public void Selling_at_mrp_extracts_gst_rather_than_adding_it()

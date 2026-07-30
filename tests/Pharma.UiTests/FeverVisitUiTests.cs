@@ -179,6 +179,7 @@ public class FeverVisitUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("InventorySearchButton");
         AppFixture.WaitUntil(() => app.Grid("InventoryProductsGrid").RowCount == 1, $"{name} in inventory");
         app.Grid("InventoryProductsGrid").Rows[0].Select();
+        app.Click("InventoryReceive");
 
         app.Type("StockBatchNo", batch);
         app.Type("StockQuantity", packs.ToString());

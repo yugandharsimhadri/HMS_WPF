@@ -2,16 +2,22 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Pharma.Core;
 using Pharma.Data;
 
 namespace Pharma.App.ViewModels;
 
 /// <summary>
-/// Stock: what is on the shelf, receiving more, and correcting a count.
+/// Stock: what is on the shelf, and the two things that can be done to it.
+///
+/// The page itself only finds a medicine and shows what is there. Receiving and
+/// correcting each open over the shell, because both are jobs with a beginning
+/// and an end — a delivery line, a recount — and neither belongs in a column
+/// that is always half-filled with whatever was done last.
 ///
 /// Split from the medicine catalogue because they are different jobs done by
-/// different people at different times — the catalogue is set up once, stock
+/// different people at different times: the catalogue is set up once, stock
 /// moves every delivery.
 /// </summary>
 public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableObject, IPage
@@ -27,56 +33,19 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     public ObservableCollection<StockAdjustment> Adjustments { get; } = [];
 
     [ObservableProperty] private string _search = "";
-    [ObservableProperty] private Product? _selectedProduct;
     [ObservableProperty] private string _status = "";
 
-    // Receiving
-    [ObservableProperty] private string _batchNo = "";
-    [ObservableProperty] private DateTime _expiryDate = DateTime.Today.AddYears(2);
-    [ObservableProperty] private int _packs;
-    [ObservableProperty] private int _freePacks;
-    [ObservableProperty] private decimal _purchaseRate;
-    [ObservableProperty] private decimal _mrp;
-    // Set when receiving was turned away for want of one of these, cleared the
-    // moment the value is put right. Expiry is here too: a date in the past is
-    // as much a stopper as a blank batch number, and the box is the only place
-    // to say which of the six fields the message was about.
-    [ObservableProperty] private bool _batchNoMissing;
-    [ObservableProperty] private bool _packsMissing;
-    [ObservableProperty] private bool _mrpMissing;
-    [ObservableProperty] private bool _expiryMissing;
+    [NotifyPropertyChangedFor(nameof(HasProduct))]
+    [ObservableProperty] private Product? _selectedProduct;
 
-    partial void OnBatchNoChanged(string value)
-    {
-        if (!string.IsNullOrWhiteSpace(value)) BatchNoMissing = false;
-    }
-
-    partial void OnMrpChanged(decimal value)
-    {
-        if (value > 0) MrpMissing = false;
-    }
-
-    partial void OnExpiryDateChanged(DateTime value)
-    {
-        if (value.Date > DateTime.Today) ExpiryMissing = false;
-    }
-
-    [ObservableProperty] private string _supplierName = "";
-    [ObservableProperty] private string _supplierInvoiceNo = "";
-    [ObservableProperty] private string _intakePreview = "";
-
-    // Correcting
-    [ObservableProperty] private Batch? _selectedBatch;
-    [ObservableProperty] private int _correctedQuantity;
-    [ObservableProperty] private AdjustmentReason _adjustmentReason = AdjustmentReason.Recount;
-    [ObservableProperty] private string _adjustmentNotes = "";
-
-    public Array AdjustmentReasons => Enum.GetValues<AdjustmentReason>();
+    /// <summary>Drives both buttons: neither job means anything without a medicine.</summary>
+    public bool HasProduct => SelectedProduct is not null;
 
     /// <summary>
     /// Says so when a medicine's pack size and its units-per-pack disagree.
     /// That combination sells whole strips to anyone asking for tablets and
-    /// reports no error, so it has to be visible where stock is handled.
+    /// reports no error, so it has to be visible where stock is handled — on the
+    /// page, before either popup is opened.
     /// </summary>
     [ObservableProperty] private string _packWarning = "";
 
@@ -130,15 +99,6 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     {
         OnPropertyChanged(nameof(Subtitle));
 
-        // A price left over from the last medicine is how the wrong MRP ends up
-        // on a batch, so the receiving form starts clean for each one.
-        BatchNo = "";
-        Packs = FreePacks = 0;
-        PurchaseRate = Mrp = 0;
-        ExpiryDate = DateTime.Today.AddYears(2);
-
-        UpdateIntakePreview();
-
         Batches.Clear();
         UpdatePackWarning();
 
@@ -162,164 +122,88 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
     }
 
     /// <summary>
-    /// Empties the receiving form and the search that drives it, without touching
-    /// what is on the shelf. Leaving the search box full kept the list filtered
-    /// and the medicine selected, so the screen did not look cleared.
+    /// Empties the search and the selection. There is no form left on this page
+    /// to clear — receiving and correcting take their fields away with them.
     /// </summary>
     [RelayCommand]
-    private async Task ClearReceiveAsync()
+    private async Task ClearAsync()
     {
-        BatchNo = SupplierName = SupplierInvoiceNo = "";
-        Packs = FreePacks = 0;
-        PurchaseRate = Mrp = 0;
-        ExpiryDate = DateTime.Today.AddYears(2);
-
         SelectedProduct = null;
         Search = "";
         await FindAsync();
 
-        UpdateIntakePreview();
         Status = "";
     }
 
-    /// <summary>Empties the correction form. Nothing is corrected until Correct count.</summary>
-    [RelayCommand]
-    private void ClearCorrection()
-    {
-        SelectedBatch = null;
-        CorrectedQuantity = 0;
-        AdjustmentReason = AdjustmentReason.Recount;
-        AdjustmentNotes = "";
-        Status = "";
-    }
-
-    // ── Receiving ──────────────────────────────────────────────────────────
-
-    // Either box satisfies "how many packs arrived", so both clear the mark.
-    partial void OnPacksChanged(int value)
-    {
-        if (value > 0 || FreePacks > 0) PacksMissing = false;
-        UpdateIntakePreview();
-    }
-
-    partial void OnFreePacksChanged(int value)
-    {
-        if (value > 0 || Packs > 0) PacksMissing = false;
-        UpdateIntakePreview();
-    }
+    // ── The two jobs ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Spells out packs in, units out. "Qty" alone is the single most misread
-    /// field in a pharmacy: the shop counts strips, the counter sells tablets.
+    /// One delivery line, over the shell. A fresh view model each time, so the
+    /// supplier, rate and batch of the last delivery cannot follow this one —
+    /// stock keyed against a stale medicine is stock counted onto the wrong
+    /// shelf, and it looks exactly like stock counted right.
     /// </summary>
-    private void UpdateIntakePreview()
-    {
-        var total = Packs + FreePacks;
-
-        if (SelectedProduct is null || total <= 0)
-        {
-            IntakePreview = "";
-            return;
-        }
-
-        var perPack = Math.Max(1, SelectedProduct.UnitsPerPack);
-        var units = total * perPack;
-        var unitName = SelectedProduct.DispensingUnit.Name(units);
-
-        IntakePreview = perPack > 1
-            ? $"{total} pack(s) × {perPack} = {units} {unitName} onto the shelf"
-            : $"{units} {unitName} onto the shelf";
-    }
-
     [RelayCommand]
     private async Task ReceiveStockAsync()
     {
-        AppLog.Trace(
-            $"Inventory.ReceiveStock product='{SelectedProduct?.Name}' id={SelectedProduct?.Id} " +
-            $"batch='{BatchNo}' packs={Packs}+{FreePacks} rate={PurchaseRate} mrp={Mrp} exp={ExpiryDate:yyyy-MM-dd}");
-
-        if (SelectedProduct is null)
+        if (SelectedProduct is not { } product)
         {
             Warn("Choose the medicine you are receiving.");
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(BatchNo))
+        var receiving = new ReceiveStockViewModel(pharmacy, product);
+        var shell = App.Services.GetRequiredService<MainViewModel>();
+
+        await shell.ShowOverlayAsync(receiving, close => receiving.RequestClose += () => close());
+
+        // Backing out says nothing, so whatever the page said last stays.
+        if (receiving.Outcome is not { } outcome) return;
+
+        // Everything clears, the selection included. Receiving twice against a
+        // medicine still sitting selected is how one delivery becomes two.
+        SelectedProduct = null;
+        Search = "";
+        await FindAsync();
+
+        Status = $"{outcome} The screen is clear for the next line.";
+    }
+
+    /// <summary>
+    /// A recount, over the shell. Refuses to open with nothing on the shelf:
+    /// there is no count to put right, and an empty batch list only invites a
+    /// correction against whatever else was selected.
+    /// </summary>
+    [RelayCommand]
+    private async Task CorrectStockAsync()
+    {
+        if (SelectedProduct is not { } product)
         {
-            BatchNoMissing = true;
-            Warn("Batch number is printed on the pack and has to appear on the bill.");
+            Warn("Choose the medicine whose count is wrong.");
             return;
         }
 
-        if (Packs <= 0 && FreePacks <= 0)
+        if (Batches.Count == 0)
         {
-            PacksMissing = true;
-            Warn("Enter how many packs arrived.");
+            Warn($"{product.Name} has no stock on the shelf to correct. Receive some first.");
             return;
         }
 
-        if (Mrp <= 0)
-        {
-            MrpMissing = true;
-            Warn("Enter the MRP printed on the pack — the counter prices from it.");
-            return;
-        }
+        var correcting = new CorrectStockViewModel(pharmacy, product);
+        var shell = App.Services.GetRequiredService<MainViewModel>();
 
-        if (ExpiryDate.Date <= DateTime.Today)
-        {
-            ExpiryMissing = true;
-            Warn("Expiry must be in the future.");
-            return;
-        }
+        var showing = shell.ShowOverlayAsync(correcting, close => correcting.RequestClose += () => close());
 
-        BatchNoMissing = PacksMissing = MrpMissing = ExpiryMissing = false;
+        await correcting.LoadAsync();
+        await showing;
 
-        await Safely.RunAsync(async () =>
-        {
-            var entry = new StockEntry
-            {
-                EntryDate = DateTime.Today,
-                SupplierName = Empty(SupplierName),
-                SupplierInvoiceNo = Empty(SupplierInvoiceNo)
-            };
+        if (correcting.Outcome is not { } outcome) return;
 
-            var item = new StockEntryItem
-            {
-                ProductId = SelectedProduct.Id,
-                BatchNo = BatchNo.Trim(),
-                ExpiryDate = ExpiryDate,
-                Quantity = Packs,
-                FreeQuantity = FreePacks,
-                UnitsPerPack = SelectedProduct.UnitsPerPack,
-                PurchaseRate = PurchaseRate,
-                Mrp = Mrp
-            };
+        await LoadBatchesAsync(product.Id);
+        await LoadAdjustmentsAsync();
+        await FindAsync();
 
-            var saved = await pharmacy.ReceiveStockAsync(entry, [item]);
-
-            var confirmation = $"{saved.EntryNo}: {item.UnitsReceived} " +
-                               $"{SelectedProduct.DispensingUnit.Name(item.UnitsReceived)} of {SelectedProduct.Name} " +
-                               $"added to batch {item.BatchNo}.";
-
-            // Everything goes, supplier and invoice number included.
-            //
-            // Those two used to be kept, on the reasoning that one delivery note
-            // covers many medicines and retyping the supplier each time is the
-            // sort of friction that stops people filling it in. In use that was
-            // the wrong trade: a supplier left in the box is a supplier silently
-            // attached to the next delivery, and a wrong supplier on a batch is
-            // worse than a blank one — it is wrong in the reconciliation report
-            // rather than merely missing from it.
-            //
-            // Clearing the medicine empties the batch, packs, rate and expiry
-            // with it, so this is the whole form.
-            SupplierName = SupplierInvoiceNo = "";
-            SelectedProduct = null;
-            Search = "";
-            await FindAsync();
-
-            Status = $"{confirmation} The form is clear for the next line.";
-        }, "Receiving stock", m => Status = m);
+        Status = outcome;
     }
 
     [RelayCommand]
@@ -338,48 +222,6 @@ public partial class InventoryViewModel(PharmacyService pharmacy) : ObservableOb
             Status = "Stock imported. It was added to what was already on the shelf.";
         }, "Importing a supplier bill", m => Status = m);
     }
-
-    // ── Correcting ─────────────────────────────────────────────────────────
-
-    partial void OnSelectedBatchChanged(Batch? value) => CorrectedQuantity = value?.QtyOnHand ?? 0;
-
-    [RelayCommand]
-    private async Task CorrectStockAsync()
-    {
-        AppLog.Trace(
-            $"Inventory.CorrectStock batch={SelectedBatch?.Id} to={CorrectedQuantity} " +
-            $"reason={AdjustmentReason} notes='{AdjustmentNotes}'");
-
-        if (SelectedBatch is null)
-        {
-            Warn("Choose the batch whose count is wrong.");
-            return;
-        }
-
-        await Safely.RunAsync(async () =>
-        {
-            var adjustment = await pharmacy.AdjustStockAsync(
-                SelectedBatch.Id, CorrectedQuantity, AdjustmentReason, AdjustmentNotes);
-
-            var confirmation = $"{adjustment.ProductName} batch {adjustment.BatchNo}: " +
-                               $"{adjustment.QuantityBefore} → {adjustment.QuantityAfter} ({adjustment.Reason}).";
-
-            if (SelectedProduct is not null) await LoadBatchesAsync(SelectedProduct.Id);
-            await LoadAdjustmentsAsync();
-            await FindAsync();
-
-            // The batch clears with the rest. A second correction made against
-            // whichever batch was still selected writes off the wrong stock, and
-            // leaves an audit record saying it was meant.
-            SelectedBatch = null;
-            AdjustmentReason = AdjustmentReason.Recount;
-            AdjustmentNotes = "";
-
-            Status = $"{confirmation} The correction form is clear.";
-        }, "Correcting the stock count", m => Status = m);
-    }
-
-    private static string? Empty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private void Warn(string message)
     {

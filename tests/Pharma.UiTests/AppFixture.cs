@@ -128,9 +128,32 @@ public class AppFixture : IDisposable
         // Nothing can be clicked behind a modal, so clear any the previous test
         // left behind before trying.
         DismissModals();
+        DismissOverlay();
 
         Button(navAutomationId).Invoke();
         WaitUntil(() => TextOf("PageTitle") == expectedTitle, $"page '{expectedTitle}'");
+    }
+
+    /// <summary>
+    /// Closes anything sitting over the shell — the consultation, the medicine
+    /// editor — the way Esc does.
+    ///
+    /// An overlay disables the navigation behind it, so a test that leaves one
+    /// open does not fail itself; it fails whichever test runs next, somewhere
+    /// else entirely. That is an afternoon nobody gets back, so it is cleared
+    /// here rather than trusted to every test remembering.
+    /// </summary>
+    public void DismissOverlay()
+    {
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            if (Find("Overlay") is null) return;
+
+            MainWindow.Focus();
+            FlaUI.Core.Input.Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.ESC);
+
+            Thread.Sleep(200);
+        }
     }
 
     /// <summary>
@@ -167,13 +190,21 @@ public class AppFixture : IDisposable
             throw new InvalidOperationException(
                 $"'{gridAutomationId}' has no column '{header}'. It has: {string.Join(", ", columns)}.");
 
-        var cell = grid.Rows[row].Cells[index];
-        var value = cell.Value ?? "";
+        return TextOfCell(grid.Rows[row].Cells[index]);
+    }
 
-        // A text column reports its own value. A template column has none, and
-        // WPF hands back its internal placeholder instead — "Item:
-        // Pharma.Core.Product, Column Display Index: 7" — so read what the cell
-        // is actually showing the operator.
+    /// <summary>
+    /// What a cell is actually showing.
+    ///
+    /// A text column reports its own value. A template column has none, and WPF
+    /// hands back its internal placeholder instead — "Item: Pharma.Core.Product,
+    /// Column Display Index: 7" — so fall through to reading the text it is
+    /// displaying. Both ways of finding a row need this, and only one of them
+    /// used to have it.
+    /// </summary>
+    private static string TextOfCell(FlaUI.Core.AutomationElements.GridCell cell)
+    {
+        var value = cell.Value ?? "";
         if (value.Length > 0 && !value.StartsWith("Item:", StringComparison.Ordinal)) return value;
 
         return cell.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
@@ -183,7 +214,7 @@ public class AppFixture : IDisposable
 
     private FlaUI.Core.AutomationElements.GridRow? FindRow(string gridAutomationId, string text)
         => Grid(gridAutomationId).Rows
-            .FirstOrDefault(r => r.Cells.Any(c => (c.Value ?? "").Contains(text, StringComparison.OrdinalIgnoreCase)));
+            .FirstOrDefault(r => r.Cells.Any(c => TextOfCell(c).Contains(text, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>How many tiles are in a queue column.</summary>
     public int TileCount(string listAutomationId)

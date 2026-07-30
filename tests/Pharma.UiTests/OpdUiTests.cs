@@ -9,6 +9,9 @@ public class OpdUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Navigate("NavOpd", "OPD");
         app.Click("OpdNewVisit");
 
+        // Booking opens over the shell, so wait for it before typing into it.
+        AppFixture.WaitUntil(() => app.Find("OpdPatientSearch") is not null, "the booking form");
+
         app.Type("OpdPatientSearch", name);
         app.Click("OpdFind");
         AppFixture.WaitUntil(() => app.Find("OpdNewName") is not null, "the new-patient form");
@@ -120,6 +123,9 @@ public class OpdUiTests(AppFixture app) : IClassFixture<AppFixture>
         AppFixture.WaitUntil(() => app.Grid("PatientsGrid").RowCount == 1, "the patient to be found");
 
         app.Grid("PatientsGrid").Rows[0].Select();
+
+        // The editor is over the shell now, so open it before typing into it.
+        app.Click("PatientsEdit");
         AppFixture.WaitUntil(() => app.TextBox("PatientName").Text == name, "the editor to fill");
 
         app.Type("PatientAllergies", "Penicillin");

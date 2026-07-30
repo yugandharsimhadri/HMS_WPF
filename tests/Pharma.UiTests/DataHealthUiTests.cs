@@ -107,14 +107,15 @@ public class DataHealthUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         Close(health);
 
-        // The counter can now sell it by the tablet.
+        // The counter can now sell it by the tablet. Read it off the catalogue
+        // rather than the editor — the grid is what everyone looks at, and it
+        // does not need the medicine opened to say so.
         app.Navigate("NavProducts", "Medicines");
         app.Type("ProductSearch", name);
         app.Click("ProductsSearchButton");
         AppFixture.WaitUntil(() => app.Grid("ProductsGrid").RowCount == 1, "the medicine");
-        app.Grid("ProductsGrid").Rows[0].Select();
 
-        AppFixture.WaitUntil(() => app.TextBox("ProductUnitsPerPack").Text == "10",
+        AppFixture.WaitUntil(() => app.CellOf("ProductsGrid", "PER PACK") == "10",
                              "units per pack to be corrected");
     }
 }
