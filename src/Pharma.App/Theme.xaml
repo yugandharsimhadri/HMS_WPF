@@ -16,6 +16,7 @@
          same reason: the booking and patient forms are shown over the shell, so
          a key declared on one page is not in scope where they are rendered. -->
     <local:BoolToVisibilityConverter x:Key="BoolVis"/>
+    <local:EnumLabelConverter x:Key="EnumLabel"/>
 
     <!-- The palette lives in Theme.Light.xaml and Theme.Dark.xaml, merged at
          startup and swapped when the theme changes. -->

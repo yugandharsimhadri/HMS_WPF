@@ -99,6 +99,27 @@ public class ZeroToVisibilityConverter : IValueConverter
 }
 
 /// <summary>Blank instead of "0" in empty numeric boxes, so forms do not look pre-filled.</summary>
+/// <summary>
+/// An enum name as English: "FullDay" reads "Full day".
+///
+/// Enum members cannot have spaces, and a combo box showing "FullDay" beside
+/// "Morning" and "Evening" looks like a bug to the person reading it.
+/// </summary>
+public class EnumLabelConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var name = value?.ToString() ?? "";
+        if (name.Length == 0) return "";
+
+        var words = System.Text.RegularExpressions.Regex.Replace(name, "(?<!^)([A-Z])", " $1");
+        return string.Concat(words[0], words[1..].ToLowerInvariant());
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => Binding.DoNothing;
+}
+
 public class BlankIfZeroConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

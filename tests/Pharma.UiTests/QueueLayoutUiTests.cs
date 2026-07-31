@@ -122,7 +122,7 @@ public class QueueLayoutUiTests(AppFixture app) : IClassFixture<AppFixture>
         Assert.StartsWith("0 waiting", evening);
         Assert.Contains("1 more today outside these hours", evening);
 
-        app.ComboBox("OpdSession").Select("FullDay");
+        app.ComboBox("OpdSession").Select("Full day");
         AppFixture.WaitUntil(() => app.TextOf("PageSubtitle").StartsWith("1 waiting"),
                              "the full day to show everyone");
         Assert.DoesNotContain("sitting", app.TextOf("PageSubtitle"));

@@ -22,21 +22,22 @@ dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
 **The OPD desk**
 3. [The OPD screen](#3-the-opd-screen)
 4. [Booking a visit](#4-booking-a-visit)
-5. [The consultation](#5-the-consultation)
+5. [Taking the consultation fee](#5-taking-the-consultation-fee)
+6. [The consultation](#6-the-consultation)
 
 **The pharmacy**
-6. [Medicines — the catalogue](#6-medicines--the-catalogue)
-7. [Inventory — what is on the shelf](#7-inventory--what-is-on-the-shelf)
-8. [Importing a supplier bill](#8-importing-a-supplier-bill)
-9. [The pharmacy counter](#9-the-pharmacy-counter)
+7. [Medicines — the catalogue](#7-medicines--the-catalogue)
+8. [Inventory — what is on the shelf](#8-inventory--what-is-on-the-shelf)
+9. [Importing a supplier bill](#9-importing-a-supplier-bill)
+10. [The pharmacy counter](#10-the-pharmacy-counter)
 
 **Everything else**
-10. [Patients](#10-patients)
-11. [Reports](#11-reports)
-12. [Printing](#12-printing)
-13. [Worked examples](#13-worked-examples)
-14. [What the system will and will not do](#14-what-the-system-will-and-will-not-do)
-15. [When something goes wrong](#15-when-something-goes-wrong)
+11. [Patients](#11-patients)
+12. [Reports](#12-reports)
+13. [Printing](#13-printing)
+14. [Worked examples](#14-worked-examples)
+15. [What the system will and will not do](#15-what-the-system-will-and-will-not-do)
+16. [When something goes wrong](#16-when-something-goes-wrong)
 
 **[Common tasks, step by step](#common-tasks-step-by-step)** — the short version of
 everything above. Start here if you just want to get through a day.
@@ -46,7 +47,7 @@ everything above. Start here if you just want to get through a day.
 # Common tasks, step by step
 
 Each task below is complete on its own. Screen-by-screen detail follows in
-sections 1 to 15.
+sections 1 to 16.
 
 ## A. Set the clinic up — once, before anything else
 
@@ -63,7 +64,7 @@ You cannot book a visit until at least one doctor exists.
 
 ## B. Book a walk-in patient
 
-1. Click **OPD**, then **+ New visit**.
+1. Click **OPD**, then **+ New visit**. The booking form opens over the screen.
 2. Type the patient's **name or phone number** and press Enter.
 3. If they are listed, **click the right person**. If a whole family shares the
    phone, everyone on it appears — pick the child who is actually here.
@@ -75,11 +76,22 @@ You cannot book a visit until at least one doctor exists.
 ## C. Take the consultation fee
 
 1. On the **OPD** screen, find the patient's tile in **Waiting**.
-2. Set **Fee taken as** to Cash, UPI or Card.
-3. Click **Fee** on the tile.
-4. The receipt preview opens — click **Print**, or **Close** to skip printing.
+2. Click **Fee** on the tile. A small form opens over the screen.
+3. Check the **token, name, age and doctor** at the top — this is the moment to
+   notice you have the wrong child.
+4. The **fee** is already filled in from the booking. Change it if you are taking
+   something else — a follow-up at half fee, a family concession.
+5. Set **Paid by** — Cash, UPI or Card.
+6. Leave **Print the receipt** ticked unless you do not want paper.
+7. Click **Take fee**. It asks once more, naming the amount and the child.
+   Answer **Yes**.
 
 The badge changes to **Fee paid**. Clicking Fee twice does nothing.
+
+**Nothing is written until you answer Yes.** Cancel at any point and no receipt
+number is used up. This matters because a receipt is numbered and dated the
+moment it is written — a fee taken wrongly has to be reversed on paper, so the
+software makes you look at it first.
 
 ## D. See a patient and write a prescription
 
@@ -109,7 +121,9 @@ once. **Inventory** is where stock arrives, every delivery.
 
 **First, describe the medicine — Medicines screen**
 
-1. Click **Medicines**, then **+ New medicine**.
+1. Click **Medicines**, then **+ New medicine**. The form opens over the screen.
+   To change one already there, select the row and click **Edit** — or just
+   double-click it.
 2. Enter the **brand name** as printed on the pack — *Calpol*.
 3. Enter the **drug / generic name** — *Paracetamol 250mg*. Staff search by
    either, so filling both is worth the few seconds.
@@ -117,22 +131,29 @@ once. **Inventory** is where stock arrives, every delivery.
 5. Set **Sold as** — tablet, capsule, bottle, sachet.
 6. Set **Units in one pack** — `15` for a strip of fifteen, `1` for a bottle.
 7. Set **GST %**, **schedule**, **rack** and **reorder level**.
-8. Click **Save medicine**. The form empties for the next one — that is normal.
-   The message underneath confirms what was saved.
+8. Click **Save medicine**. The form closes — that is normal. The message
+   underneath the catalogue confirms what was saved.
 
 **Then, put stock on the shelf — Inventory screen**
 
 9. Click **Inventory**, type the name in the search box and click **Search**.
 10. Click the medicine in the list. The heading names it and says how much is
     on hand.
-11. In **Receive stock**, enter **batch no**, **expiry**, **packs received**,
-    any **free** packs, the **rate** you paid and the **MRP** printed on the pack.
-12. Check the line that appears — *"20 pack(s) × 15 = 300 tablets onto the shelf"*.
-13. Click **Add stock**. The medicine is let go of and the form clears, ready
-    for the next line of the delivery note.
+11. Click **Receive stock**. A form opens over the screen, headed with the
+    medicine's name and what is already on the shelf.
+12. Enter **batch no**, **expiry**, **packs**, any **free** packs, the **rate**
+    you paid and the **MRP** printed on the pack.
+13. Check the line that appears — *"20 pack(s) × 15 = 300 tablets onto the shelf"*.
+14. Click **Add stock**. The form closes and the screen clears, ready for the
+    next line of the delivery note.
 
-If you are entering several medicines off one delivery note, repeat steps 9–13
-for each. The **supplier** and **invoice no** stay where you typed them.
+If you are entering several medicines off one delivery note, repeat steps 9–14
+for each.
+
+**Everything clears between lines, the supplier and bill number included.** That
+is deliberate. A supplier left in the box is a supplier silently attached to the
+next delivery, and a wrong supplier on a batch is worse than a blank one — it is
+wrong in the reconciliation report rather than merely missing from it.
 
 ## F. Load a supplier's file instead of typing it
 
@@ -193,18 +214,25 @@ strips; it becomes 20 tablets.
 ## J. Correct a stock count
 
 1. Click **Inventory** and select the medicine.
-2. In **Correct the stock count**, choose the **batch**.
-3. Enter the **true count** — what is actually on the shelf, in units.
-4. Choose a **reason**: recount, breakage, expired, lost, entry error.
-5. Add a **note** if it is unusual.
-6. Click **Correct count**.
+2. Click **Correct count**. A form opens over the screen.
+3. Choose the **batch**. If there is only one it is already chosen.
+4. Enter the **true count** — what is actually on the shelf, in units. It starts
+   at what the system currently believes, so you are changing a number rather
+   than typing one from nothing.
+5. Choose a **reason**: recount, breakage, expired, lost, entry error.
+6. Add a **note** if it is unusual.
+7. Click **Correct count**.
 
-Every correction is recorded underneath with was, now and why.
+Every correction is recorded in **Recent corrections** at the foot of the
+Inventory screen, with was, now and why.
 
-The batch is let go of afterwards. Correcting a second batch means choosing it
-again — which is the point: a correction made against a batch you had forgotten
-was still selected writes off the wrong stock, and the trail then says you meant
-to.
+If the medicine has nothing on the shelf, it says so rather than opening an
+empty form — there is no count to put right.
+
+The form closes afterwards and takes the batch with it. Correcting a second
+batch means opening it again — which is the point: a correction made against a
+batch you had forgotten was still selected writes off the wrong stock, and the
+trail then says you meant to.
 
 ## K. Print something again, however long ago
 
@@ -297,9 +325,33 @@ a one-off job usually done by whoever sets the shop up; receiving stock happens
 every delivery and is done at the counter. Keeping them apart means neither
 screen is crowded with the other's fields.
 
-Some screens — the consultation, importing a bill, a print preview — cover the
-window while they are open, and the rest of the app waits behind them. This is
-on purpose: nothing can be half-started and then forgotten.
+The application opens **maximised**, filling the screen. The screens it runs on
+are small, and every pixel spent on desktop around the edge is a pixel not spent
+on the queue.
+
+## Forms open over the screen
+
+Anything you fill in opens **over** the screen you were on, greyed out behind it,
+and the rest of the app waits until you are done:
+
+- Booking a visit, and taking the fee
+- Adding or editing a patient
+- Adding or editing a medicine
+- Receiving stock, and correcting a count
+- The consultation, importing a supplier bill, a print preview
+
+This is on purpose, and it is worth knowing why. These used to be columns down
+the right-hand side of each screen, permanently there and never empty. On a
+small screen that meant scrolling to reach the Save button — and a form you
+scroll to save is one people abandon half-filled. Worse, a column that is never
+empty always has *something* in it from the last time, which is how a patient
+gets saved on top of another one.
+
+A form over the screen is opened for one job and taken away when that job is
+done. **Cancel**, or the **Esc** key, closes it and writes nothing.
+
+That is also why the lists behind them now have the whole window: the catalogue,
+the register and the stock list are no longer sharing it with a form.
 
 The heading of every screen shows the screen name and a one-line summary
 underneath — for example *"2 waiting · 1 completed · Sun, 26 Jul"*.
@@ -331,9 +383,15 @@ pressing Add again would re-do the line you already have.
 So after every save you start from a clean screen. If you want to look at what
 you just saved, search for it again; it is there.
 
-The one thing that stays is the **supplier and invoice number** on the Inventory
-screen, because a delivery note has many medicines on it and you would otherwise
-retype the supplier for every line.
+For the forms that open over the screen, "clear" means the form has **gone**,
+taking everything typed into it. There is nothing left behind to be saved by
+accident, because the next one gets a fresh form.
+
+**Nothing carries over between deliveries either** — not the supplier, not the
+bill number. Those two used to stay, on the reasoning that one delivery note
+covers many medicines. In use that was the wrong trade: a supplier left in the
+box is a supplier silently attached to the next delivery, and a wrong supplier on
+a batch is worse than a blank one.
 
 ---
 
@@ -354,10 +412,30 @@ Everything here prints on your bills, receipts and prescriptions.
 | **GSTIN** | Your GST number. Only enabled when registered |
 | **Drug licence no** | Your 20B/21B number. **Required on a chemist's bill** |
 | **Pharmacist** | Printed at the foot of the bill |
+| **Consulting hours** | When the doctor sits, morning and evening. See below |
 | **OPD queue layout** | `Tiles` or `Rows` — see [section 3](#choosing-tiles-or-rows) |
 | **Appearance** | `Light` or `Dark`. Changes the whole application straight away |
 | **Bill footer** | Free text at the bottom of a bill, e.g. "Get well soon" |
 | **Save Clinic / Pharmacy details** | Applies everything above. New documents use it immediately |
+
+### Consulting hours
+
+Most clinics run two sittings with the afternoon off. Set the hours here and the
+OPD screen can show one sitting at a time:
+
+```
+Morning   10:00  to  13:00
+Evening   16:00  to  20:00
+```
+
+Use the 24-hour clock. The line underneath reads the four boxes back as a
+sentence, so a typo is caught before it is saved rather than the next time
+somebody wonders where the queue went. The end of a sitting is **exclusive** — a
+morning ending at 13:00 does not also claim the one o'clock patient.
+
+These are only a filter on the OPD screen. Nothing stops you booking a visit
+outside them, and a visit booked outside both sittings still shows on **Full
+day** — see [section 3](#3-the-opd-screen).
 
 **Appearance** is worth trying if the counter sits under a bright window or, more
 often, in a dim corner in the evening. The change is immediate — you do not have
@@ -419,11 +497,32 @@ an **Open log folder** button. You need those only if reporting a problem.
 |---|---|
 | **All doctors** tab | Shows every patient in the clinic |
 | **Doctor tabs** | One per doctor. Shows only their patients |
-| **+ New visit** | Opens the booking panel on the right |
+| **Sitting** | `Full day`, `Morning` or `Evening`. See below |
+| **+ New visit** | Opens the booking form over the screen |
 | **Date** | Which day you are looking at. Defaults to today |
 
 The doctor is a tab rather than a column on each patient, which is why the tiles
 stay small.
+
+## Morning, evening or the full day
+
+Doctors sit mornings and evenings with the afternoon off, so *"who is left this
+evening"* is usually the real question. The picker narrows both columns to one
+sitting; the hours come from **Settings → Consulting hours**.
+
+The heading then names the sitting and its hours:
+
+> 3 waiting · 1 completed · Fri, 31 Jul · **Morning sitting, 10:00 to 13:00**
+
+**It tells you when it is hiding somebody.** A visit booked at two in the
+afternoon belongs to neither sitting, so on **Evening** the heading reads:
+
+> 0 waiting · 0 completed · Fri, 31 Jul · Evening sitting, 16:00 to 20:00 ·
+> **1 more today outside these hours**
+
+Switch to **Full day** and everybody is there. Full day is how the screen starts,
+and it hides nobody — so if a patient seems to have vanished, that is the first
+thing to check.
 
 ## The two columns
 
@@ -447,7 +546,7 @@ A patient moves from one to the other and can be moved back.
 | Button | What it does |
 |---|---|
 | **Consult** | Opens the consultation window for this patient |
-| **Fee** | Takes the consultation fee, issues a numbered receipt, offers to print it |
+| **Fee** | Opens the fee form — see [section 5](#5-taking-the-consultation-fee) |
 | **Done** | Moves the tile to Completed without a consultation |
 | **Cancel** | Cancels the visit. Asks first |
 
@@ -470,7 +569,8 @@ screen when the clinic is busy. **Everything works the same in either.**
 
 # 4. Booking a visit
 
-Click **+ New visit**. The panel opens on the right, in three numbered steps.
+Click **+ New visit**. The form opens over the screen, in three numbered steps —
+who is here on the left, when and why on the right.
 
 ![Booking a visit](images/opd-booking.png)
 
@@ -510,9 +610,12 @@ already filled in.
 
 Optional. Whatever you type shows on the queue tile and on the prescription.
 
-Then **Book visit**. A token number is allocated automatically and the panel
-closes. **Fee taken as** below the button sets the payment method used when you
-later click **Fee** on the tile.
+Then **Book visit**. A token number is allocated automatically and the form
+closes. **Clear** empties the form without closing it; **Cancel** closes it and
+books nothing.
+
+The payment method is no longer chosen here — it is asked for when you actually
+take the money, in [section 5](#5-taking-the-consultation-fee).
 
 > ### One phone, several children
 >
@@ -528,7 +631,62 @@ later click **Fee** on the tile.
 
 ---
 
-# 5. The consultation
+# 5. Taking the consultation fee
+
+Click **Fee** on a waiting tile. A small form opens over the screen.
+
+![Taking the fee](images/collect-fee.png)
+
+Every control, ringed and explained:
+
+![Taking the fee, explained](images/collect-fee-annotated.png)
+
+| Control | What it does |
+|---|---|
+| **Heading** | Token number and the patient's name |
+| Line underneath | Age, sex, the booked time and the doctor |
+| **Fee (₹)** | What you are actually taking. Filled in from the booking |
+| **Paid by** | Cash, UPI or Card. Recorded against the receipt |
+| **Print the receipt** | On by default. Turn it off if you do not want paper |
+| **Cancel** | Closes it. Nothing is taken and no receipt number is used |
+| **Take fee** | Asks once more, then writes the receipt |
+
+## Changing the amount
+
+The fee starts at whatever was quoted when the visit was booked. Change it for a
+follow-up seen at half price, a family concession, or a rounding down. A note
+appears the moment it differs:
+
+> Booked at ₹300.00. This receipt will say ₹150.00.
+
+That note is there because a concession is a decision and a mistyped digit is
+not, and on screen the two look identical.
+
+## The confirmation
+
+**Take fee** does not take the fee. It asks:
+
+> Take ₹300.00 from Baby Anika by Cash?
+
+Only **Yes** writes anything. This is the last gate before a receipt number is
+burnt, and it names the three things that get mixed up when two people are at the
+desk at once — the amount, the method and the child.
+
+Afterwards the badge on the tile turns green to **Fee paid**, and the message
+under the doctor tabs gives the receipt number. Pressing **Fee** again does
+nothing; use **Receipt** on the completed tile, or the patient's own record, to
+print it a second time.
+
+> **Why it asks at all.** A receipt is numbered and dated the moment it is
+> written. There is no way to un-write one — a fee taken wrongly has to be
+> reversed on paper. Pressing Fee used to take the money immediately, at whatever
+> payment method a box at the top of the screen had been left on, and go straight
+> to a print preview. Now nothing happens until you have seen the amount, the
+> method and the name.
+
+---
+
+# 6. The consultation
 
 Click **Consult** on a tile.
 
@@ -616,22 +774,30 @@ screen with a half-written prescription behind you.
 
 ---
 
-# 6. Medicines — the catalogue
+# 7. Medicines — the catalogue
 
 What each medicine **is**. Set up once per medicine; stock is the next screen.
 
 ![Medicines](images/medicines.png)
 
-## The catalogue (left)
+## The catalogue
 
-Search box, **Search** and **+ New medicine**. The grid shows medicine, drug,
-pack, maker, rack, GST %, schedule, units per pack, and stock on hand. Click a
-row to load it into the form on the right.
+The grid has the whole window: medicine, pack, maker, rack, GST %, schedule,
+units per pack and stock on hand. Above it sit the search box, **Search**,
+**Edit** and **+ New medicine**.
 
 Search matches the **brand name**, the **drug name**, the manufacturer and the
 rack. Typing `paracetamol` finds Calpol; typing `calpol` finds it too.
 
-## Medicine details (right)
+To change a medicine, select the row and click **Edit** — or just **double-click
+the row**, which does the same thing.
+
+## The medicine form
+
+Opens over the screen, in three columns: what it is called, what a pack is, and
+what it costs and where it lives.
+
+![Adding a medicine](images/medicine-editor.png)
 
 | Field | Notes |
 |---|---|
@@ -647,8 +813,11 @@ rack. Typing `paracetamol` finds Calpol; typing `calpol` finds it too.
 | **Units per pack** | **10 for a ten-tablet strip. 1 for a syrup bottle** |
 | **Sell loose units** | Ticked, part of a strip can be sold. Unticked, the counter insists on whole packs |
 | **Active** | Uncheck to hide it from the counter |
-| **Save medicine** | Saves it, then clears the whole screen — search box included — for the next medicine |
-| **Clear** | Empties the form without saving. Nothing already saved is changed |
+| **Save medicine** | Saves it and closes the form. The catalogue clears — search box included — for the next medicine |
+| **Cancel** | Closes without saving. Nothing already saved is changed |
+
+There is no Clear button, because there is nothing to clear: the form holds one
+medicine and Cancel takes it away. The next one gets a fresh form.
 
 > ### Units per pack is what makes loose sale work
 >
@@ -658,7 +827,7 @@ rack. Typing `paracetamol` finds Calpol; typing `calpol` finds it too.
 
 ---
 
-# 7. Inventory — what is on the shelf
+# 8. Inventory — what is on the shelf
 
 Everything to do with stock: receiving it, seeing the batches, correcting a
 count. Nothing here changes what a medicine *is* — that is the Medicines screen.
@@ -669,60 +838,87 @@ Every control, ringed and explained:
 
 ![Inventory, explained](images/inventory-annotated.png)
 
-## Finding the medicine (left)
+## Finding the medicine
 
 Type any part of the brand name, drug name, maker or rack and click **Search**,
 then click the row. The heading at the top of the screen then names the medicine
 and how much is on hand, so you always know what you are about to change.
 
-**Import supplier bill** sits next to Search — see [section 8](#8-importing-a-supplier-bill).
+Underneath the grid, **the batches on the shelf** for the selected medicine
+appear as small chips — batch number, expiry, MRP and how much is left.
 
-## Receive stock (top right)
+Along the top: **Search**, **Clear**, **Import supplier bill**
+(see [section 9](#9-importing-a-supplier-bill)), **Correct count** and
+**Receive stock**. The last two need a medicine selected first.
+
+At the foot of the screen, **Recent corrections** lists every count that has been
+put right — when, what, was, now, the change, the reason and any note.
+
+## Receive stock
+
+Select the medicine, then click **Receive stock**. A form opens over the screen,
+headed with the medicine's name and what is already on the shelf.
 
 **This is the only way stock enters, and it always creates a batch.**
+
+![Receiving stock](images/receive-stock.png)
+
+Every control, ringed and explained:
+
+![Receiving stock, explained](images/receive-stock-annotated.png)
 
 | Field | Notes |
 |---|---|
 | **Batch no** | Printed on the pack. **Required — it goes on the bill by law** |
 | **Expiry** | The pack is good until the **end** of that month |
 | **Packs** | How many **packs** arrived — strips, boxes, bottles |
-| **Free** | Scheme quantity, the "+1" in 10+1. Adds to stock, costs nothing |
-| **Rate** | What the hospital paid per pack |
-| **MRP** | The price printed on the pack. **The counter prices from this** |
-| **Supplier**, **Supplier bill no** | For your records. These two stay put after each line, since one delivery note covers many medicines |
-| **Add stock** | Adds it, then clears the medicine and the form for the next line |
+| **Free packs** | Scheme quantity, the "+1" in 10+1. Adds to stock, costs nothing |
+| **Rate per pack** | What the hospital paid per pack |
+| **MRP per pack** | The price printed on the pack. **The counter prices from this** |
+| **Supplier**, **Supplier bill no** | For your records, and what the reconciliation report matches against |
+| **Add stock** | Adds it and closes the form, ready for the next line |
+| **Cancel** | Closes it. Nothing goes on the shelf |
 
 > ### Packs in, units out
 >
-> Under the quantity boxes a grey line reads back what you have entered:
+> Above the buttons a grey line reads back what you have entered:
 > *"20 pack(s) × 15 = 300 tablets onto the shelf"*. You count deliveries in
 > strips, the counter sells tablets, and this is the one place the two meet —
 > so it says so out loud rather than leaving you to trust it.
 
-The form clears whenever you pick a different medicine, and again once the stock
-has gone on, so a price or expiry from the last delivery can never be carried
-onto the wrong batch — and a second batch can never be received against a
-medicine you had forgotten was still selected.
+Everything goes when the form closes — the supplier and bill number included —
+so a price, an expiry or a supplier from the last delivery can never be carried
+onto the wrong batch, and a second batch can never be received against a medicine
+you had forgotten was still selected.
 
-**Batches on the shelf** lists every batch of the selected medicine with its
-expiry, MRP and quantity left.
+Double-clicking a row in the grid opens this form too.
 
 > **Adding stock always adds.** Receiving the same batch number again increases
 > what is on the shelf. It never replaces it.
 
-## Correct the stock count
+## Correct count
 
 For when the shelf and the screen disagree — breakage, a miscount, or something
-keyed in wrongly.
+keyed in wrongly. Select the medicine and click **Correct count**.
+
+![Correcting a count](images/correct-stock.png)
+
+Every control, ringed and explained:
+
+![Correcting a count, explained](images/correct-stock-annotated.png)
 
 | Control | Notes |
 |---|---|
-| **Batch** | Which batch is wrong. Shows expiry, MRP and current count |
-| **True count** | What is **actually** on the shelf, in units |
+| **Batch** | Which batch is wrong. Shows expiry, MRP and current count. Chosen for you when there is only one |
+| **True count** | What is **actually** on the shelf, in units. Starts at what the system believes |
 | **Reason** | `Recount`, `Breakage`, `Expired`, `Lost`, `Entry error`, `Other` |
 | **Notes** | Free text — worth writing for anything unusual |
-| **Correct count** | Applies it, then lets go of the batch |
-| **Recent corrections** | When, what, was, now, change, reason and notes |
+| **Correct count** | Applies it and closes the form |
+| **Cancel** | Closes it. Nothing is corrected |
+
+If the medicine has nothing on the shelf, the form does not open at all — it says
+so instead. There is no count to put right, and an empty batch list only invites
+a correction against whatever else was selected.
 
 > ### Every correction is recorded
 >
@@ -736,7 +932,7 @@ keyed in wrongly.
 
 ---
 
-# 8. Importing a supplier bill
+# 9. Importing a supplier bill
 
 Instead of keying in a delivery line by line, load the file your supplier sends.
 **Inventory → Import supplier bill.**
@@ -795,7 +991,7 @@ unit(s) added to stock."*
 
 ---
 
-# 9. The pharmacy counter
+# 10. The pharmacy counter
 
 Three steps per line: **find the medicine, set the quantity, add.**
 
@@ -918,35 +1114,51 @@ NET PAYABLE      what the customer hands over
 
 ---
 
-# 10. Patients
+# 11. Patients
 
 ![Patients](images/patients.png)
 
 Search by **name, patient number or phone**. A phone number lists the whole
 family.
 
-## The register (top left)
+## The register
 
-Patient no, name, phone, age, sex, allergies. Click a row to select it.
+Patient no, name, phone, age, sex and allergies, across the whole window. Click a
+row to select it — the history underneath fills in with that patient's visits and
+bills.
 
-## Patient details (right)
+Along the top: **Search**, **Clear**, **Edit** and **+ New patient**.
+
+## The patient form
+
+**+ New patient** registers someone without booking a visit. **Edit** opens the
+selected patient — as does **double-clicking the row**.
+
+![The patient form](images/patient-editor.png)
+
+Every control, ringed and explained:
+
+![The patient form, explained](images/patient-editor-annotated.png)
 
 | Field | Notes |
 |---|---|
-| **Patient no** | Allocated on save, e.g. `P00012` |
-| **Name**, **Phone**, **Age**, **Sex** | |
-| **Address**, **Allergies** | Optional |
-| **Save patient** | Saves changes, then clears the screen — search box included — for the next patient |
-| **Clear** | Empties the form without saving |
-| **Remove** | Refused if they have visits on record. Clears the screen too |
-| **+ New patient** | Registers someone without booking a visit |
+| **Patient no** | Top right. Allocated on save, e.g. `P00012` |
+| **Name** | The only field that is required |
+| **Phone** | The parent's number. Shared across siblings is normal |
+| **Age**, **Sex** | |
+| **Address**, **Allergies** | Optional. Allergies show against every prescription |
+| **Save patient** | Saves and closes. The register clears — search box included — for the next patient |
+| **Cancel** | Closes without saving. Nothing already saved is changed |
+| **Remove** | Only for somebody already registered, and it asks first. Refused if they have visits on record |
 
-> **The screen clearing after Save is deliberate.** With the patient left loaded,
-> typing the next child's name over it and pressing Save would change the child
-> you just registered instead of adding the new one. To carry on editing the same
-> patient, search for them again and select them.
+> **The register clearing after Save is deliberate.** This screen used to keep the
+> patient loaded in a column on the right, and typing the next child's name over
+> it and pressing Save changed the child you had just registered instead of adding
+> the new one — the first child left the register without a trace. Each patient
+> now gets a form of its own. To carry on editing the same patient, search for
+> them again and click Edit.
 
-## History (bottom left)
+## History
 
 **Visits & prescriptions** — every visit ever, with diagnosis, fee and receipt
 number. Select one, then:
@@ -960,7 +1172,7 @@ number. Select one, then:
 
 ---
 
-# 11. Reports
+# 12. Reports
 
 ![Reports](images/reports.png)
 
@@ -993,7 +1205,7 @@ The list is not a warning and does not have to be empty. It is a worklist.
 
 ---
 
-# 12. Printing
+# 13. Printing
 
 Everything previews before any paper moves.
 
@@ -1013,7 +1225,7 @@ it cannot be mistaken for the original.
 
 ---
 
-# 13. Worked examples
+# 14. Worked examples
 
 Real situations, start to finish, with the numbers.
 
@@ -1153,7 +1365,7 @@ batch numbers and expiry printed on it.
 
 ---
 
-# 14. What the system will and will not do
+# 15. What the system will and will not do
 
 Worth reading once. It is the difference between trusting a number and checking it.
 
@@ -1166,7 +1378,7 @@ Worth reading once. It is the difference between trusting a number and checking 
 | **A course needs 20 and there are only 12** | It bills 12 and says *"Short: Amoxicillin (12 of 20)"*. It never quietly bills less without telling you |
 | **A strip of 15 and a strip of 10 of the same drug** | Each batch prices against the pack it actually came in. Old stock is never repriced |
 | **A medicine is prescribed that you do not stock** | Written on the prescription, named at the counter, never added to your records |
-| **A medicine has run out mid-queue** | Add it from the counter — see [section 9](#the-medicine-is-in-the-shop-but-the-screen-says-none) |
+| **A medicine has run out mid-queue** | Add it from the counter — see [section 10](#the-medicine-is-in-the-shop-but-the-screen-says-none) |
 | **Stock is expired** | Never dispensed. It stays on the shelf listing so you can see it and return it |
 | **A sealed pack that cannot be split** | Untick **Sell loose units** and the counter insists on whole packs, telling you the number to type |
 | **A Schedule H1 medicine** | Cannot be saved without the prescribing doctor. It goes in the register automatically |
@@ -1204,7 +1416,7 @@ Worth reading once. It is the difference between trusting a number and checking 
 
 ---
 
-# 15. When something goes wrong
+# 16. When something goes wrong
 
 ## The application does not close on an error
 

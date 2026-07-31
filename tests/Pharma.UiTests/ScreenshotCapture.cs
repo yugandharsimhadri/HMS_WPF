@@ -265,6 +265,23 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("patients");
 
+        // The patient form, over the shell.
+        app.Click("PatientsEdit");
+        AppFixture.WaitUntil(() => app.Find("PatientName") is not null, "the patient form");
+        Settle();
+        Capture("patient-editor");
+
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "patient-editor-annotated.png"),
+            new Note("PatientName", "The only field that must be filled in."),
+            new Note("PatientPhone", "A whole family shares one number, and that is fine."),
+            new Note("PatientAllergies", "Shown against every prescription this child is written."),
+            new Note("PatientDelete", "Only for somebody already on the register, and it asks first."),
+            new Note("PatientSave", "Saves and closes. The register clears for the next patient."));
+
+        app.Click("PatientEditorCancel");
+        AppFixture.WaitUntil(() => app.Find("PatientName") is null, "the patient form to close");
+        app.Grid("PatientsGrid").Rows[0].Select();
+
         // Print preview, from the patient's own record.
         app.Grid("PatientHistoryGrid").Rows[0].Select();
         app.Click("PatientPrintReceipt");

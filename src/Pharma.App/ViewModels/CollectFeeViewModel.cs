@@ -31,9 +31,19 @@ public partial class CollectFeeViewModel : ObservableObject
         _settings = settings;
         _visit = visit;
 
-        Fee = visit.Fee;
-        _booked = visit.Fee;
+        Fee = Money(visit.Fee);
+        _booked = Fee;
     }
+
+    /// <summary>
+    /// The same amount, to two decimal places.
+    ///
+    /// SQLite keeps a decimal's scale exactly as it was written, so a fee typed
+    /// as 300 comes back as 300 and one that has been through a calculation
+    /// comes back as 300.0. Adding a zero of scale two lifts either to 300.00 —
+    /// "₹300.0" on the screen where money changes hands reads as unfinished.
+    /// </summary>
+    private static decimal Money(decimal value) => value + 0.00m;
 
     /// <summary>What was quoted at booking, so a change can be pointed out.</summary>
     private readonly decimal _booked;
