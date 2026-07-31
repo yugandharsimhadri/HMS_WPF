@@ -55,7 +55,7 @@ sections 1 to 15.
 3. Tick **Registered for GST** only if the clinic actually is. Then enter the
    **GSTIN**. Leave it unticked and bills print as a plain invoice.
 4. Enter the **drug licence number** and the **pharmacist's name**.
-5. Click **Save shop details**.
+5. Click **Save Clinic / Pharmacy details**.
 6. On the right, enter the first **doctor** — name, speciality, registration
    number, usual fee — and click **Save doctor**.
 
@@ -343,11 +343,11 @@ Everything here prints on your bills, receipts and prescriptions.
 
 ![Settings](images/settings.png)
 
-## Shop details (left card)
+## Clinic / Pharmacy details (left card)
 
 | Control | What to enter |
 |---|---|
-| **Clinic / shop name** | Printed largest, at the top of every document |
+| **Clinic / Pharmacy name** | Printed largest, at the top of every document |
 | **Address** | One line, under the name |
 | **Phone** | Shown beside the address |
 | **Registered for GST** | Off by default. See below — this changes what your bills are |
@@ -357,12 +357,12 @@ Everything here prints on your bills, receipts and prescriptions.
 | **OPD queue layout** | `Tiles` or `Rows` — see [section 3](#choosing-tiles-or-rows) |
 | **Appearance** | `Light` or `Dark`. Changes the whole application straight away |
 | **Bill footer** | Free text at the bottom of a bill, e.g. "Get well soon" |
-| **Save shop details** | Applies everything above. New documents use it immediately |
+| **Save Clinic / Pharmacy details** | Applies everything above. New documents use it immediately |
 
 **Appearance** is worth trying if the counter sits under a bright window or, more
 often, in a dim corner in the evening. The change is immediate — you do not have
-to save or restart to see it — but **Save shop details** is what makes it stick
-for next time.
+to save or restart to see it — but **Save Clinic / Pharmacy details** is what
+makes it stick for next time.
 
 Printed bills, receipts and prescriptions are always black on white whatever you
 choose here. Paper is paper.

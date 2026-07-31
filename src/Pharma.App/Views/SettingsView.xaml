@@ -19,11 +19,11 @@
 
         <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
             <StackPanel>
-                <TextBlock Text="Shop details" Style="{StaticResource H2}"/>
+                <TextBlock Text="Clinic / Pharmacy details" Style="{StaticResource H2}"/>
                 <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
                            Text="These appear on every printed bill and prescription. GSTIN and the drug licence number are required on a retail chemist's tax invoice."/>
 
-                <TextBlock Text="Clinic / shop name" Style="{StaticResource Label}"/>
+                <TextBlock Text="Clinic / Pharmacy name" Style="{StaticResource Label}"/>
                 <TextBox Text="{Binding ShopName, UpdateSourceTrigger=PropertyChanged}"
                          AutomationProperties.AutomationId="ShopName"/>
 
@@ -86,7 +86,7 @@
                          AcceptsReturn="True" Height="50" TextWrapping="Wrap"/>
 
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="Save shop details" Style="{StaticResource BtnPrimary}"
+                    <Button Content="Save Clinic / Pharmacy details" Style="{StaticResource BtnPrimary}"
                             Command="{Binding SaveShopCommand}"
                             AutomationProperties.AutomationId="ShopSave"/>
                     <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="8,0,0,0" MinWidth="80"

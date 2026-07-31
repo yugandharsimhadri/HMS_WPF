@@ -8,12 +8,19 @@ using Pharma.Data;
 
 namespace Pharma.App.ViewModels;
 
-/// <summary>Shop identity (printed on every bill) and the doctor list.</summary>
+/// <summary>
+/// The clinic's own identity (printed on every bill) and the doctor list.
+///
+/// The type behind it is still <c>ShopProfile</c> and the columns are still
+/// named for a shop. That is a schema already live at a customer, and renaming
+/// it would earn a migration for no benefit anyone can see — the words on
+/// screen are what people read, and those say clinic / pharmacy.
+/// </summary>
 public partial class SettingsViewModel(
     SettingsService settings, OpdService opd, ILicenseService licence) : ObservableObject, IPage
 {
     public string Title => "Settings";
-    public string Subtitle => "Shop details printed on bills and prescriptions";
+    public string Subtitle => "Clinic / Pharmacy details printed on bills and prescriptions";
 
     /// <summary>One line about the licence, so the state is visible without
     /// opening the dialog.</summary>

@@ -100,7 +100,7 @@ otherwise the first thing they meet is a warning that looks like a virus alert.
 
 Once it opens, in this order:
 
-1. **Settings → Shop details.** The clinic name, address, phone, GSTIN, drug
+1. **Settings → Clinic / Pharmacy details.** The clinic name, address, phone, GSTIN, drug
    licence number and pharmacist. Everything here prints on every bill, receipt
    and prescription, so it is worth getting right before the first sale.
 2. **Settings → Doctors.** At least one, or no visit can be booked.
