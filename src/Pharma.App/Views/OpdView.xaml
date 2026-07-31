@@ -251,12 +251,17 @@
                 <Button DockPanel.Dock="Right" Content="+ New visit" Style="{StaticResource BtnPrimary}"
                         Margin="8,0,0,6" Command="{Binding NewVisitCommand}"
                         AutomationProperties.AutomationId="OpdNewVisit"/>
-                <!-- Belongs to the Fee button on a tile, not to booking, which is
-                     where it used to live and where nobody looked for it. -->
-                <ComboBox DockPanel.Dock="Right" Width="110" Margin="8,0,0,6" VerticalAlignment="Center"
-                          ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding FeePaymentMode, Mode=TwoWay}"
-                          ToolTip="How the consultation fee is taken when you press Fee on a tile"
-                          AutomationProperties.AutomationId="OpdFeeMode"/>
+                <!-- Which sitting. Doctors work mornings and evenings with the
+                     afternoon off, so this is the filter the desk actually
+                     wants. The hours are set under Settings.
+
+                     It replaced a payment-mode picker, which sat here deciding
+                     how money was taken three clicks away — that now lives in
+                     the fee form, where the money is. -->
+                <ComboBox DockPanel.Dock="Right" Width="120" Margin="8,0,0,6" VerticalAlignment="Center"
+                          ItemsSource="{Binding Sessions}" SelectedItem="{Binding Session, Mode=TwoWay}"
+                          ToolTip="Morning or evening sitting. The hours are set under Settings."
+                          AutomationProperties.AutomationId="OpdSession"/>
 
                 <StackPanel Orientation="Horizontal">
                     <RadioButton Content="All doctors" GroupName="DoctorTab" IsChecked="True"

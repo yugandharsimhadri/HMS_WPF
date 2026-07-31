@@ -37,7 +37,7 @@ public class ReprintUiTests(AppFixture app) : IClassFixture<AppFixture>
         OpdUiTests.BookWalkIn(app, name, "9007006005", "5");
 
         AppFixture.WaitUntil(() => app.HasTile("OpdWaitingList", name), "the tile to appear");
-        app.ClickTile("OpdWaitingList", "TileFee", name);
+        app.TakeFee("OpdWaitingList", name);
         ClosePreview();
 
         return name;
@@ -59,6 +59,62 @@ public class ReprintUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         Assert.Contains("RCP", app.TextOf("OpdStatus"));
         Assert.Contains(name, app.TextOf("OpdStatus"));
+    }
+
+    /// <summary>
+    /// Pressing Fee used to take the money there and then, at whatever payment
+    /// mode a combo at the top of the screen was left on, and go straight to a
+    /// print preview. A receipt is numbered and dated as it is written, so a fee
+    /// taken wrongly is a fee reversed on paper. It has to ask first.
+    /// </summary>
+    [Fact]
+    public void The_fee_form_shows_what_is_about_to_be_taken()
+    {
+        var name = $"Shown {DateTime.Now:HHmmssfff}";
+        OpdUiTests.BookWalkIn(app, name, "9007006007", "6");
+        AppFixture.WaitUntil(() => app.HasTile("OpdWaitingList", name), "the tile to appear");
+
+        app.OpenFeeForm("OpdWaitingList", name);
+
+        // The child, and the amount, before anything is written.
+        Assert.Contains(name, app.TextOf("CollectFeeHeader"));
+        Assert.NotEqual("", app.TextBox("CollectFeeAmount").Text);
+
+        app.Click("CollectFeeCancel");
+        AppFixture.WaitUntil(() => app.Find("CollectFeeTake") is null, "the form to close");
+
+        // Backing out burns no receipt number: the tile still owes the fee.
+        app.Navigate("NavOpd", "OPD");
+        OpenPatient(name);
+        AppFixture.WaitUntil(() => app.Grid("PatientHistoryGrid").RowCount == 1, "the visit history");
+        Assert.Equal("", app.CellOf("PatientHistoryGrid", "RECEIPT"));
+    }
+
+    /// <summary>
+    /// A follow-up seen at half fee, or a family concession. The receipt has to
+    /// say what actually changed hands, not what was quoted at booking.
+    /// </summary>
+    [Fact]
+    public void An_edited_amount_is_what_the_receipt_says()
+    {
+        var name = $"Concession {DateTime.Now:HHmmssfff}";
+        OpdUiTests.BookWalkIn(app, name, "9007006008", "3");
+        AppFixture.WaitUntil(() => app.HasTile("OpdWaitingList", name), "the tile to appear");
+
+        app.OpenFeeForm("OpdWaitingList", name);
+        app.Type("CollectFeeAmount", "150");
+
+        // It says so, rather than letting a mistyped digit pass as a decision.
+        AppFixture.WaitUntil(() => app.TextOf("CollectFeeNote").Contains("150"), "the changed-fee note");
+
+        app.ConfirmFee();
+        ClosePreview();
+
+        Assert.Contains("150", app.TextOf("OpdStatus"));
+
+        OpenPatient(name);
+        AppFixture.WaitUntil(() => app.Grid("PatientHistoryGrid").RowCount == 1, "the visit history");
+        Assert.Equal("150.00", app.CellOf("PatientHistoryGrid", "FEE"));
     }
 
     [Fact]

@@ -3,8 +3,14 @@ namespace Pharma.UiTests;
 /// <summary>Drives the OPD desk exactly as a receptionist would.</summary>
 public class OpdUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
-    /// <summary>Open booking, search for someone new, fill the form, book.</summary>
-    internal static void BookWalkIn(AppFixture app, string name, string phone, string age)
+    /// <summary>
+    /// Open booking, search for someone new, fill the form, book.
+    /// </summary>
+    /// <param name="at">
+    /// The booked time as "HH:mm". Left alone it is now, which is what a walk-in
+    /// is; the session tests need a time they chose rather than the clock's.
+    /// </param>
+    internal static void BookWalkIn(AppFixture app, string name, string phone, string age, string? at = null)
     {
         app.Navigate("NavOpd", "OPD");
         app.Click("OpdNewVisit");
@@ -19,6 +25,17 @@ public class OpdUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Type("OpdNewName", name);
         app.Type("OpdNewPhone", phone);
         app.Type("OpdNewAge", age);
+
+        if (at is not null)
+        {
+            app.Type("OpdTime", at);
+
+            // Read it back. A booked time that did not take would otherwise show
+            // up much later as a visit missing from a session, which is a long
+            // way from the line that caused it.
+            AppFixture.WaitUntil(() => app.TextBox("OpdTime").Text == at, $"the booked time to read {at}");
+        }
+
         app.Click("OpdBook");
 
         AppFixture.WaitUntil(

@@ -76,6 +76,51 @@ public partial class SettingsViewModel(
     partial void OnThemeChanged(Pharma.Core.AppThemeKind value) => AppTheme.Apply(value);
 
     public Array QueueLayouts => Enum.GetValues<QueueLayout>();
+
+    // Held as text, because they are typed. Anything unreadable falls back to
+    // the current default rather than being refused — an unparseable window
+    // would otherwise hide the whole OPD queue, which is a far worse outcome
+    // than a session that quietly runs the usual hours.
+    [ObservableProperty] private string _morningFrom = "10:00";
+    [ObservableProperty] private string _morningTo = "13:00";
+    [ObservableProperty] private string _eveningFrom = "16:00";
+    [ObservableProperty] private string _eveningTo = "20:00";
+
+    /// <summary>
+    /// Reads the four boxes back as sentences, so a typo is visible before it
+    /// is saved rather than the next time somebody wonders where the queue went.
+    /// </summary>
+    public string SessionHint
+    {
+        get
+        {
+            var bad = new[]
+            {
+                ("Morning from", MorningFrom), ("Morning to", MorningTo),
+                ("Evening from", EveningFrom), ("Evening to", EveningTo)
+            }.Where(f => !TimeSpan.TryParse(f.Item2, out _)).Select(f => f.Item1).ToList();
+
+            if (bad.Count > 0)
+                return $"{string.Join(", ", bad)} — not a time. Use the 24-hour clock, like 16:30.";
+
+            var morning = TimeSpan.Parse(MorningFrom);
+            var morningEnd = TimeSpan.Parse(MorningTo);
+            var evening = TimeSpan.Parse(EveningFrom);
+            var eveningEnd = TimeSpan.Parse(EveningTo);
+
+            if (morningEnd <= morning || eveningEnd <= evening)
+                return "A sitting has to end after it starts.";
+
+            return $"The OPD screen can show the morning sitting ({MorningFrom}–{MorningTo}), " +
+                   $"the evening one ({EveningFrom}–{EveningTo}), or the full day. " +
+                   $"A visit booked outside both is only on the full day.";
+        }
+    }
+
+    partial void OnMorningFromChanged(string value) => OnPropertyChanged(nameof(SessionHint));
+    partial void OnMorningToChanged(string value) => OnPropertyChanged(nameof(SessionHint));
+    partial void OnEveningFromChanged(string value) => OnPropertyChanged(nameof(SessionHint));
+    partial void OnEveningToChanged(string value) => OnPropertyChanged(nameof(SessionHint));
     [ObservableProperty] private string _databasePath = DbBootstrapper.DatabasePath;
     [ObservableProperty] private string _logPath = AppLog.CurrentFile;
     [ObservableProperty] private string _backupPath = DbBootstrapper.BackupDirectory;
@@ -165,6 +210,11 @@ public partial class SettingsViewModel(
         QueueLayout = profile.QueueLayout;
         Theme = profile.Theme;
 
+        MorningFrom = profile.MorningFrom.ToString(@"hh\:mm");
+        MorningTo = profile.MorningTo.ToString(@"hh\:mm");
+        EveningFrom = profile.EveningFrom.ToString(@"hh\:mm");
+        EveningTo = profile.EveningTo.ToString(@"hh\:mm");
+
         RefreshLastBackup();
 
         await LoadDoctorsAsync();
@@ -213,6 +263,10 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task SaveShopAsync()
     {
+        // Read back first, so a session time that will not parse can fall back
+        // to what is already stored rather than to a hard-coded default.
+        var saved = await settings.GetAsync();
+
         await settings.SaveAsync(new ShopProfile
         {
             Name = ShopName.Trim(),
@@ -224,12 +278,23 @@ public partial class SettingsViewModel(
             PharmacistName = PharmacistName.Trim(),
             BillFooter = BillFooter.Trim(),
             QueueLayout = QueueLayout,
-            Theme = Theme
+            Theme = Theme,
+
+            // A time that will not parse keeps the one already saved. The OPD
+            // screen filters on these, and a bad window there hides the queue.
+            MorningFrom = Session(MorningFrom, saved.MorningFrom),
+            MorningTo = Session(MorningTo, saved.MorningTo),
+            EveningFrom = Session(EveningFrom, saved.EveningFrom),
+            EveningTo = Session(EveningTo, saved.EveningTo)
         });
 
         Status = $"Saved. The OPD queue will use {QueueLayout.ToString().ToLowerInvariant()}, " +
                  $"in the {Theme.ToString().ToLowerInvariant()} theme.";
     }
+
+    /// <summary>A typed session time, or what was already saved if it is not one.</summary>
+    private static TimeSpan Session(string typed, TimeSpan fallback)
+        => TimeSpan.TryParse(typed, out var parsed) ? parsed : fallback;
 
     /// <summary>Opens the log folder so a problem can be reported with the file attached.</summary>
     [RelayCommand]

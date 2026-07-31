@@ -34,7 +34,19 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         OpdUiTests.BookWalkIn(app, "Rohan Verma", "9008007001", "7");
         OpdUiTests.BookWalkIn(app, "Sana Iqbal", "9004003002", "2");
 
-        app.ClickTile("OpdWaitingList", "TileFee", "Baby Anika");
+        // The fee form, before it is taken.
+        app.OpenFeeForm("OpdWaitingList", "Baby Anika");
+        Settle();
+        Capture("collect-fee");
+
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "collect-fee-annotated.png"),
+            new Note("CollectFeeSummary", "Age, sex, booked time and the doctor. Check you have the right child."),
+            new Note("CollectFeeAmount", "What is actually being taken. Change it for a concession or a follow-up."),
+            new Note("CollectFeeMode", "Cash, UPI or card. Recorded against the receipt."),
+            new Note("CollectFeePrint", "Off if you do not want paper. The receipt is still numbered and reprintable."),
+            new Note("CollectFeeTake", "Asks once more, naming the amount and the child, then writes the receipt."));
+
+        app.ConfirmFee();
         ClosePreview();
 
         app.ClickTile("OpdWaitingList", "TileDone", "Sana Iqbal");

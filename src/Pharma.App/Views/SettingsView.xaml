@@ -71,6 +71,51 @@
                     </StackPanel>
                 </Grid>
 
+                <!-- When the doctor sits. The OPD screen filters the queue by
+                     these, so the hours are the clinic's to set: a two-sitting
+                     day is the norm but the times are not. -->
+                <TextBlock Text="Consulting hours" Style="{StaticResource Label}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Morning" Style="{StaticResource Muted}"
+                               VerticalAlignment="Center" Width="60"/>
+                    <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding MorningFrom, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="24-hour clock, e.g. 10:00"
+                             AutomationProperties.AutomationId="MorningFrom"/>
+                    <TextBlock Grid.Row="0" Grid.Column="4" Text="to" Style="{StaticResource Muted}"
+                               VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="0" Grid.Column="6" Text="{Binding MorningTo, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="The end is exclusive - a morning ending 13:00 does not claim the one o'clock patient"
+                             AutomationProperties.AutomationId="MorningTo"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Evening" Style="{StaticResource Muted}"
+                               VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding EveningFrom, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="24-hour clock, e.g. 16:00"
+                             AutomationProperties.AutomationId="EveningFrom"/>
+                    <TextBlock Grid.Row="1" Grid.Column="4" Text="to" Style="{StaticResource Muted}"
+                               VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="1" Grid.Column="6" Text="{Binding EveningTo, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="24-hour clock, e.g. 20:00"
+                             AutomationProperties.AutomationId="EveningTo"/>
+                </Grid>
+                <TextBlock Text="{Binding SessionHint}" Style="{StaticResource Muted}"
+                           TextWrapping="Wrap" Margin="0,4,0,10"
+                           AutomationProperties.AutomationId="SessionHint"/>
+
                 <TextBlock Text="OPD queue layout" Style="{StaticResource Label}"/>
                 <ComboBox ItemsSource="{Binding QueueLayouts}" SelectedItem="{Binding QueueLayout, Mode=TwoWay}"
                           ToolTip="Tiles read at a glance; rows fit more people on screen"

@@ -33,12 +33,62 @@ public class ShopProfile
     /// them, so it is a setting rather than something we decide.
     /// </summary>
     public Pharma.Core.AppThemeKind Theme { get; set; } = Pharma.Core.AppThemeKind.Light;
+
+    // When the doctor actually sits. Indian clinics run two sittings with the
+    // afternoon off, and the desk thinks in those terms — "who is left this
+    // evening" is a real question and "who is left today" is not.
+    //
+    // Defaults are the common pattern. They are settings because the hours are
+    // the one thing that differs from clinic to clinic.
+    public TimeSpan MorningFrom { get; set; } = new(10, 0, 0);
+    public TimeSpan MorningTo { get; set; } = new(13, 0, 0);
+    public TimeSpan EveningFrom { get; set; } = new(16, 0, 0);
+    public TimeSpan EveningTo { get; set; } = new(20, 0, 0);
+
+    /// <summary>
+    /// The hours a session covers, or null for the whole day. The end is
+    /// exclusive, so a morning ending at 13:00 does not also claim the one
+    /// o'clock patient.
+    /// </summary>
+    public (TimeSpan From, TimeSpan To)? Window(ClinicSession session) => session switch
+    {
+        ClinicSession.Morning => (MorningFrom, MorningTo),
+        ClinicSession.Evening => (EveningFrom, EveningTo),
+        _ => null
+    };
+
+    /// <summary>Whether a visit at this time belongs to the chosen session.</summary>
+    public bool IsIn(ClinicSession session, DateTime when)
+    {
+        if (Window(session) is not { } window) return true;
+
+        var time = when.TimeOfDay;
+        return time >= window.From && time < window.To;
+    }
+
+    /// <summary>"10:00 to 13:00", for the line under the OPD heading.</summary>
+    public string Describe(ClinicSession session) =>
+        Window(session) is { } window
+            ? $"{window.From:hh\\:mm} to {window.To:hh\\:mm}"
+            : "the whole day";
 }
 
 public enum QueueLayout
 {
     Tiles = 0,
     Rows = 1
+}
+
+/// <summary>
+/// Which sitting the OPD screen is showing. Full day is the safe default: it
+/// hides nobody, which matters because a visit booked outside both windows —
+/// two in the afternoon, say — belongs to neither session.
+/// </summary>
+public enum ClinicSession
+{
+    FullDay = 0,
+    Morning = 1,
+    Evening = 2
 }
 
 public class SettingsService(IDbContextFactory<AppDbContext> factory)
@@ -53,6 +103,10 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     private const string KeyQueueLayout = "opd.queuelayout";
     private const string KeyTheme = "ui.theme";
     private const string KeyGstRegistered = "shop.gstregistered";
+    private const string KeyMorningFrom = "opd.morning.from";
+    private const string KeyMorningTo = "opd.morning.to";
+    private const string KeyEveningFrom = "opd.evening.from";
+    private const string KeyEveningTo = "opd.evening.to";
 
     public async Task<ShopProfile> GetAsync()
     {
@@ -76,7 +130,12 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
             Theme = Enum.TryParse<Pharma.Core.AppThemeKind>(Get(map, KeyTheme, ""), out var theme)
                 ? theme
                 : fallback.Theme,
-            GstRegistered = bool.TryParse(Get(map, KeyGstRegistered, ""), out var registered) && registered
+            GstRegistered = bool.TryParse(Get(map, KeyGstRegistered, ""), out var registered) && registered,
+
+            MorningFrom = Time(map, KeyMorningFrom, fallback.MorningFrom),
+            MorningTo = Time(map, KeyMorningTo, fallback.MorningTo),
+            EveningFrom = Time(map, KeyEveningFrom, fallback.EveningFrom),
+            EveningTo = Time(map, KeyEveningTo, fallback.EveningTo)
         };
     }
 
@@ -95,11 +154,26 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         await SetAsync(db, KeyTheme, profile.Theme.ToString());
         await SetAsync(db, KeyGstRegistered, profile.GstRegistered.ToString());
 
+        // "hh\:mm" rather than the default, which would write 10:00:00 and read
+        // back the same — correct, but nobody hand-editing the table wants to
+        // count the colons.
+        await SetAsync(db, KeyMorningFrom, profile.MorningFrom.ToString(@"hh\:mm"));
+        await SetAsync(db, KeyMorningTo, profile.MorningTo.ToString(@"hh\:mm"));
+        await SetAsync(db, KeyEveningFrom, profile.EveningFrom.ToString(@"hh\:mm"));
+        await SetAsync(db, KeyEveningTo, profile.EveningTo.ToString(@"hh\:mm"));
+
         await db.SaveChangesAsync();
     }
 
     private static string Get(Dictionary<string, string> map, string key, string fallback)
         => map.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
+
+    /// <summary>
+    /// A stored time, or the default when the row is missing or unreadable. An
+    /// unparseable session window would otherwise hide the whole queue.
+    /// </summary>
+    private static TimeSpan Time(Dictionary<string, string> map, string key, TimeSpan fallback)
+        => TimeSpan.TryParse(Get(map, key, ""), out var parsed) ? parsed : fallback;
 
     private static async Task SetAsync(AppDbContext db, string key, string? value)
     {

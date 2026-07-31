@@ -311,9 +311,16 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
     /// Records the consultation fee and allocates a receipt number. Collecting
     /// twice is a no-op so a double click cannot burn a number or restate the date.
     /// </summary>
-    public async Task<Visit?> CollectFeeAsync(Guid visitId, PaymentMode mode = PaymentMode.Cash)
+    /// <param name="amount">
+    /// What was actually taken, when it differs from what was quoted at booking
+    /// — a follow-up seen at half fee, a rounding down, a family concession.
+    /// Null keeps the booked fee. The receipt must say what changed hands, so
+    /// this writes the visit's fee as well as the receipt.
+    /// </param>
+    public async Task<Visit?> CollectFeeAsync(
+        Guid visitId, PaymentMode mode = PaymentMode.Cash, decimal? amount = null)
     {
-        using var log = AppLog.Enter(nameof(CollectFeeAsync), $"visit={visitId} mode={mode}");
+        using var log = AppLog.Enter(nameof(CollectFeeAsync), $"visit={visitId} mode={mode} amount={amount}");
 
         await using var db = await factory.CreateDbContextAsync();
 
@@ -332,6 +339,14 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         {
             log.Skip($"{visit.VisitNo} already paid on receipt {visit.FeeReceiptNo}");
             return visit;
+        }
+
+        // A negative fee is not a concession, it is a typo, and it would print a
+        // receipt the clinic owes money on.
+        if (amount is { } corrected && corrected >= 0 && corrected != visit.Fee)
+        {
+            AppLog.Info($"Fee on {visit.VisitNo} corrected at the desk: {visit.Fee:0.00} -> {corrected:0.00}.");
+            visit.Fee = corrected;
         }
 
         visit.FeePaid = true;

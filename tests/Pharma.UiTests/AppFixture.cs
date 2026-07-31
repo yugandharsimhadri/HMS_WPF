@@ -249,6 +249,40 @@ public class AppFixture : IDisposable
         TileAction(listAutomationId, action, patientName)!.AsButton().Invoke();
     }
 
+    /// <summary>
+    /// Takes the consultation fee at the amount already on the form.
+    ///
+    /// Pressing Fee no longer takes the money — it opens a form over the shell
+    /// showing the amount and the payment mode, and the press after that is a
+    /// plain yes or no. Three test classes need the whole sequence, so it lives
+    /// here rather than being spelled out in each of them.
+    ///
+    /// Leaves the receipt preview open; the caller closes it.
+    /// </summary>
+    public void TakeFee(string listAutomationId, string patientName)
+    {
+        OpenFeeForm(listAutomationId, patientName);
+        ConfirmFee();
+    }
+
+    /// <summary>Presses Fee on a tile and waits for the form to open.</summary>
+    public void OpenFeeForm(string listAutomationId, string patientName)
+    {
+        ClickTile(listAutomationId, "TileFee", patientName);
+        WaitUntil(() => Find("CollectFeeTake") is not null, $"the fee form for {patientName}");
+    }
+
+    /// <summary>Presses Take fee and says yes to the confirmation behind it.</summary>
+    public void ConfirmFee()
+    {
+        Click("CollectFeeTake");
+
+        WaitUntil(() => MainWindow.ModalWindows.Length == 1, "the fee confirmation");
+        MainWindow.ModalWindows[0].FindFirstDescendant(cf => cf.ByName("Yes"))?.AsButton().Invoke();
+
+        WaitUntil(() => Find("CollectFeeTake") is null, "the fee form to close");
+    }
+
     public void Type(string automationId, string value)
     {
         var box = TextBox(automationId);

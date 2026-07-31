@@ -50,7 +50,7 @@ public class FeverVisitUiTests(AppFixture app) : IClassFixture<AppFixture>
         AppFixture.WaitUntil(() => app.HasTile("OpdWaitingList", patient), "the tile");
 
         // ── 3. The fee ─────────────────────────────────────────────────────
-        app.ClickTile("OpdWaitingList", "TileFee", patient);
+        app.TakeFee("OpdWaitingList", patient);
         ClosePreview();
 
         AppFixture.WaitUntil(() => app.TileAction("OpdWaitingList", "TileConsult", patient) is not null,

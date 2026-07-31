@@ -19,7 +19,27 @@ namespace Pharma.App.ViewModels;
 public partial class OpdViewModel(OpdService opd, SettingsService settings) : ObservableObject, IPage
 {
     public string Title => "OPD";
-    public string Subtitle => $"{Waiting.Count} waiting · {Completed.Count} completed · {Date:ddd, dd MMM}";
+
+    public string Subtitle
+    {
+        get
+        {
+            var line = $"{Waiting.Count} waiting · {Completed.Count} completed · {Date:ddd, dd MMM}";
+
+            if (Session == ClinicSession.FullDay) return line;
+
+            // Naming the hours matters: "3 waiting" under a session filter is a
+            // different number from "3 waiting" today, and the desk has to know
+            // which one it is looking at.
+            line += $" · {Session} sitting, {_shop.Describe(Session)}";
+
+            // And say when the filter is hiding people, or the afternoon walk-in
+            // who belongs to neither sitting simply vanishes.
+            if (Hidden > 0) line += $" · {Hidden} more today outside these hours";
+
+            return line;
+        }
+    }
 
     public ObservableCollection<Visit> Waiting { get; } = [];
     public ObservableCollection<Visit> Completed { get; } = [];
@@ -33,15 +53,29 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
     /// <summary>Chosen in Settings; re-read every time the screen is opened.</summary>
     [ObservableProperty] private bool _useTiles = true;
-    [ObservableProperty] private PaymentMode _feePaymentMode = PaymentMode.Cash;
+
+    /// <summary>
+    /// Which sitting to show. Doctors sit mornings and evenings with the
+    /// afternoon off, and "who is left this evening" is the question actually
+    /// being asked at the desk — "who is left today" answers it only by
+    /// accident, on a day with one sitting.
+    /// </summary>
+    [ObservableProperty] private ClinicSession _session = ClinicSession.FullDay;
+
+    /// <summary>How many of today's visits the session filter is holding back.</summary>
+    public int Hidden { get; private set; }
 
     private readonly List<Visit> _all = [];
 
-    public Array PaymentModes => Enum.GetValues<PaymentMode>();
+    /// <summary>The session hours, re-read whenever the screen is opened.</summary>
+    private ShopProfile _shop = new();
+
+    public Array Sessions => Enum.GetValues<ClinicSession>();
 
     public async Task LoadAsync()
     {
-        UseTiles = (await settings.GetAsync()).QueueLayout == QueueLayout.Tiles;
+        _shop = await settings.GetAsync();
+        UseTiles = _shop.QueueLayout == QueueLayout.Tiles;
 
         Doctors.Clear();
         foreach (var d in await opd.GetDoctorsAsync()) Doctors.Add(d);
@@ -53,6 +87,8 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
     partial void OnDoctorTabChanged(Doctor? value) => Regroup();
 
+    partial void OnSessionChanged(ClinicSession value) => Regroup();
+
     [RelayCommand]
     private async Task RefreshAsync()
     {
@@ -61,18 +97,32 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         Regroup();
     }
 
-    /// <summary>Splits the day's visits into the two columns for the chosen doctor.</summary>
+    /// <summary>
+    /// Splits the day's visits into the two columns, for the chosen doctor and
+    /// the chosen sitting.
+    /// </summary>
     private void Regroup()
     {
         Waiting.Clear();
         Completed.Clear();
+        Hidden = 0;
 
         foreach (var visit in _all.Where(v => DoctorTab is null || v.DoctorId == DoctorTab.Id))
         {
+            // Counted rather than dropped. A visit booked at two in the
+            // afternoon belongs to neither sitting, and a queue that quietly
+            // loses somebody is worse than one that says it is filtered.
+            if (!_shop.IsIn(Session, visit.ScheduledOn))
+            {
+                if (visit.IsWaiting || visit.Status == VisitStatus.Completed) Hidden++;
+                continue;
+            }
+
             if (visit.IsWaiting) Waiting.Add(visit);
             else if (visit.Status == VisitStatus.Completed) Completed.Add(visit);
         }
 
+        OnPropertyChanged(nameof(Hidden));
         OnPropertyChanged(nameof(Subtitle));
     }
 
@@ -122,7 +172,13 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         }, "Marking arrived", m => Status = m);
     }
 
-    /// <summary>Takes the fee, issues a numbered receipt, and offers to print it.</summary>
+    /// <summary>
+    /// Opens the fee form over the shell. It used to take the money on the
+    /// press — at whatever payment mode a combo at the top of the screen was
+    /// left on, and straight into a print preview. A receipt is numbered and
+    /// dated as it is written, so a fee taken wrongly is a fee reversed on
+    /// paper. Now the amount and the mode are shown, and asked about, first.
+    /// </summary>
     [RelayCommand]
     private async Task CollectFeeAsync(Visit? visit)
     {
@@ -134,17 +190,16 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
             return;
         }
 
-        await Safely.RunAsync(async () =>
-        {
-            var paid = await opd.CollectFeeAsync(visit.Id, FeePaymentMode);
-            if (paid is null) return;
+        var collecting = new CollectFeeViewModel(opd, settings, visit);
+        var shell = App.Services.GetRequiredService<MainViewModel>();
 
-            Status = $"Receipt {paid.FeeReceiptNo} — ₹{paid.Fee:0.00} received from {paid.Patient.Name}.";
-            await RefreshAsync();
+        await shell.ShowOverlayAsync(collecting, close => collecting.RequestClose += () => close());
 
-            var shop = await settings.GetAsync();
-            PrintService.Preview(() => FeeReceiptDocument.Build(paid, shop), $"Receipt {paid.FeeReceiptNo}");
-        }, "Taking the fee", m => Status = m);
+        await RefreshAsync();
+
+        // Set last: refreshing writes its own status, and the receipt number is
+        // what the desk needs left on screen.
+        if (collecting.Outcome is { } outcome) Status = outcome;
     }
 
     /// <summary>Moves the tile out of waiting and into completed.</summary>
