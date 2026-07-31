@@ -309,10 +309,12 @@ each day the application is opened. Under that is who built the software and
 which version you are running:
 
 > Developed by Sivayaan Technologies
-> Version 1.0.0
+> Version 1.0.0.4
 
-Read that version number out if you ever ring for help. It is on screen whatever
-page you are on, so nobody has to go looking for it.
+Read that version number out if you ever ring for help — it says which build of
+the software you have, which is the first thing anyone helping you needs to
+know. It is on screen whatever page you are on, so nobody has to go looking
+for it.
 
 ## Screens clear themselves when the job is done
 

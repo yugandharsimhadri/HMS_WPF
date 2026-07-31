@@ -29,7 +29,7 @@ public partial class App : Application
         // which covers a single clinic. Required before any PDF is generated.
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
-        AppLog.Info($"---- {ProductName} starting (v{AppInfo.Version}, {AppInfo.Developer}) ----");
+        AppLog.Info($"---- {ProductName} starting (v{AppInfo.FullVersion}, {AppInfo.Developer}) ----");
         AppLog.Info($"Settings: {AppConfig.FilePath}");
         AppLog.Info($"Database: {DbBootstrapper.DatabasePath}");
         AppLog.Info($"Logs:     {AppLog.LogDirectory}");

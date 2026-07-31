@@ -24,7 +24,6 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 $staging = Join-Path $env:TEMP "twinkle-setup-staging"
-$setup = Join-Path $OutputDir "TwinkleHMSSetup.exe"
 
 Write-Host "1/3  Building the application as a single file ..." -ForegroundColor Cyan
 
@@ -44,6 +43,17 @@ if ($LASTEXITCODE -ne 0) { throw "Publish failed." }
 
 $exe = Join-Path $staging "TwinkleHMS.exe"
 if (-not (Test-Path $exe)) { throw "TwinkleHMS.exe was not produced." }
+
+# The version goes in the file name. Setup files get emailed, copied to pen
+# drives and kept in a folder for years, and TwinkleHMSSetup.exe on its own
+# gives nobody any way to tell one from the next - which is the same problem
+# the version line in the sidebar exists to solve.
+$version = (Get-Item $exe).VersionInfo.FileVersion
+if (-not $version) { throw "Could not read the version out of $exe." }
+
+$setup = Join-Path $OutputDir "TwinkleHMSSetup-$version.exe"
+
+Write-Host "     version $version" -ForegroundColor DarkGray
 
 # Everything else the publish drops - symbols, the fonts QuestPDF ships as
 # package content, appsettings.json - is not needed beside a single-file build
@@ -92,7 +102,7 @@ InstallPrompt=Install Twinkle Children's Hospital on this PC?
 DisplayLicense=
 FinishMessage=Twinkle is installed. There is a shortcut on the desktop.
 TargetName=$setup
-FriendlyName=Twinkle Children's Hospital
+FriendlyName=Twinkle Children's Hospital $version
 AppLaunched=cmd /c install.cmd
 PostInstallCmd=<None>
 AdminQuietInstCmd=
@@ -118,6 +128,7 @@ $setupSize = [math]::Round((Get-Item $setup).Length / 1MB, 1)
 
 Write-Host ""
 Write-Host "Setup file:  $setup  ($setupSize MB)" -ForegroundColor Green
+Write-Host "Version:     $version  - this is what the clinic will read off the sidebar" -ForegroundColor Green
 Write-Host ""
 Write-Host "Copy that one file to the clinic PC and run it. It needs nothing"
 Write-Host "installed first. Windows will warn that the publisher is unknown,"

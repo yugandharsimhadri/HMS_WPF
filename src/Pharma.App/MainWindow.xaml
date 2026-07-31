@@ -145,9 +145,14 @@
                                    NavigateUri="{Binding DeveloperUrl}"
                                    RequestNavigate="Vendor_RequestNavigate"
                                    ToolTip="{Binding DeveloperUrl}"><Run Text="{Binding Developer, Mode=OneWay}"/></Hyperlink></TextBlock>
+                    <!-- The publish number, and nothing else. The commit it was
+                         built from lives in About and in the log files: it is
+                         for whoever is diagnosing, not for the person at the
+                         desk being asked to read a number down the phone. -->
                     <TextBlock FontSize="{StaticResource FontSmall}"
                                Foreground="{DynamicResource NavInkFaded}"
-                               Text="{Binding VersionLabel}"
+                               Text="{Binding VersionLabel}" TextWrapping="Wrap"
+                               ToolTip="Which build of the software this is. Read it out on a support call."
                                AutomationProperties.AutomationId="AppVersion"/>
                 </StackPanel>
 

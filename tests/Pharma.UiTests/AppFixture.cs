@@ -64,6 +64,13 @@ public class AppFixture : IDisposable
         }
     }
 
+    /// <summary>
+    /// Where the application under test was built to. Tests that check what the
+    /// build stamped on the assembly need to read the assembly itself, not a
+    /// number typed into the test.
+    /// </summary>
+    public static string ApplicationDirectory => Path.GetDirectoryName(FindExecutable())!;
+
     private static string FindExecutable()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

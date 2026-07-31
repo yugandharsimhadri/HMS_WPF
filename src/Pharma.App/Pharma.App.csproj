@@ -14,9 +14,22 @@
 
     <Product>Twinkle Children's Hospital</Product>
     <Company>Twinkle Children's Hospital</Company>
-    <!-- One field to bump per release: it sets both the assembly and file
-         version, and it is what the sidebar shows. -->
-    <Version>1.0.0</Version>
+    <!--
+        One field to bump, and it must be bumped before every publish.
+
+        major.minor.patch.PUBLISH. The fourth part is the publish number: it
+        counts the builds that actually went out to a clinic, and it is the
+        thing a support call turns on. Without it every release since 1.0.0 is
+        called 1.0.0, and "which version are you on?" has no useful answer.
+
+        1.0.0.3 was the last build published to the customer, so this — the one
+        under development — is .4. Bump it again the moment .4 has gone out.
+
+        It sets the assembly version, the file version Add or remove programs
+        lists, the name of the setup file, and the line in the sidebar. They
+        cannot disagree because there is only one of them.
+    -->
+    <Version>1.0.0.4</Version>
   </PropertyGroup>
 
   <ItemGroup>

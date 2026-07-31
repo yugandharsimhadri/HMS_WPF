@@ -48,8 +48,12 @@ public sealed class AboutViewModel(ILicenseService licence)
             ? "Expired"
             : $"{_info.DaysRemaining:N0} day(s)";
 
-    /// <summary>The build this is, for support to read back.</summary>
-    public string BuildVersion => AppInfo.Version;
+    /// <summary>
+    /// The build this is, for support to read back — commit included, because
+    /// two builds of the same version behave differently and the version alone
+    /// cannot tell them apart.
+    /// </summary>
+    public string BuildVersion => AppInfo.FullVersion;
 
     /// <summary>Who wrote it.</summary>
     public string Vendor => LicenseConstants.Vendor;

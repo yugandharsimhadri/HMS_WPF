@@ -16,7 +16,7 @@ powershell -ExecutionPolicy Bypass -File scripts\make-installer.ps1
 Takes two or three minutes, most of it compressing. You get one file:
 
 ```
-C:\HMS\Setup\TwinkleHMSSetup.exe        about 67 MB
+C:\HMS\Setup\TwinkleHMSSetup-1.0.0.5.exe        about 67 MB
 ```
 
 That is the whole thing. There is no folder to copy alongside it.
@@ -28,9 +28,11 @@ powershell -ExecutionPolicy Bypass -File scripts\make-installer.ps1 -OutputDir D
 ```
 
 > **The version comes from the project, not the script.** `<Version>` in
-> `src/Pharma.App/Pharma.App.csproj` is what the sidebar shows and what Add or
-> remove programs lists. Bump it before building a release, or two different
-> builds will both call themselves 1.0.0.
+> `src/Pharma.App/Pharma.App.csproj` is what names the setup file, what the
+> sidebar shows and what Add or remove programs lists. The fourth part is the
+> publish number — **raise it by one before building any installer you intend
+> to hand over**, or two different releases will both call themselves the same
+> thing and a support call will have no way to tell them apart.
 
 ---
 
@@ -52,7 +54,8 @@ otherwise the first thing they meet is a warning that looks like a virus alert.
 
 ## 3. What the person at the clinic does
 
-1. **Copy `TwinkleHMSSetup.exe` to the desktop.** Running it straight off a pen
+1. **Copy the setup file to the desktop.** It is named for the version it
+   installs — `TwinkleHMSSetup-1.0.0.5.exe`. Running it straight off a pen
    drive works, but from the desktop it is easier to find again.
 
 2. **If it came from the internet, unblock it first.** Right-click the file →

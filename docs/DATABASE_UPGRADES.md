@@ -169,9 +169,12 @@ project uses it and nothing should start.
 **Never ship a `.db` file with the installer.** It would overwrite the clinic's
 records. The installer copies one executable and nothing else, deliberately.
 
-**Bump `<Version>` in `Pharma.App.csproj` for every release.** Not required by
-migrations, but it is how you find out which schema a clinic is on when they ring
-up.
+**Bump the publish number in `<Version>` in `Pharma.App.csproj` for every
+release** — the fourth part, `1.0.0.4` → `1.0.0.5`. Not required by migrations,
+but it is how you find out which schema a clinic is on when they ring up: the
+sidebar tells you which build they are running, and the build tells you which
+migrations it carries. Leave it unchanged across two releases and that chain
+breaks at the first link.
 
 ---
 

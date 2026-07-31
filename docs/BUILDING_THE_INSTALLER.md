@@ -26,23 +26,43 @@ PowerShell script and a tool Windows already has.
 
 ## The four steps
 
-### 1. Set the version
+### 1. Bump the publish number
 
 Open `src/Pharma.App/Pharma.App.csproj` and change one line:
 
 ```xml
-<Version>1.0.1</Version>
+<Version>1.0.0.5</Version>
 ```
+
+It reads **major.minor.patch.publish**. The fourth part is the publish number:
+it counts the builds that actually went out to a clinic. Raise it by one every
+time you build an installer you intend to hand over, whether or not anything
+else about the version changed.
 
 That single field becomes:
 
 - the version in the navigation sidebar, which support asks people to read out,
 - the version listed under **Add or remove programs**,
+- **the name of the setup file** — `TwinkleHMSSetup-1.0.0.5.exe`,
 - the assembly and file version stamped on the executable.
 
 > **Do this before every release.** Two different builds both calling themselves
 > 1.0.0 is the fastest way to spend an afternoon on a bug that was fixed weeks
 > ago. There is nothing in the build that will stop you.
+
+The sidebar shows the publish number on its own:
+
+```
+Version 1.0.0.5
+```
+
+That is what a clinic reads out, and it answers *which release are they on*.
+
+The commit it was built from is kept out of the sidebar on purpose — a line of
+hex beside the number only invites the wrong half to be read out. It is in
+**Help → About** and at the top of every log file, as `1.0.0.5+72dbe37`. Reach
+for it when you rebuild a publish number after a quick fix and need to tell two
+builds of the same version apart.
 
 ### 2. Run the tests
 
@@ -74,11 +94,16 @@ Two or three minutes, most of it compressing. It prints its progress:
 ```
 1/3  Building the application as a single file ...
      72.9 MB
+     version 1.0.0.5
 2/3  Writing the package definition ...
 3/3  Packing (a 73 MB payload takes a minute or two) ...
 
-Setup file:  C:\HMS\Setup\TwinkleHMSSetup.exe  (66.6 MB)
+Setup file:  C:\HMS\Setup\TwinkleHMSSetup-1.0.0.5.exe  (66.6 MB)
+Version:     1.0.0.5  - this is what the clinic will read off the sidebar
 ```
+
+The version is in the file name, so a folder of setup files stays readable a
+year later and nobody hands over the wrong one.
 
 Somewhere other than `C:\HMS\Setup`:
 
