@@ -119,6 +119,9 @@ recall.
 
 Same pattern as the other fields already copied onto the line at sale time.
 
+> Written up more fully in [MANUFACTURER.md §1](MANUFACTURER.md), alongside the
+> three other places the manufacturer is under-used. Same change — do it once.
+
 ### 7. Customer mobile number
 
 **Where:** `Sale`, the counter, `BillPrinter`
