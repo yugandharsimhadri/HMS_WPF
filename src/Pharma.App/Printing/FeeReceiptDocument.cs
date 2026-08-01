@@ -66,8 +66,12 @@ public static class FeeReceiptDocument
         doc.Blocks.Add(Text("Consultation services. Fees once paid are not refundable.",
                             7.4, brush: Muted, align: TextAlignment.Center, topMargin: 8));
 
-        if (!string.IsNullOrWhiteSpace(theme.Footer))
-            doc.Blocks.Add(Text(theme.Footer, 7.4, brush: Muted, align: TextAlignment.Center, topMargin: 3));
+        // The clinic's own footer, set on the Clinic settings tab, takes over
+        // from the shared Reports footer once it is typed — see
+        // ClinicProfile.FooterText.
+        var footer = string.IsNullOrWhiteSpace(clinic.FooterText) ? theme.Footer : clinic.FooterText;
+        if (!string.IsNullOrWhiteSpace(footer))
+            doc.Blocks.Add(Text(footer, 7.4, brush: Muted, align: TextAlignment.Center, topMargin: 3));
 
         if (isReprint)
             doc.Blocks.Add(Text("DUPLICATE", 9, FontWeights.Bold, Muted, TextAlignment.Center, topMargin: 5));

@@ -168,6 +168,15 @@
                                        TextWrapping="Wrap" Margin="0,4,0,14"
                                        AutomationProperties.AutomationId="SessionHint"/>
 
+                            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,14"/>
+
+                            <TextBlock Text="Footer / disclaimer" Style="{StaticResource Label}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                       Text="Printed at the foot of the prescription and the fee receipt. Left blank, the Reports tab's shared footer prints instead."/>
+                            <TextBox Text="{Binding ClinicFooter, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,14"
+                                     AutomationProperties.AutomationId="ClinicFooter"/>
+
                             <Button Content="Save clinic details" Style="{StaticResource BtnPrimary}"
                                     HorizontalAlignment="Left"
                                     Command="{Binding SaveClinicCommand}"
@@ -230,6 +239,15 @@
                             <TextBox Text="{Binding PharmacistName, UpdateSourceTrigger=PropertyChanged}"
                                      Margin="0,0,0,14"
                                      AutomationProperties.AutomationId="PharmacistName"/>
+
+                            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,14"/>
+
+                            <TextBlock Text="Footer / disclaimer" Style="{StaticResource Label}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                       Text="Printed at the foot of the medicine bill. Left blank, the Reports tab's shared footer prints instead."/>
+                            <TextBox Text="{Binding PharmacyFooter, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,14"
+                                     AutomationProperties.AutomationId="PharmacyFooter"/>
 
                             <Button Content="Save pharmacy details" Style="{StaticResource BtnPrimary}"
                                     HorizontalAlignment="Left"

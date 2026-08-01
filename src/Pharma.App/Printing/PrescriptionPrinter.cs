@@ -47,10 +47,10 @@ public static class PrescriptionPrinter
             doc.Blocks.Add(Text(string.Join("   ·   ", vitals), 8, brush: Muted));
 
         if (!string.IsNullOrWhiteSpace(visit.Complaint))
-            doc.Blocks.Add(Text($"Complaint: {visit.Complaint}", 8.5, topMargin: 3));
+            doc.Blocks.Add(LabelValueText("Complaint", visit.Complaint, 8.5, topMargin: 3));
 
         if (!string.IsNullOrWhiteSpace(visit.Diagnosis))
-            doc.Blocks.Add(Text($"Diagnosis: {visit.Diagnosis}", 8.5, FontWeights.SemiBold));
+            doc.Blocks.Add(LabelValueText("Diagnosis", visit.Diagnosis, 8.5));
 
         doc.Blocks.Add(Text("Rx", 15, FontWeights.Bold, topMargin: 6, bottomMargin: 1));
 
@@ -87,8 +87,12 @@ public static class PrescriptionPrinter
         if (visit.FollowUpOn is { } follow)
             doc.Blocks.Add(Text($"Review on {follow:dd MMM yyyy}", 9, FontWeights.SemiBold, topMargin: 4));
 
-        if (!string.IsNullOrWhiteSpace(theme.Footer))
-            doc.Blocks.Add(Text(theme.Footer, 7.6, brush: Muted, align: TextAlignment.Center, topMargin: 6));
+        // The clinic's own footer, set on the Clinic settings tab, takes over
+        // from the shared Reports footer once it is typed — see
+        // ClinicProfile.FooterText.
+        var footer = string.IsNullOrWhiteSpace(clinic.FooterText) ? theme.Footer : clinic.FooterText;
+        if (!string.IsNullOrWhiteSpace(footer))
+            doc.Blocks.Add(Text(footer, 7.6, brush: Muted, align: TextAlignment.Center, topMargin: 6));
 
         doc.Blocks.Add(Text(visit.Doctor.Name, 8.5, FontWeights.SemiBold,
                             align: TextAlignment.Right, topMargin: 20));

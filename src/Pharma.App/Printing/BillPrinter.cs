@@ -26,9 +26,8 @@ public static class BillPrinter
         var head = NewTable(1, 1);
         var headGroup = new TableRowGroup();
         headGroup.Rows.Add(StackedListRow(
-            [$"Bill No: {sale.BillNo}", $"Patient: {sale.CustomerName}"],
-            [$"Date: {sale.BillDate:dd/MM/yyyy  HH:mm}",
-             string.IsNullOrWhiteSpace(sale.DoctorName) ? "" : $"Doctor: {sale.DoctorName}"]));
+            [("Bill No", sale.BillNo), ("Patient", sale.CustomerName)],
+            [("Date", $"{sale.BillDate:dd/MM/yyyy  HH:mm}"), ("Doctor", sale.DoctorName ?? "")]));
         head.RowGroups.Add(headGroup);
         doc.Blocks.Add(head);
         doc.Blocks.Add(Rule());
@@ -118,17 +117,17 @@ public static class BillPrinter
 
         var totals = NewTable(3, 0.2, 1.2);
         var totalGroup = new TableRowGroup();
-        totalGroup.Rows.Add(Row(false, "Gross", "", sale.GrossAmount.ToString("0.00")));
+        totalGroup.Rows.Add(TotalRow("Gross", sale.GrossAmount.ToString("0.00")));
         if (sale.DiscountAmount > 0)
-            totalGroup.Rows.Add(Row(false, "Discount", "", $"-{sale.DiscountAmount:0.00}"));
+            totalGroup.Rows.Add(TotalRow("Discount", $"-{sale.DiscountAmount:0.00}"));
         if (sale.IsTaxInvoice)
         {
-            totalGroup.Rows.Add(Row(false, "Taxable value", "", sale.TaxableAmount.ToString("0.00")));
-            totalGroup.Rows.Add(Row(false, "CGST", "", sale.CgstAmount.ToString("0.00")));
-            totalGroup.Rows.Add(Row(false, "SGST", "", sale.SgstAmount.ToString("0.00")));
+            totalGroup.Rows.Add(TotalRow("Taxable value", sale.TaxableAmount.ToString("0.00")));
+            totalGroup.Rows.Add(TotalRow("CGST", sale.CgstAmount.ToString("0.00")));
+            totalGroup.Rows.Add(TotalRow("SGST", sale.SgstAmount.ToString("0.00")));
         }
         if (sale.RoundOff != 0)
-            totalGroup.Rows.Add(Row(false, "Round off", "", sale.RoundOff.ToString("+0.00;-0.00")));
+            totalGroup.Rows.Add(TotalRow("Round off", sale.RoundOff.ToString("+0.00;-0.00")));
         totals.RowGroups.Add(totalGroup);
         doc.Blocks.Add(totals);
 
@@ -140,14 +139,18 @@ public static class BillPrinter
         doc.Blocks.Add(Rule());
 
         if (!string.IsNullOrWhiteSpace(pharmacy.PharmacistName))
-            doc.Blocks.Add(Text($"Pharmacist: {pharmacy.PharmacistName}", 8, brush: Muted));
+            doc.Blocks.Add(LabelValueText("Pharmacist", pharmacy.PharmacistName, 8, brush: Muted));
 
         if (sale.Items.Count > 0)
-            doc.Blocks.Add(Text($"HSN: {string.Join(", ", sale.Items.Select(i => i.HsnCode).Distinct())}",
-                                7.4, brush: Muted));
+            doc.Blocks.Add(LabelValueText("HSN", string.Join(", ", sale.Items.Select(i => i.HsnCode).Distinct()),
+                                           7.4, brush: Muted));
 
-        if (!string.IsNullOrWhiteSpace(theme.Footer))
-            doc.Blocks.Add(Text(theme.Footer, 7.4, brush: Muted, align: TextAlignment.Center, topMargin: 6));
+        // The pharmacy's own footer, set on the Pharmacy settings tab, takes
+        // over from the shared Reports footer once it is typed — see
+        // PharmacyProfile.FooterText.
+        var footer = string.IsNullOrWhiteSpace(pharmacy.FooterText) ? theme.Footer : pharmacy.FooterText;
+        if (!string.IsNullOrWhiteSpace(footer))
+            doc.Blocks.Add(Text(footer, 7.4, brush: Muted, align: TextAlignment.Center, topMargin: 6));
 
         return doc;
     }

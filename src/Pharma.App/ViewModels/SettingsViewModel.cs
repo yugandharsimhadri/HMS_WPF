@@ -44,6 +44,7 @@ public partial class SettingsViewModel(
         ClinicPhone = clinic.Phone;
         ClinicGstRegistered = clinic.GstRegistered;
         ClinicGstin = clinic.Gstin;
+        ClinicFooter = clinic.FooterText;
         MorningFrom = clinic.MorningFrom.ToString(@"hh\:mm");
         MorningTo = clinic.MorningTo.ToString(@"hh\:mm");
         EveningFrom = clinic.EveningFrom.ToString(@"hh\:mm");
@@ -58,6 +59,7 @@ public partial class SettingsViewModel(
         PharmacyGstin = pharmacy.Gstin;
         DrugLicenceNo = pharmacy.DrugLicenceNo;
         PharmacistName = pharmacy.PharmacistName;
+        PharmacyFooter = pharmacy.FooterText;
 
         var theme = await settings.GetDocumentThemeAsync();
         DocumentFooter = theme.Footer;
@@ -209,6 +211,13 @@ public partial class SettingsViewModel(
     [ObservableProperty] private bool _clinicGstRegistered;
     [ObservableProperty] private string _clinicGstin = "";
 
+    /// <summary>
+    /// Printed at the foot of the prescription and the fee receipt. Left
+    /// blank, the shared Reports footer keeps printing instead — see
+    /// ClinicProfile.FooterText.
+    /// </summary>
+    [ObservableProperty] private string _clinicFooter = "";
+
     public string ClinicGstHint => ClinicGstRegistered
         ? "The prescription and the fee receipt print your GSTIN."
         : "No GSTIN is printed on the prescription or the fee receipt.";
@@ -275,6 +284,7 @@ public partial class SettingsViewModel(
             Phone = ClinicPhone.Trim(),
             GstRegistered = ClinicGstRegistered,
             Gstin = ClinicGstin.Trim(),
+            FooterText = ClinicFooter.Trim(),
 
             // A time that will not parse keeps the one already saved. The OPD
             // screen filters on these, and a bad window there hides the queue.
@@ -302,6 +312,12 @@ public partial class SettingsViewModel(
     [ObservableProperty] private string _drugLicenceNo = "";
     [ObservableProperty] private string _pharmacistName = "";
 
+    /// <summary>
+    /// Printed at the foot of the medicine bill. Left blank, the shared
+    /// Reports footer keeps printing instead — see PharmacyProfile.FooterText.
+    /// </summary>
+    [ObservableProperty] private string _pharmacyFooter = "";
+
     /// <summary>Spells out what the switch does to a printed bill.</summary>
     public string PharmacyGstHint => PharmacyGstRegistered
         ? "Bills print as TAX INVOICE with GSTIN, GST columns and a GST summary."
@@ -321,7 +337,8 @@ public partial class SettingsViewModel(
             GstRegistered = PharmacyGstRegistered,
             Gstin = PharmacyGstin.Trim(),
             DrugLicenceNo = DrugLicenceNo.Trim(),
-            PharmacistName = PharmacistName.Trim()
+            PharmacistName = PharmacistName.Trim(),
+            FooterText = PharmacyFooter.Trim()
         });
 
         Status = "Pharmacy details saved.";

@@ -21,6 +21,14 @@ public class ClinicProfile
     public bool GstRegistered { get; set; }
     public string Gstin { get; set; } = "";
 
+    /// <summary>
+    /// Printed at the foot of the prescription and the fee receipt. Empty
+    /// means "use the shared Reports footer" — see <see cref="DocumentTheme.Footer"/>
+    /// — so a clinic that never visits this field keeps printing exactly what
+    /// it always did until it types its own.
+    /// </summary>
+    public string FooterText { get; set; } = "";
+
     // When the doctor actually sits. Indian clinics run two sittings with the
     // afternoon off, and the desk thinks in those terms — "who is left this
     // evening" is a real question and "who is left today" is not.
@@ -78,6 +86,14 @@ public class PharmacyProfile
     public string Gstin { get; set; } = "";
     public string DrugLicenceNo { get; set; } = "";
     public string PharmacistName { get; set; } = "";
+
+    /// <summary>
+    /// Printed at the foot of the medicine bill. Empty means "use the shared
+    /// Reports footer" — see <see cref="DocumentTheme.Footer"/> — so a
+    /// pharmacy that never visits this field keeps printing exactly what it
+    /// always did until it types its own.
+    /// </summary>
+    public string FooterText { get; set; } = "";
 }
 
 /// <summary>
@@ -160,6 +176,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     private const string KeyClinicMorningTo = "clinic.morningto";
     private const string KeyClinicEveningFrom = "clinic.eveningfrom";
     private const string KeyClinicEveningTo = "clinic.eveningto";
+    private const string KeyClinicFooter = "clinic.footer";
 
     // ── Pharmacy ───────────────────────────────────────────────────────────
     private const string KeyPharmacyName = "pharmacy.name";
@@ -170,6 +187,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     private const string KeyPharmacyGstin = "pharmacy.gstin";
     private const string KeyPharmacyLicence = "pharmacy.druglicence";
     private const string KeyPharmacyPharmacist = "pharmacy.pharmacist";
+    private const string KeyPharmacyFooter = "pharmacy.footer";
 
     // ── Document branding ─────────────────────────────────────────────────
     private const string KeyDocsFooter = "docs.footer";
@@ -212,6 +230,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
             Phone = Get(map, KeyClinicPhone, fallback.Phone),
             GstRegistered = Bool(map, KeyClinicGstRegistered),
             Gstin = Get(map, KeyClinicGstin, fallback.Gstin),
+            FooterText = Get(map, KeyClinicFooter, fallback.FooterText),
             MorningFrom = Time(map, KeyClinicMorningFrom, fallback.MorningFrom),
             MorningTo = Time(map, KeyClinicMorningTo, fallback.MorningTo),
             EveningFrom = Time(map, KeyClinicEveningFrom, fallback.EveningFrom),
@@ -229,6 +248,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         await SetAsync(db, KeyClinicPhone, profile.Phone);
         await SetAsync(db, KeyClinicGstRegistered, profile.GstRegistered.ToString());
         await SetAsync(db, KeyClinicGstin, profile.Gstin);
+        await SetAsync(db, KeyClinicFooter, profile.FooterText);
 
         // "hh\:mm" rather than the default, which would write 10:00:00 and read
         // back the same — correct, but nobody hand-editing the table wants to
@@ -256,7 +276,8 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
             GstRegistered = Bool(map, KeyPharmacyGstRegistered),
             Gstin = Get(map, KeyPharmacyGstin, fallback.Gstin),
             DrugLicenceNo = Get(map, KeyPharmacyLicence, fallback.DrugLicenceNo),
-            PharmacistName = Get(map, KeyPharmacyPharmacist, fallback.PharmacistName)
+            PharmacistName = Get(map, KeyPharmacyPharmacist, fallback.PharmacistName),
+            FooterText = Get(map, KeyPharmacyFooter, fallback.FooterText)
         };
     }
 
@@ -272,6 +293,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         await SetAsync(db, KeyPharmacyGstin, profile.Gstin);
         await SetAsync(db, KeyPharmacyLicence, profile.DrugLicenceNo);
         await SetAsync(db, KeyPharmacyPharmacist, profile.PharmacistName);
+        await SetAsync(db, KeyPharmacyFooter, profile.FooterText);
 
         await db.SaveChangesAsync();
     }

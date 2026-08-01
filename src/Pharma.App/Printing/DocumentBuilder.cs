@@ -56,8 +56,17 @@ internal static class DocumentBuilder
         doc.Blocks.Add(IdentityBlock(
             clinic.Name, line1, line2,
             clinic.GstRegistered && !string.IsNullOrWhiteSpace(clinic.Gstin) ? $"GSTIN: {clinic.Gstin}" : null,
-            documentTitle, theme, boxed: true));
+            documentTitle, theme, boxed: true, nameFontSize: ClinicNameFontSize));
     }
+
+    /// <summary>
+    /// The clinic's own name prints two points larger than every other
+    /// identity name on a document — a specific ask, not derived from
+    /// anything else on the page.
+    /// </summary>
+    private const double ClinicNameFontSize = IdentityNameFontSize + 2;
+
+    private const double IdentityNameFontSize = 13;
 
     /// <summary>
     /// The pharmacy identity block a bill opens with — unboxed, matching its
@@ -75,7 +84,7 @@ internal static class DocumentBuilder
         doc.Blocks.Add(IdentityBlock(
             pharmacy.Name, line1, line2,
             licences.Count > 0 ? string.Join("   ", licences) : null,
-            documentTitle, theme, boxed: false));
+            documentTitle, theme, boxed: false, nameFontSize: IdentityNameFontSize));
     }
 
     /// <summary>
@@ -142,7 +151,7 @@ internal static class DocumentBuilder
     /// </remarks>
     private static Block IdentityBlock(
         string name, string? contactLine1, string? contactLine2, string? licenceLine, string? documentTitle,
-        DocumentTheme theme, bool boxed)
+        DocumentTheme theme, bool boxed, double nameFontSize)
     {
         var section = new Section
         {
@@ -157,7 +166,7 @@ internal static class DocumentBuilder
             section.BorderThickness = new Thickness(1);
         }
 
-        var text = IdentityText(name, contactLine1, contactLine2, licenceLine, documentTitle, boxed);
+        var text = IdentityText(name, contactLine1, contactLine2, licenceLine, documentTitle, boxed, nameFontSize);
 
         if (LogoElement(theme) is not { } logo)
         {
@@ -194,13 +203,13 @@ internal static class DocumentBuilder
     /// a word processor, regardless of what else shares the header.</summary>
     private static List<Block> IdentityText(
         string name, string? contactLine1, string? contactLine2, string? licenceLine, string? documentTitle,
-        bool boxed)
+        bool boxed, double nameFontSize)
     {
         var blocks = new List<Block>
         {
             new Paragraph(new Run(name))
             {
-                FontSize = 13, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center,
+                FontSize = nameFontSize, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center,
                 Foreground = PrintForeground
             }
         };
@@ -415,11 +424,12 @@ internal static class DocumentBuilder
             };
             cell.Blocks.Add(new Paragraph(new Run(label))
             {
-                FontSize = 6.6, Foreground = PrintSecondaryForeground, Margin = new Thickness(2, 1, 2, 0)
+                FontSize = 6.6, FontWeight = FontWeights.Bold,
+                Foreground = PrintSecondaryForeground, Margin = new Thickness(2, 1, 2, 0)
             });
             cell.Blocks.Add(new Paragraph(new Run(value))
             {
-                FontSize = 7.8, FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, 0, 2, 2),
+                FontSize = 7.8, FontWeight = FontWeights.Normal, Margin = new Thickness(2, 0, 2, 2),
                 Foreground = PrintForeground
             });
             row.Cells.Add(cell);
@@ -432,9 +442,12 @@ internal static class DocumentBuilder
     /// A row of the pharmacy bill's own header shape — one stacked
     /// "label: value" list on the left, another on the right, unequal in
     /// length, matching that reference exactly rather than forcing it into
-    /// the receipt's 3x3 grid.
+    /// the receipt's 3x3 grid. The label is bold, the value ordinary weight,
+    /// the same convention every other label/value pair on the page follows.
+    /// A blank value keeps the line — and the row's height, matched against
+    /// the other column — rather than omitting it.
     /// </summary>
-    public static TableRow StackedListRow(string[] left, string[] right)
+    public static TableRow StackedListRow((string Label, string Value)[] left, (string Label, string Value)[] right)
     {
         var row = new TableRow();
         row.Cells.Add(StackedCell(left));
@@ -442,14 +455,79 @@ internal static class DocumentBuilder
         return row;
     }
 
-    private static TableCell StackedCell(string[] lines)
+    private static TableCell StackedCell((string Label, string Value)[] lines)
     {
         var cell = new TableCell { BorderBrush = Line, BorderThickness = new Thickness(0) };
-        foreach (var line in lines)
-            cell.Blocks.Add(new Paragraph(new Run(line))
-                { FontSize = 7.6, Margin = new Thickness(2, 0, 2, 1), Foreground = PrintForeground });
+
+        foreach (var (label, value) in lines)
+        {
+            var paragraph = new Paragraph
+            {
+                FontSize = 7.6, Margin = new Thickness(2, 0, 2, 1), Foreground = PrintForeground
+            };
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                paragraph.Inlines.Add(new Run($"{label}: ") { FontWeight = FontWeights.Bold });
+                paragraph.Inlines.Add(new Run(value) { FontWeight = FontWeights.Normal });
+            }
+
+            cell.Blocks.Add(paragraph);
+        }
+
         return cell;
     }
+
+    /// <summary>
+    /// A single "Label: value" line, bold label and ordinary-weight value —
+    /// the same convention as every label/value pair on the page, for the
+    /// stray lines (pharmacist, HSN, complaint, diagnosis) that sit outside
+    /// any grid.
+    /// </summary>
+    public static Paragraph LabelValueText(string label, string value, double size = 8, Brush? brush = null,
+                                            TextAlignment align = TextAlignment.Left,
+                                            double topMargin = 0, double bottomMargin = 0)
+    {
+        var paragraph = new Paragraph
+        {
+            FontSize = size, Foreground = brush ?? PrintForeground, TextAlignment = align,
+            Margin = new Thickness(0, topMargin, 0, bottomMargin)
+        };
+
+        paragraph.Inlines.Add(new Run($"{label}: ") { FontWeight = FontWeights.Bold });
+        paragraph.Inlines.Add(new Run(value) { FontWeight = FontWeights.Normal });
+
+        return paragraph;
+    }
+
+    /// <summary>
+    /// A row of a totals block — the label in bold, the value in ordinary
+    /// weight and right-aligned, the empty middle cell keeping the same
+    /// three-column shape the totals table is built with.
+    /// </summary>
+    public static TableRow TotalRow(string label, string value)
+    {
+        var row = new TableRow();
+
+        row.Cells.Add(TotalCell(label, FontWeights.Bold, TextAlignment.Left));
+        row.Cells.Add(TotalCell("", FontWeights.Normal, TextAlignment.Left));
+        row.Cells.Add(TotalCell(value, FontWeights.Normal, TextAlignment.Right));
+
+        return row;
+    }
+
+    private static TableCell TotalCell(string text, FontWeight weight, TextAlignment align) => new(new Paragraph(new Run(text))
+    {
+        Margin = new Thickness(3, 2, 3, 2),
+        FontSize = 8.4,
+        FontWeight = weight,
+        Foreground = PrintForeground,
+        TextAlignment = align
+    })
+    {
+        BorderBrush = Line,
+        BorderThickness = new Thickness(0)
+    };
 
     /// <summary>Shows the print dialog and sends the document to the chosen printer.</summary>
     public static void Send(FlowDocument document, string jobName)
