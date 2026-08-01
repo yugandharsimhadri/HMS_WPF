@@ -12,30 +12,28 @@ namespace Pharma.App.Printing;
 /// </summary>
 public static class FeeReceiptDocument
 {
-    public static FlowDocument Build(Visit visit, ShopProfile shop, bool isReprint = false)
+    public static FlowDocument Build(Visit visit, ClinicProfile clinic, DocumentTheme theme, bool isReprint = false)
     {
         var doc = NewDocument();
 
-        AddClinicHeader(doc, shop, "CONSULTATION RECEIPT");
+        AddClinicHeader(doc, clinic, theme, "CASH RECEIPT");
 
-        var head = NewTable(1, 1);
-        var headGroup = new TableRowGroup();
-
-        headGroup.Rows.Add(Row(false,
-            $"Receipt No: {visit.FeeReceiptNo ?? "(not issued)"}",
-            $"Date: {(visit.FeePaidOn ?? visit.ScheduledOn):dd MMM yyyy  HH:mm}"));
-
-        headGroup.Rows.Add(Row(false,
-            $"Patient: {visit.Patient.Name}  ({visit.Patient.Age}{visit.Patient.Gender.ToString()[0]})",
-            $"Patient No: {visit.Patient.PatientNo}"));
-
-        headGroup.Rows.Add(Row(false,
-            $"Doctor: {visit.Doctor.Name}",
-            $"Token: {visit.TokenNo}   Visit: {visit.VisitNo}"));
-
-        head.RowGroups.Add(headGroup);
-        doc.Blocks.Add(head);
-
+        var grid = NewTable(1, 1, 1);
+        var group = new TableRowGroup();
+        group.Rows.Add(IdentityRow(
+            ("Receipt No", visit.FeeReceiptNo ?? "(not issued)"),
+            ("Date", $"{(visit.FeePaidOn ?? visit.ScheduledOn):dd/MM/yyyy}"),
+            ("Patient", visit.Patient.Name)));
+        group.Rows.Add(IdentityRow(
+            ("Patient No", visit.Patient.PatientNo),
+            ("Age / Sex", $"{visit.Patient.Age} / {visit.Patient.Gender}"),
+            ("Doctor", visit.Doctor.Name)));
+        group.Rows.Add(IdentityRow(
+            ("Token / Visit", $"{visit.TokenNo} · {visit.VisitNo}"),
+            ("Time", $"{(visit.FeePaidOn ?? visit.ScheduledOn):hh\\:mm tt}"),
+            ("Speciality", visit.Doctor.Speciality ?? "")));
+        grid.RowGroups.Add(group);
+        doc.Blocks.Add(grid);
         doc.Blocks.Add(Rule());
 
         var lines = NewTable(3, 0.2, 1.2);
@@ -52,24 +50,27 @@ public static class FeeReceiptDocument
 
         doc.Blocks.Add(Rule());
 
-        doc.Blocks.Add(Text($"RECEIVED   ₹{visit.Fee:0.00}", 16, FontWeights.Bold,
-                            align: TextAlignment.Right, topMargin: 2));
+        doc.Blocks.Add(Text($"RECEIVED   ₹{visit.Fee:0.00}", 13, FontWeights.Bold,
+                            align: TextAlignment.Right, topMargin: 1));
 
         doc.Blocks.Add(Text($"Paid by {visit.FeePaymentMode?.ToString() ?? "Cash"}",
-                            10, brush: Muted, align: TextAlignment.Right));
+                            8, brush: Muted, align: TextAlignment.Right));
 
-        doc.Blocks.Add(Text(InWords(visit.Fee), 10, brush: Muted, topMargin: 6));
+        doc.Blocks.Add(Text(InWords(visit.Fee), 8, brush: Muted, topMargin: 4));
 
         if (visit.FollowUpOn is { } follow)
-            doc.Blocks.Add(Text($"Review on {follow:dd MMM yyyy}", 11, FontWeights.SemiBold, topMargin: 8));
+            doc.Blocks.Add(Text($"Review on {follow:dd MMM yyyy}", 9, FontWeights.SemiBold, topMargin: 5));
 
         // A consultation fee is a service, not a medicine sale — no GST is shown
-        // here on purpose. Add it only if the clinic registers for it.
+        // here on purpose. Add it only if the clinic itself registers for it.
         doc.Blocks.Add(Text("Consultation services. Fees once paid are not refundable.",
-                            9.5, brush: Muted, align: TextAlignment.Center, topMargin: 14));
+                            7.4, brush: Muted, align: TextAlignment.Center, topMargin: 8));
+
+        if (!string.IsNullOrWhiteSpace(theme.Footer))
+            doc.Blocks.Add(Text(theme.Footer, 7.4, brush: Muted, align: TextAlignment.Center, topMargin: 3));
 
         if (isReprint)
-            doc.Blocks.Add(Text("DUPLICATE", 11, FontWeights.Bold, Muted, TextAlignment.Center, topMargin: 6));
+            doc.Blocks.Add(Text("DUPLICATE", 9, FontWeights.Bold, Muted, TextAlignment.Center, topMargin: 5));
 
         return doc;
     }

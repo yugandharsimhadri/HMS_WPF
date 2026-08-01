@@ -92,8 +92,9 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
             return;
         }
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => PrescriptionPrinter.Build(visit, shop), $"Prescription {visit.VisitNo}");
+        var clinic = await settings.GetClinicAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => PrescriptionPrinter.Build(visit, clinic, theme), $"Prescription {visit.VisitNo}");
     }
 
     [RelayCommand]
@@ -114,8 +115,9 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
         var visit = await opd.GetVisitAsync(SelectedVisit.Id);
         if (visit is null) return;
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop, isReprint: true),
+        var clinic = await settings.GetClinicAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(visit, clinic, theme, isReprint: true),
                              $"Receipt {visit.FeeReceiptNo} (duplicate)");
     }
 
@@ -131,8 +133,9 @@ public partial class PatientsViewModel(OpdService opd, PharmacyService pharmacy,
         var sale = await pharmacy.GetSaleAsync(SelectedBill.Id);
         if (sale is null) return;
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => BillPrinter.Build(sale, shop, isReprint: true),
+        var pharmacyProfile = await settings.GetPharmacyAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => BillPrinter.Build(sale, pharmacyProfile, theme, isReprint: true),
                              $"Bill {sale.BillNo} (duplicate)");
     }
 

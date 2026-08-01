@@ -300,6 +300,7 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Capture("settings");
 
         // ── The dark theme ─────────────────────────────────────────────────
+        app.SelectTab("SettingsTabs", "General");
         app.ComboBox("AppThemeChoice").Select("Dark");
         Settle();
         Capture("settings-dark");
@@ -315,19 +316,21 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Capture("reports-dark");
 
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "General");
         app.ComboBox("AppThemeChoice").Select("Light");
         Settle();
 
         // ── The other queue layout ─────────────────────────────────────────
         app.ComboBox("QueueLayout").Select("Rows");
-        app.Click("ShopSave");
+        app.Click("GeneralSave");
         app.Navigate("NavOpd", "OPD");
         Settle();
         Capture("opd-rows");
 
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "General");
         app.ComboBox("QueueLayout").Select("Tiles");
-        app.Click("ShopSave");
+        app.Click("GeneralSave");
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -335,13 +338,21 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
     private void SetUpShop()
     {
         app.Navigate("NavSettings", "Settings");
-        app.Type("ShopName", "Twinkle Children's Hospital");
+        app.SelectTab("SettingsTabs", "Clinic");
+        app.Type("ClinicName", "Twinkle Children's Hospital");
+        app.Click("ClinicSave");
+        AppFixture.WaitUntil(() => app.TextOf("SettingsStatus").Contains("saved", StringComparison.OrdinalIgnoreCase),
+                             "the clinic details");
 
-        // The sample clinic is GST registered, so the guide shows a tax invoice.
-        app.CheckBox("ShopGstRegistered").IsChecked = true;
-        app.Type("ShopGstin", "36ABCDE1234F1Z5");
-        app.Click("ShopSave");
-        AppFixture.WaitUntil(() => app.TextOf("SettingsStatus").Contains("Saved"), "the shop details");
+        app.SelectTab("SettingsTabs", "Pharmacy");
+        app.Type("PharmacyName", "Twinkle Pharmacy");
+
+        // The sample pharmacy is GST registered, so the guide shows a tax invoice.
+        app.CheckBox("PharmacyGstRegistered").IsChecked = true;
+        app.Type("PharmacyGstin", "36ABCDE1234F1Z5");
+        app.Click("PharmacySave");
+        AppFixture.WaitUntil(() => app.TextOf("SettingsStatus").Contains("saved", StringComparison.OrdinalIgnoreCase),
+                             "the pharmacy details");
     }
 
 

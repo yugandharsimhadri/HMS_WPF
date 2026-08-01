@@ -15,7 +15,7 @@ public class NavigationUiTests(AppFixture app) : IClassFixture<AppFixture>
     [InlineData("NavSale", "Pharmacy counter", "SaleLinesGrid")]
     [InlineData("NavProducts", "Medicines", "ProductsGrid")]
     [InlineData("NavReports", "Reports", null)]
-    [InlineData("NavSettings", "Settings", "ShopName")]
+    [InlineData("NavSettings", "Settings", "SettingsTabs")]
     [InlineData("NavOpd", "OPD", "OpdWaitingList")]
     public void Every_module_opens_from_the_sidebar(string navId, string title, string? expectedElement)
     {

@@ -414,8 +414,9 @@ public partial class ConsultationViewModel : ObservableObject
         var visit = await _opd.GetVisitAsync(_visitId);
         if (visit is null) return;
 
-        var shop = await _settings.GetAsync();
-        PrintService.Preview(() => PrescriptionPrinter.Build(visit, shop), $"Prescription {visit.VisitNo}");
+        var clinic = await _settings.GetClinicAsync();
+        var theme = await _settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => PrescriptionPrinter.Build(visit, clinic, theme), $"Prescription {visit.VisitNo}");
     }
 
     private async Task PersistAsync(bool complete, string? message)

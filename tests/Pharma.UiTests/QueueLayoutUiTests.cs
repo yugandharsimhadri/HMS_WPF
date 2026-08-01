@@ -12,8 +12,9 @@ public class QueueLayoutUiTests(AppFixture app) : IClassFixture<AppFixture>
     private void ChooseLayout(string layout)
     {
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "General");
         app.ComboBox("QueueLayout").Select(layout);
-        app.Click("ShopSave");
+        app.Click("GeneralSave");
 
         AppFixture.WaitUntil(
             () => app.TextOf("SettingsStatus").Contains(layout, StringComparison.OrdinalIgnoreCase),
@@ -27,6 +28,7 @@ public class QueueLayoutUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         app.Navigate("NavOpd", "OPD");
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "General");
 
         AppFixture.WaitUntil(
             () => app.ComboBox("QueueLayout").SelectedItems.FirstOrDefault()?.Text == "Rows",
@@ -37,6 +39,7 @@ public class QueueLayoutUiTests(AppFixture app) : IClassFixture<AppFixture>
         ChooseLayout("Tiles");
         app.Navigate("NavOpd", "OPD");
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "General");
 
         AppFixture.WaitUntil(
             () => app.ComboBox("QueueLayout").SelectedItems.FirstOrDefault()?.Text == "Tiles",
@@ -71,13 +74,15 @@ public class QueueLayoutUiTests(AppFixture app) : IClassFixture<AppFixture>
     private void SetHours(string morningFrom, string morningTo, string eveningFrom, string eveningTo)
     {
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "Clinic");
         app.Type("MorningFrom", morningFrom);
         app.Type("MorningTo", morningTo);
         app.Type("EveningFrom", eveningFrom);
         app.Type("EveningTo", eveningTo);
-        app.Click("ShopSave");
+        app.Click("ClinicSave");
 
-        AppFixture.WaitUntil(() => app.TextOf("SettingsStatus").Contains("Saved"), "the hours to save");
+        AppFixture.WaitUntil(() => app.TextOf("SettingsStatus").Contains("saved", StringComparison.OrdinalIgnoreCase),
+                             "the hours to save");
     }
 
     /// <summary>
@@ -135,6 +140,7 @@ public class QueueLayoutUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         app.Navigate("NavOpd", "OPD");
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "Clinic");
 
         AppFixture.WaitUntil(() => app.TextBox("MorningFrom").Text == "09:30", "the hours to be read back");
 

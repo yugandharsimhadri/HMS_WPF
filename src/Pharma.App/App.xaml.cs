@@ -105,11 +105,24 @@ public partial class App : Application
             return;
         }
 
+        // Splits a shared clinic/pharmacy identity from a build before this one
+        // into the two separate ones this build asks for. New Settings rows
+        // only — no schema change — and it runs once, ever: see
+        // SettingsService.EnsureSettingsSplitSeedAsync.
+        try
+        {
+            await Services.GetRequiredService<SettingsService>().EnsureSettingsSplitSeedAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Settings: could not split the clinic/pharmacy identity.", ex);
+        }
+
         // Before the window is shown, so it never appears in the wrong theme and
         // then repaints in front of the user.
         try
         {
-            AppTheme.Apply((await Services.GetRequiredService<SettingsService>().GetAsync()).Theme);
+            AppTheme.Apply((await Services.GetRequiredService<SettingsService>().GetGeneralAsync()).Theme);
         }
         catch (Exception ex)
         {

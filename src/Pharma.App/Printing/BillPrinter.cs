@@ -12,26 +12,26 @@ namespace Pharma.App.Printing;
 /// </summary>
 public static class BillPrinter
 {
-    public static FlowDocument Build(Sale sale, ShopProfile shop, bool isReprint = false)
+    public static FlowDocument Build(Sale sale, PharmacyProfile pharmacy, DocumentTheme theme, bool isReprint = false)
     {
         var doc = NewDocument();
 
-        // A clinic that is not registered for GST issues a plain invoice. Calling
+        // A pharmacy that is not registered for GST issues a plain invoice. Calling
         // it a tax invoice, or printing a GSTIN on it, would be a false claim.
         var kind = sale.IsTaxInvoice ? "TAX INVOICE" : "INVOICE";
 
-        AddClinicHeader(doc, shop, isReprint ? $"{kind} (DUPLICATE)" : kind, showGstin: sale.IsTaxInvoice);
+        AddPharmacyHeader(doc, pharmacy, theme, isReprint ? $"{kind} (DUPLICATE)" : kind, showGstin: sale.IsTaxInvoice);
+        doc.Blocks.Add(Rule());
 
         var head = NewTable(1, 1);
         var headGroup = new TableRowGroup();
-        headGroup.Rows.Add(Row(false,
-            $"Bill No: {sale.BillNo}",
-            $"Date: {sale.BillDate:dd MMM yyyy  HH:mm}"));
-        headGroup.Rows.Add(Row(false,
-            $"Patient: {sale.CustomerName}",
-            string.IsNullOrWhiteSpace(sale.DoctorName) ? "" : $"Doctor: {sale.DoctorName}"));
+        headGroup.Rows.Add(StackedListRow(
+            [$"Bill No: {sale.BillNo}", $"Patient: {sale.CustomerName}"],
+            [$"Date: {sale.BillDate:dd/MM/yyyy  HH:mm}",
+             string.IsNullOrWhiteSpace(sale.DoctorName) ? "" : $"Doctor: {sale.DoctorName}"]));
         head.RowGroups.Add(headGroup);
         doc.Blocks.Add(head);
+        doc.Blocks.Add(Rule());
 
         // The GST% column only earns its space on a tax invoice.
         var items = sale.IsTaxInvoice
@@ -90,7 +90,7 @@ public static class BillPrinter
         var slabs = sale.Items.GroupBy(i => i.GstRate).OrderBy(g => g.Key).ToList();
         if (sale.IsTaxInvoice && slabs.Count > 0)
         {
-            doc.Blocks.Add(Text("GST SUMMARY", 9.5, FontWeights.SemiBold, Muted, topMargin: 4));
+            doc.Blocks.Add(Text("GST SUMMARY", 7.4, FontWeights.SemiBold, Muted, topMargin: 2));
 
             var gst = NewTable(1.2, 1.4, 1.2, 1.2, 1.2);
             var gstGroup = new TableRowGroup();
@@ -132,22 +132,22 @@ public static class BillPrinter
         totals.RowGroups.Add(totalGroup);
         doc.Blocks.Add(totals);
 
-        doc.Blocks.Add(Text($"NET PAYABLE   ₹{sale.NetAmount:0.00}", 16, FontWeights.Bold,
-                            align: TextAlignment.Right, topMargin: 2));
-        doc.Blocks.Add(Text($"Paid by {sale.PaymentMode}", 10, brush: Muted, align: TextAlignment.Right));
-        doc.Blocks.Add(Text(FeeReceiptDocument.InWords(sale.NetAmount), 10, brush: Muted, topMargin: 4));
+        doc.Blocks.Add(Text($"NET PAYABLE   ₹{sale.NetAmount:0.00}", 13, FontWeights.Bold,
+                            align: TextAlignment.Right, topMargin: 1));
+        doc.Blocks.Add(Text($"Paid by {sale.PaymentMode}", 8, brush: Muted, align: TextAlignment.Right));
+        doc.Blocks.Add(Text(FeeReceiptDocument.InWords(sale.NetAmount), 8, brush: Muted, topMargin: 3));
 
         doc.Blocks.Add(Rule());
 
-        if (!string.IsNullOrWhiteSpace(shop.PharmacistName))
-            doc.Blocks.Add(Text($"Pharmacist: {shop.PharmacistName}", 10, brush: Muted));
+        if (!string.IsNullOrWhiteSpace(pharmacy.PharmacistName))
+            doc.Blocks.Add(Text($"Pharmacist: {pharmacy.PharmacistName}", 8, brush: Muted));
 
         if (sale.Items.Count > 0)
             doc.Blocks.Add(Text($"HSN: {string.Join(", ", sale.Items.Select(i => i.HsnCode).Distinct())}",
-                                9.5, brush: Muted));
+                                7.4, brush: Muted));
 
-        if (!string.IsNullOrWhiteSpace(shop.BillFooter))
-            doc.Blocks.Add(Text(shop.BillFooter, 9.5, brush: Muted, align: TextAlignment.Center, topMargin: 8));
+        if (!string.IsNullOrWhiteSpace(theme.Footer))
+            doc.Blocks.Add(Text(theme.Footer, 7.4, brush: Muted, align: TextAlignment.Center, topMargin: 6));
 
         return doc;
     }

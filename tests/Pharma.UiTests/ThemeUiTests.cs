@@ -14,6 +14,7 @@ public class ThemeUiTests(AppFixture app) : IClassFixture<AppFixture>
     private void Choose(string theme)
     {
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "General");
         app.ComboBox("AppThemeChoice").Select(theme);
     }
 
@@ -40,19 +41,20 @@ public class ThemeUiTests(AppFixture app) : IClassFixture<AppFixture>
     public void The_choice_is_remembered()
     {
         Choose("Dark");
-        app.Click("ShopSave");
+        app.Click("GeneralSave");
 
         AppFixture.WaitUntil(() => app.TextOf("SettingsStatus").Contains("dark"), "the saved confirmation");
 
         // Away and back: the dropdown still shows what was chosen.
         app.Navigate("NavPatients", "Patients");
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "General");
 
         Assert.Equal("Dark", app.ComboBox("AppThemeChoice").SelectedItem.Text);
 
         // Put it back so the screenshots and the other classes are unaffected.
         Choose("Light");
-        app.Click("ShopSave");
+        app.Click("GeneralSave");
         AppFixture.WaitUntil(() => app.TextOf("SettingsStatus").Contains("light"), "the theme to be restored");
     }
 }

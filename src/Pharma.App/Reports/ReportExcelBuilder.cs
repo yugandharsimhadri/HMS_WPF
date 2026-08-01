@@ -16,20 +16,20 @@ public static class ReportExcelBuilder
     private const string TimeFormat = "hh:mm";
     private const string DateTimeFormat = "dd-mmm-yyyy hh:mm";
 
-    public static void Build(ReportKind kind, ReportsViewModel vm, ShopProfile shop, string path)
+    public static void Build(ReportKind kind, ReportsViewModel vm, string shopName, string path)
     {
         using var workbook = new XLWorkbook();
         var ws = workbook.Worksheets.Add(SheetName(kind));
 
         var lastRow = kind switch
         {
-            ReportKind.DayBook => DayBookSheet(ws, vm, shop),
-            ReportKind.GstSummary => GstSheet(ws, vm, shop),
-            ReportKind.OpdRegister => OpdSheet(ws, vm, shop),
-            ReportKind.ExpiringSoon => ExpiringSheet(ws, vm, shop),
-            ReportKind.LowStock => LowStockSheet(ws, vm, shop),
-            ReportKind.StockRegister => StockRegisterSheet(ws, vm, shop),
-            ReportKind.ScheduleH1 => H1Sheet(ws, vm, shop),
+            ReportKind.DayBook => DayBookSheet(ws, vm, shopName),
+            ReportKind.GstSummary => GstSheet(ws, vm, shopName),
+            ReportKind.OpdRegister => OpdSheet(ws, vm, shopName),
+            ReportKind.ExpiringSoon => ExpiringSheet(ws, vm, shopName),
+            ReportKind.LowStock => LowStockSheet(ws, vm, shopName),
+            ReportKind.StockRegister => StockRegisterSheet(ws, vm, shopName),
+            ReportKind.ScheduleH1 => H1Sheet(ws, vm, shopName),
             _ => 1
         };
 
@@ -43,9 +43,9 @@ public static class ReportExcelBuilder
 
     // ── Title block ──────────────────────────────────────────────────────
 
-    private static int WriteTitle(IXLWorksheet ws, ReportKind kind, ReportsViewModel vm, ShopProfile shop, int columns)
+    private static int WriteTitle(IXLWorksheet ws, ReportKind kind, ReportsViewModel vm, string shopName, int columns)
     {
-        ws.Cell(1, 1).Value = shop.Name;
+        ws.Cell(1, 1).Value = shopName;
         ws.Cell(1, 1).Style.Font.Bold = true;
         ws.Cell(1, 1).Style.Font.FontSize = 14;
 
@@ -155,10 +155,10 @@ public static class ReportExcelBuilder
 
     // ── Day book ─────────────────────────────────────────────────────────
 
-    private static int DayBookSheet(IXLWorksheet ws, ReportsViewModel vm, ShopProfile shop)
+    private static int DayBookSheet(IXLWorksheet ws, ReportsViewModel vm, string shopName)
     {
         const int cols = 10;
-        var headerRow = WriteTitle(ws, ReportKind.DayBook, vm, shop, cols);
+        var headerRow = WriteTitle(ws, ReportKind.DayBook, vm, shopName, cols);
 
         string[] headers = ["Bill No", "Time", "Customer", "Doctor", "Items", "Taxable", "CGST", "SGST", "Net", "Mode"];
         for (var i = 0; i < headers.Length; i++) Head(ws, headerRow, i + 1, headers[i]);
@@ -201,10 +201,10 @@ public static class ReportExcelBuilder
 
     // ── GST summary ──────────────────────────────────────────────────────
 
-    private static int GstSheet(IXLWorksheet ws, ReportsViewModel vm, ShopProfile shop)
+    private static int GstSheet(IXLWorksheet ws, ReportsViewModel vm, string shopName)
     {
         const int cols = 6;
-        var headerRow = WriteTitle(ws, ReportKind.GstSummary, vm, shop, cols);
+        var headerRow = WriteTitle(ws, ReportKind.GstSummary, vm, shopName, cols);
 
         string[] headers = ["GST Rate", "Taxable Value", "CGST", "SGST", "Total Tax", "Invoice Value"];
         for (var i = 0; i < headers.Length; i++) Head(ws, headerRow, i + 1, headers[i]);
@@ -240,10 +240,10 @@ public static class ReportExcelBuilder
 
     // ── OPD register ─────────────────────────────────────────────────────
 
-    private static int OpdSheet(IXLWorksheet ws, ReportsViewModel vm, ShopProfile shop)
+    private static int OpdSheet(IXLWorksheet ws, ReportsViewModel vm, string shopName)
     {
         const int cols = 9;
-        var headerRow = WriteTitle(ws, ReportKind.OpdRegister, vm, shop, cols);
+        var headerRow = WriteTitle(ws, ReportKind.OpdRegister, vm, shopName, cols);
 
         string[] headers = ["Visit No", "Date", "Time", "Patient", "Age", "Gender", "Doctor", "Fee", "Paid"];
         for (var i = 0; i < headers.Length; i++) Head(ws, headerRow, i + 1, headers[i]);
@@ -282,10 +282,10 @@ public static class ReportExcelBuilder
 
     // ── Expiring soon ────────────────────────────────────────────────────
 
-    private static int ExpiringSheet(IXLWorksheet ws, ReportsViewModel vm, ShopProfile shop)
+    private static int ExpiringSheet(IXLWorksheet ws, ReportsViewModel vm, string shopName)
     {
         const int cols = 8;
-        var headerRow = WriteTitle(ws, ReportKind.ExpiringSoon, vm, shop, cols);
+        var headerRow = WriteTitle(ws, ReportKind.ExpiringSoon, vm, shopName, cols);
 
         string[] headers = ["Medicine", "Batch", "Expiry Date", "Qty Left", "MRP", "Supplier", "Days Remaining", "Status"];
         for (var i = 0; i < headers.Length; i++) Head(ws, headerRow, i + 1, headers[i]);
@@ -321,10 +321,10 @@ public static class ReportExcelBuilder
 
     // ── Low stock ────────────────────────────────────────────────────────
 
-    private static int LowStockSheet(IXLWorksheet ws, ReportsViewModel vm, ShopProfile shop)
+    private static int LowStockSheet(IXLWorksheet ws, ReportsViewModel vm, string shopName)
     {
         const int cols = 6;
-        var headerRow = WriteTitle(ws, ReportKind.LowStock, vm, shop, cols);
+        var headerRow = WriteTitle(ws, ReportKind.LowStock, vm, shopName, cols);
 
         string[] headers = ["Medicine", "Pack", "Rack", "In Stock", "Reorder Level", "Shortage"];
         for (var i = 0; i < headers.Length; i++) Head(ws, headerRow, i + 1, headers[i]);
@@ -356,10 +356,10 @@ public static class ReportExcelBuilder
 
     // ── Schedule H1 register ─────────────────────────────────────────────
 
-    private static int H1Sheet(IXLWorksheet ws, ReportsViewModel vm, ShopProfile shop)
+    private static int H1Sheet(IXLWorksheet ws, ReportsViewModel vm, string shopName)
     {
         const int cols = 7;
-        var headerRow = WriteTitle(ws, ReportKind.ScheduleH1, vm, shop, cols);
+        var headerRow = WriteTitle(ws, ReportKind.ScheduleH1, vm, shopName, cols);
 
         string[] headers = ["Date", "Bill No", "Patient/Customer", "Doctor", "Medicine", "Batch", "Quantity"];
         for (var i = 0; i < headers.Length; i++) Head(ws, headerRow, i + 1, headers[i]);
@@ -395,10 +395,10 @@ public static class ReportExcelBuilder
 
     // ── Stock register ───────────────────────────────────────────────────
 
-    private static int StockRegisterSheet(IXLWorksheet ws, ReportsViewModel vm, ShopProfile shop)
+    private static int StockRegisterSheet(IXLWorksheet ws, ReportsViewModel vm, string shopName)
     {
         const int cols = 13;
-        var headerRow = WriteTitle(ws, ReportKind.StockRegister, vm, shop, cols);
+        var headerRow = WriteTitle(ws, ReportKind.StockRegister, vm, shopName, cols);
 
         string[] headers =
         [

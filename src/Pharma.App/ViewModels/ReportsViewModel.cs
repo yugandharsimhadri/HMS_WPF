@@ -294,8 +294,9 @@ public partial class ReportsViewModel(
         var sale = await pharmacy.GetSaleAsync(SelectedSale.Id);
         if (sale is null) return;
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => BillPrinter.Build(sale, shop, isReprint: true),
+        var pharmacyProfile = await settings.GetPharmacyAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => BillPrinter.Build(sale, pharmacyProfile, theme, isReprint: true),
                              $"Bill {sale.BillNo} (duplicate)");
     }
 
@@ -307,8 +308,9 @@ public partial class ReportsViewModel(
         var visit = await opd.GetVisitAsync(SelectedVisit.Id);
         if (visit is null) return;
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => FeeReceiptDocument.Build(visit, shop, isReprint: true),
+        var clinic = await settings.GetClinicAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(visit, clinic, theme, isReprint: true),
                              $"Receipt {visit.FeeReceiptNo} (duplicate)");
     }
 
@@ -365,8 +367,8 @@ public partial class ReportsViewModel(
 
         try
         {
-            var shop = await settings.GetAsync();
-            ReportPdfBuilder.Build(kind, this, shop).GeneratePdf(dialog.FileName);
+            var shopName = (await settings.GetClinicAsync()).Name;
+            ReportPdfBuilder.Build(kind, this, shopName).GeneratePdf(dialog.FileName);
             AppLog.Info($"Exported {kind} report to PDF: {dialog.FileName}");
         }
         catch (Exception ex)
@@ -396,8 +398,8 @@ public partial class ReportsViewModel(
 
         try
         {
-            var shop = await settings.GetAsync();
-            ReportExcelBuilder.Build(kind, this, shop, dialog.FileName);
+            var shopName = (await settings.GetClinicAsync()).Name;
+            ReportExcelBuilder.Build(kind, this, shopName, dialog.FileName);
             AppLog.Info($"Exported {kind} report to Excel: {dialog.FileName}");
         }
         catch (Exception ex)

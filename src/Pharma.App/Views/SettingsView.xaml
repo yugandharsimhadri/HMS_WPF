@@ -3,246 +3,374 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Pharma.App">
 
-    <!--
-        Scrolls, because these cards are taller than the window on a laptop and
-        were simply cut off: the log folder and licence buttons at the foot of
-        the left card could not be reached at all on a 768-high screen, with no
-        scrollbar to say anything was missing.
-    -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <Grid Margin="20">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="18"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
-            <StackPanel>
-                <TextBlock Text="Clinic / Pharmacy details" Style="{StaticResource H2}"/>
-                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
-                           Text="These appear on every printed bill and prescription. GSTIN and the drug licence number are required on a retail chemist's tax invoice."/>
+        <Border Grid.Row="0" Style="{StaticResource Card}" Padding="8">
+            <TabControl BorderThickness="0" Background="Transparent"
+                        AutomationProperties.AutomationId="SettingsTabs">
 
-                <TextBlock Text="Clinic / Pharmacy name" Style="{StaticResource Label}"/>
-                <TextBox Text="{Binding ShopName, UpdateSourceTrigger=PropertyChanged}"
-                         AutomationProperties.AutomationId="ShopName"/>
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="General">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="16" MaxWidth="560" HorizontalAlignment="Left">
+                            <TextBlock Text="How the software behaves" Style="{StaticResource H2}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="Nothing here is who the clinic or the pharmacy is — that is on the Clinic and Pharmacy tabs."/>
 
-                <TextBlock Text="Address" Style="{StaticResource Label}"/>
-                <TextBox Text="{Binding AddressLine, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Text="OPD queue layout" Style="{StaticResource Label}"/>
+                            <ComboBox ItemsSource="{Binding QueueLayouts}" SelectedItem="{Binding QueueLayout, Mode=TwoWay}"
+                                      ToolTip="Tiles read at a glance; rows fit more people on screen"
+                                      AutomationProperties.AutomationId="QueueLayout"/>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Phone" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="GSTIN" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Gstin, UpdateSourceTrigger=PropertyChanged}"
-                                 IsEnabled="{Binding GstRegistered}"
-                                 AutomationProperties.AutomationId="ShopGstin"/>
-                    </StackPanel>
-                </Grid>
+                            <TextBlock Text="Appearance" Style="{StaticResource Label}"/>
+                            <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme, Mode=TwoWay}"
+                                      ToolTip="Applies straight away. Save to keep it for next time."
+                                      AutomationProperties.AutomationId="AppThemeChoice"/>
 
-                <CheckBox Content="Registered for GST" IsChecked="{Binding GstRegistered, Mode=TwoWay}"
-                          Margin="0,2,0,4"
-                          AutomationProperties.AutomationId="ShopGstRegistered"/>
-                <TextBlock Text="{Binding GstHint}" Style="{StaticResource Muted}"
-                           TextWrapping="Wrap" Margin="0,0,0,10"
-                           AutomationProperties.AutomationId="ShopGstHint"/>
+                            <Button Content="Save general settings" Style="{StaticResource BtnPrimary}"
+                                    HorizontalAlignment="Left" Margin="0,4,0,0"
+                                    Command="{Binding SaveGeneralCommand}"
+                                    AutomationProperties.AutomationId="GeneralSave"/>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Drug licence no" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding DrugLicenceNo, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Pharmacist" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding PharmacistName, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                </Grid>
+                            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,18,0,14"/>
 
-                <!-- When the doctor sits. The OPD screen filters the queue by
-                     these, so the hours are the clinic's to set: a two-sitting
-                     day is the norm but the times are not. -->
-                <TextBlock Text="Consulting hours" Style="{StaticResource Label}"/>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="8"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                            <TextBlock Text="Data health" Style="{StaticResource Label}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
+                                       Text="Finds medicines whose pack size and units-per-pack disagree — the records that make the counter sell strips to someone asking for tablets — and puts them right together."/>
+                            <Button Content="Check data health" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
+                                    Margin="0,0,0,12"
+                                    Command="{Binding CheckDataHealthCommand}"
+                                    AutomationProperties.AutomationId="CheckDataHealth"/>
 
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Morning" Style="{StaticResource Muted}"
-                               VerticalAlignment="Center" Width="60"/>
-                    <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding MorningFrom, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="24-hour clock, e.g. 10:00"
-                             AutomationProperties.AutomationId="MorningFrom"/>
-                    <TextBlock Grid.Row="0" Grid.Column="4" Text="to" Style="{StaticResource Muted}"
-                               VerticalAlignment="Center"/>
-                    <TextBox Grid.Row="0" Grid.Column="6" Text="{Binding MorningTo, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="The end is exclusive - a morning ending 13:00 does not claim the one o'clock patient"
-                             AutomationProperties.AutomationId="MorningTo"/>
+                            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
 
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Evening" Style="{StaticResource Muted}"
-                               VerticalAlignment="Center"/>
-                    <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding EveningFrom, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="24-hour clock, e.g. 16:00"
-                             AutomationProperties.AutomationId="EveningFrom"/>
-                    <TextBlock Grid.Row="1" Grid.Column="4" Text="to" Style="{StaticResource Muted}"
-                               VerticalAlignment="Center"/>
-                    <TextBox Grid.Row="1" Grid.Column="6" Text="{Binding EveningTo, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="24-hour clock, e.g. 20:00"
-                             AutomationProperties.AutomationId="EveningTo"/>
-                </Grid>
-                <TextBlock Text="{Binding SessionHint}" Style="{StaticResource Muted}"
-                           TextWrapping="Wrap" Margin="0,4,0,10"
-                           AutomationProperties.AutomationId="SessionHint"/>
+                            <TextBlock Text="Backup" Style="{StaticResource Label}"/>
+                            <TextBlock Text="{Binding BackupPath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                       Margin="0,0,0,4" AutomationProperties.AutomationId="BackupPath"/>
+                            <TextBlock Text="{Binding LastBackup}" TextWrapping="Wrap" FontWeight="SemiBold"
+                                       Margin="0,0,0,8" AutomationProperties.AutomationId="LastBackup"/>
 
-                <TextBlock Text="OPD queue layout" Style="{StaticResource Label}"/>
-                <ComboBox ItemsSource="{Binding QueueLayouts}" SelectedItem="{Binding QueueLayout, Mode=TwoWay}"
-                          ToolTip="Tiles read at a glance; rows fit more people on screen"
-                          AutomationProperties.AutomationId="QueueLayout"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <Button Content="Back up now" Style="{StaticResource BtnPrimary}"
+                                        Command="{Binding BackUpNowCommand}"
+                                        ToolTip="Copies the database as it stands. Do this before closing up."
+                                        AutomationProperties.AutomationId="BackUpNow"/>
+                                <Button Content="Open backup folder" Style="{StaticResource BtnGhost}"
+                                        Margin="8,0,0,0" Command="{Binding OpenBackupFolderCommand}"
+                                        AutomationProperties.AutomationId="OpenBackupFolder"/>
+                            </StackPanel>
 
-                <TextBlock Text="Appearance" Style="{StaticResource Label}"/>
-                <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme, Mode=TwoWay}"
-                          ToolTip="Applies straight away. Save to keep it for next time."
-                          AutomationProperties.AutomationId="AppThemeChoice"/>
+                            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
+                            <TextBlock Text="Database file" Style="{StaticResource Label}"/>
+                            <TextBlock Text="{Binding DatabasePath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                       Margin="0,0,0,10"/>
 
-                <TextBlock Text="Bill footer" Style="{StaticResource Label}"/>
-                <TextBox Text="{Binding BillFooter, UpdateSourceTrigger=PropertyChanged}"
-                         AcceptsReturn="True" Height="50" TextWrapping="Wrap"/>
+                            <TextBlock Text="Activity log" Style="{StaticResource Label}"/>
+                            <TextBlock Text="{Binding LogPath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                       Margin="0,0,0,8" AutomationProperties.AutomationId="LogPath"/>
+                            <Button Content="Open log folder" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
+                                    Command="{Binding OpenLogFolderCommand}"
+                                    AutomationProperties.AutomationId="OpenLogFolder"/>
 
-                <StackPanel Orientation="Horizontal">
-                    <Button Content="Save Clinic / Pharmacy details" Style="{StaticResource BtnPrimary}"
-                            Command="{Binding SaveShopCommand}"
-                            AutomationProperties.AutomationId="ShopSave"/>
-                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="8,0,0,0" MinWidth="80"
-                            Command="{Binding ClearShopCommand}"
-                            ToolTip="Empties the form. Saved details are unchanged until you save again."
-                            AutomationProperties.AutomationId="ShopClear"/>
-                </StackPanel>
+                            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,18,0,12"/>
 
-                <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap"
-                           AutomationProperties.AutomationId="SettingsStatus"/>
+                            <TextBlock Text="Licence" Style="{StaticResource Label}"/>
+                            <TextBlock Text="{Binding LicenceSummary}" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                       Margin="0,0,0,8" AutomationProperties.AutomationId="LicenceSummary"/>
+                            <Button Content="About" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
+                                    Command="{Binding ShowAboutCommand}"
+                                    AutomationProperties.AutomationId="ShowAbout"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
 
-                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,16,0,12"/>
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="Clinic">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="16" MaxWidth="560" HorizontalAlignment="Left">
+                            <TextBlock Text="Clinic details" Style="{StaticResource H2}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="Printed on the prescription and the consultation fee receipt. Not on the pharmacy bill — that is on the Pharmacy tab."/>
 
-                <TextBlock Text="Data health" Style="{StaticResource Label}"/>
-                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,8"
-                           Text="Finds medicines whose pack size and units-per-pack disagree — the records that make the counter sell strips to someone asking for tablets — and puts them right together."/>
-                <Button Content="Check data health" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
-                        Margin="0,0,0,12"
-                        Command="{Binding CheckDataHealthCommand}"
-                        AutomationProperties.AutomationId="CheckDataHealth"/>
+                            <TextBlock Text="Clinic name" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding ClinicName, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="ClinicName"/>
 
-                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
+                            <TextBlock Text="Address line 1" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding ClinicAddress, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="ClinicAddress"/>
 
-                <TextBlock Text="Backup" Style="{StaticResource Label}"/>
-                <TextBlock Text="{Binding BackupPath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
-                           Margin="0,0,0,4" AutomationProperties.AutomationId="BackupPath"/>
-                <TextBlock Text="{Binding LastBackup}" TextWrapping="Wrap" FontWeight="SemiBold"
-                           Margin="0,0,0,8" AutomationProperties.AutomationId="LastBackup"/>
+                            <TextBlock Text="Address line 2" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding ClinicAddress2, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="ClinicAddress2"/>
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                    <Button Content="Back up now" Style="{StaticResource BtnPrimary}"
-                            Command="{Binding BackUpNowCommand}"
-                            ToolTip="Copies the database as it stands. Do this before closing up."
-                            AutomationProperties.AutomationId="BackUpNow"/>
-                    <Button Content="Open backup folder" Style="{StaticResource BtnGhost}"
-                            Margin="8,0,0,0" Command="{Binding OpenBackupFolderCommand}"
-                            AutomationProperties.AutomationId="OpenBackupFolder"/>
-                </StackPanel>
+                            <TextBlock Text="Phone" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding ClinicPhone, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="ClinicPhone"/>
 
-                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,4,0,12"/>
-                <TextBlock Text="Database file" Style="{StaticResource Label}"/>
-                <TextBlock Text="{Binding DatabasePath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
-                           Margin="0,0,0,10"/>
+                            <CheckBox Content="Registered for GST" IsChecked="{Binding ClinicGstRegistered, Mode=TwoWay}"
+                                      Margin="0,10,0,4"
+                                      AutomationProperties.AutomationId="ClinicGstRegistered"/>
+                            <TextBlock Text="{Binding ClinicGstHint}" Style="{StaticResource Muted}"
+                                       TextWrapping="Wrap" Margin="0,0,0,8"
+                                       AutomationProperties.AutomationId="ClinicGstHint"/>
 
-                <TextBlock Text="Activity log" Style="{StaticResource Label}"/>
-                <TextBlock Text="{Binding LogPath}" Style="{StaticResource Muted}" TextWrapping="Wrap"
-                           Margin="0,0,0,8" AutomationProperties.AutomationId="LogPath"/>
-                <Button Content="Open log folder" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
-                        Command="{Binding OpenLogFolderCommand}"
-                        AutomationProperties.AutomationId="OpenLogFolder"/>
+                            <TextBlock Text="GSTIN" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding ClinicGstin, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding ClinicGstRegistered}"
+                                     AutomationProperties.AutomationId="ClinicGstin"/>
 
-                <!-- The application has a navigation column rather than a menu
-                     bar, so About lives here beside the other things support
-                     asks people to read out. -->
-                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,14,0,12"/>
+                            <!-- When the doctor sits. The OPD screen filters the
+                                 queue by these. -->
+                            <TextBlock Text="Consulting hours" Style="{StaticResource Label}" Margin="0,10,0,4"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                <TextBlock Text="Licence" Style="{StaticResource Label}"/>
-                <TextBlock Text="{Binding LicenceSummary}" Style="{StaticResource Muted}" TextWrapping="Wrap"
-                           Margin="0,0,0,8" AutomationProperties.AutomationId="LicenceSummary"/>
-                <Button Content="About" Style="{StaticResource BtnGhost}" HorizontalAlignment="Left"
-                        Command="{Binding ShowAboutCommand}"
-                        AutomationProperties.AutomationId="ShowAbout"/>
-            </StackPanel>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Morning" Style="{StaticResource Muted}"
+                                           VerticalAlignment="Center" Width="60"/>
+                                <TextBox Grid.Row="0" Grid.Column="2" Text="{Binding MorningFrom, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="24-hour clock, e.g. 10:00"
+                                         AutomationProperties.AutomationId="MorningFrom"/>
+                                <TextBlock Grid.Row="0" Grid.Column="4" Text="to" Style="{StaticResource Muted}"
+                                           VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="0" Grid.Column="6" Text="{Binding MorningTo, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="The end is exclusive - a morning ending 13:00 does not claim the one o'clock patient"
+                                         AutomationProperties.AutomationId="MorningTo"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Evening" Style="{StaticResource Muted}"
+                                           VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding EveningFrom, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="24-hour clock, e.g. 16:00"
+                                         AutomationProperties.AutomationId="EveningFrom"/>
+                                <TextBlock Grid.Row="1" Grid.Column="4" Text="to" Style="{StaticResource Muted}"
+                                           VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="1" Grid.Column="6" Text="{Binding EveningTo, UpdateSourceTrigger=PropertyChanged}"
+                                         ToolTip="24-hour clock, e.g. 20:00"
+                                         AutomationProperties.AutomationId="EveningTo"/>
+                            </Grid>
+                            <TextBlock Text="{Binding SessionHint}" Style="{StaticResource Muted}"
+                                       TextWrapping="Wrap" Margin="0,4,0,14"
+                                       AutomationProperties.AutomationId="SessionHint"/>
+
+                            <Button Content="Save clinic details" Style="{StaticResource BtnPrimary}"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding SaveClinicCommand}"
+                                    AutomationProperties.AutomationId="ClinicSave"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="Pharmacy">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="16" MaxWidth="560" HorizontalAlignment="Left">
+                            <TextBlock Text="Pharmacy details" Style="{StaticResource H2}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="Printed on every medicine bill. GSTIN and the drug licence number are required on a retail chemist's tax invoice."/>
+
+                            <TextBlock Text="Pharmacy name" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding PharmacyName, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="PharmacyName"/>
+
+                            <TextBlock Text="Address line 1" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding PharmacyAddress, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="PharmacyAddress"/>
+
+                            <TextBlock Text="Address line 2" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding PharmacyAddress2, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="PharmacyAddress2"/>
+
+                            <TextBlock Text="Phone" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding PharmacyPhone, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="PharmacyPhone"/>
+
+                            <CheckBox Content="Registered for GST" IsChecked="{Binding PharmacyGstRegistered, Mode=TwoWay}"
+                                      Margin="0,10,0,4"
+                                      AutomationProperties.AutomationId="PharmacyGstRegistered"/>
+                            <TextBlock Text="{Binding PharmacyGstHint}" Style="{StaticResource Muted}"
+                                       TextWrapping="Wrap" Margin="0,0,0,10"
+                                       AutomationProperties.AutomationId="PharmacyGstHint"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="GSTIN" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding PharmacyGstin, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding PharmacyGstRegistered}"
+                                             AutomationProperties.AutomationId="PharmacyGstin"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Drug licence no" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding DrugLicenceNo, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="DrugLicenceNo"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Pharmacist" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding PharmacistName, UpdateSourceTrigger=PropertyChanged}"
+                                     Margin="0,0,0,14"
+                                     AutomationProperties.AutomationId="PharmacistName"/>
+
+                            <Button Content="Save pharmacy details" Style="{StaticResource BtnPrimary}"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding SavePharmacyCommand}"
+                                    AutomationProperties.AutomationId="PharmacySave"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="Doctors">
+                    <Grid Margin="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="260"/>
+                            <ColumnDefinition Width="18"/>
+                            <ColumnDefinition Width="*" MaxWidth="360"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Doctors" Style="{StaticResource H2}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"
+                                       Text="At least one is needed before a visit can be booked."/>
+                            <ListBox ItemsSource="{Binding Doctors}" SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
+                                     DisplayMemberPath="Name" Height="300"
+                                     BorderBrush="{DynamicResource Border}"
+                                     AutomationProperties.AutomationId="DoctorsList"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <local:RequiredLabel Text="Name"/>
+                            <TextBox Text="{Binding DoctorName, UpdateSourceTrigger=PropertyChanged}"
+                                     local:Field.IsMissing="{Binding DoctorNameMissing}"
+                                     AutomationProperties.AutomationId="DoctorName"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Speciality" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding Speciality, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="DoctorSpeciality"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Registration no" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding RegistrationNo, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="DoctorRegistrationNo"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Phone (optional)" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding DoctorPhone, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.AutomationId="DoctorPhone"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Default consultation fee" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding ConsultationFee, UpdateSourceTrigger=PropertyChanged}"
+                                             local:NumericInput.Mode="Money"
+                                             AutomationProperties.AutomationId="ConsultationFee"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <Button Content="Save doctor" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
+                                        Command="{Binding SaveDoctorCommand}"
+                                        AutomationProperties.AutomationId="DoctorSave"/>
+                                <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,0,8,0" MinWidth="80"
+                                        Command="{Binding NewDoctorCommand}"
+                                        ToolTip="Empties the form. Saved doctors are unchanged."
+                                        AutomationProperties.AutomationId="DoctorClear"/>
+                                <Button Content="+ New doctor" Style="{StaticResource BtnGhost}"
+                                        Command="{Binding NewDoctorCommand}"
+                                        AutomationProperties.AutomationId="NewDoctor"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="Reports">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="16" MaxWidth="560" HorizontalAlignment="Left">
+                            <TextBlock Text="Document branding" Style="{StaticResource H2}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,4"
+                                       Text="How every prescription, receipt and bill is branded. This is the default — and today the only — theme; more can be added later without changing anything here."/>
+
+                            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,10,0,14"/>
+
+                            <TextBlock Text="Logo" Style="{StaticResource Label}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                       Text="Printed in a column on the left of the header, next to the clinic or pharmacy name. Until one is uploaded, documents print with the name centred in text only.&#10;&#10;PNG or JPEG, under 1 MB. Best as a wide mark — a wordmark or a logo with its name built in, not a square icon — between 700x200px and 1300x350px, roughly 4 times wider than tall. A taller or more square image still works but leaves empty space left and right in the header column."/>
+
+                            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
+                                    BorderThickness="1" CornerRadius="6" Padding="10" Width="180" Height="50"
+                                    HorizontalAlignment="Left" Margin="0,0,0,10">
+                                <Grid>
+                                    <TextBlock Text="No logo" Style="{StaticResource Muted}" HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Visibility="{Binding HasLogo, Converter={StaticResource BoolVis}, ConverterParameter=invert}"/>
+                                    <Image Source="{Binding LogoPreview}" Stretch="Uniform"
+                                           AutomationProperties.AutomationId="LogoPreview"/>
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <Button Content="Upload logo" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
+                                        Command="{Binding UploadLogoCommand}"
+                                        AutomationProperties.AutomationId="UploadLogo"/>
+                                <Button Content="Remove logo" Style="{StaticResource BtnGhost}"
+                                        Command="{Binding RemoveLogoCommand}"
+                                        IsEnabled="{Binding HasLogo}"
+                                        AutomationProperties.AutomationId="RemoveLogo"/>
+                            </StackPanel>
+
+                            <TextBlock Text="Bottom message" Style="{StaticResource Label}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                       Text="Printed at the foot of every document — a returns policy, a thank-you, whatever the clinic wants. For example: &quot;Goods once sold are only returnable within 7 days.&quot;"/>
+                            <TextBox Text="{Binding DocumentFooter, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,14"
+                                     AutomationProperties.AutomationId="DocumentFooter"/>
+
+                            <Button Content="Save document branding" Style="{StaticResource BtnPrimary}"
+                                    HorizontalAlignment="Left"
+                                    Command="{Binding SaveDocumentThemeCommand}"
+                                    AutomationProperties.AutomationId="DocumentThemeSave"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
         </Border>
 
-        <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
-            <StackPanel>
-                <TextBlock Text="Doctors" Style="{StaticResource H2}"/>
-                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"
-                           Text="At least one doctor is needed before a visit can be booked."/>
-
-                <ListBox ItemsSource="{Binding Doctors}" SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
-                         DisplayMemberPath="Name" Height="150" Margin="0,0,0,12"
-                         BorderBrush="{DynamicResource Border}"/>
-
-                <local:RequiredLabel Text="Name"/>
-                <TextBox Text="{Binding DoctorName, UpdateSourceTrigger=PropertyChanged}"
-                         local:Field.IsMissing="{Binding DoctorNameMissing}"/>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="10"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Speciality" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Speciality, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Registration no" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding RegistrationNo, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                </Grid>
-
-                <TextBlock Text="Default consultation fee" Style="{StaticResource Label}"/>
-                <TextBox Text="{Binding ConsultationFee, UpdateSourceTrigger=PropertyChanged}"/>
-
-                <StackPanel Orientation="Horizontal">
-                    <Button Content="Save doctor" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
-                            Command="{Binding SaveDoctorCommand}"/>
-                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,0,8,0" MinWidth="80"
-                            Command="{Binding NewDoctorCommand}"
-                            ToolTip="Empties the form. Saved doctors are unchanged."
-                            AutomationProperties.AutomationId="DoctorClear"/>
-                    <Button Content="+ New doctor" Style="{StaticResource BtnGhost}"
-                            Command="{Binding NewDoctorCommand}"
-                            AutomationProperties.AutomationId="NewDoctor"/>
-                </StackPanel>
-            </StackPanel>
-        </Border>
+        <TextBlock Grid.Row="1" Text="{Binding Status}" Style="{StaticResource Muted}" Margin="4,10,4,0" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="SettingsStatus"/>
     </Grid>
-    </ScrollViewer>
 </UserControl>

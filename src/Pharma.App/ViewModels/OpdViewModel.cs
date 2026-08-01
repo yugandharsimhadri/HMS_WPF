@@ -31,7 +31,7 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
             // Naming the hours matters: "3 waiting" under a session filter is a
             // different number from "3 waiting" today, and the desk has to know
             // which one it is looking at.
-            line += $" · {Session} sitting, {_shop.Describe(Session)}";
+            line += $" · {Session} sitting, {_clinic.Describe(Session)}";
 
             // And say when the filter is hiding people, or the afternoon walk-in
             // who belongs to neither sitting simply vanishes.
@@ -68,14 +68,14 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     private readonly List<Visit> _all = [];
 
     /// <summary>The session hours, re-read whenever the screen is opened.</summary>
-    private ShopProfile _shop = new();
+    private ClinicProfile _clinic = new();
 
     public Array Sessions => Enum.GetValues<ClinicSession>();
 
     public async Task LoadAsync()
     {
-        _shop = await settings.GetAsync();
-        UseTiles = _shop.QueueLayout == QueueLayout.Tiles;
+        _clinic = await settings.GetClinicAsync();
+        UseTiles = (await settings.GetGeneralAsync()).QueueLayout == QueueLayout.Tiles;
 
         Doctors.Clear();
         foreach (var d in await opd.GetDoctorsAsync()) Doctors.Add(d);
@@ -112,7 +112,7 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
             // Counted rather than dropped. A visit booked at two in the
             // afternoon belongs to neither sitting, and a queue that quietly
             // loses somebody is worse than one that says it is filtered.
-            if (!_shop.IsIn(Session, visit.ScheduledOn))
+            if (!_clinic.IsIn(Session, visit.ScheduledOn))
             {
                 if (visit.IsWaiting || visit.Status == VisitStatus.Completed) Hidden++;
                 continue;
@@ -289,8 +289,9 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         var full = await opd.GetVisitAsync(visit.Id);
         if (full is null) return;
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => FeeReceiptDocument.Build(full, shop, isReprint: true),
+        var clinic = await settings.GetClinicAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => FeeReceiptDocument.Build(full, clinic, theme, isReprint: true),
                              $"Receipt {full.FeeReceiptNo} (duplicate)");
     }
 
@@ -308,7 +309,8 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
             return;
         }
 
-        var shop = await settings.GetAsync();
-        PrintService.Preview(() => PrescriptionPrinter.Build(full, shop), $"Prescription {full.VisitNo}");
+        var clinic = await settings.GetClinicAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => PrescriptionPrinter.Build(full, clinic, theme), $"Prescription {full.VisitNo}");
     }
 }

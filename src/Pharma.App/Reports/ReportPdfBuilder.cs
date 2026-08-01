@@ -20,7 +20,7 @@ public static class ReportPdfBuilder
     private static string Inr(decimal v) => "₹" + v.ToString("N2", InCulture);
     private static string Num(decimal v) => v.ToString("N2", InCulture);
 
-    public static IDocument Build(ReportKind kind, ReportsViewModel vm, ShopProfile shop)
+    public static IDocument Build(ReportKind kind, ReportsViewModel vm, string shopName)
     {
         // Stock Register is Excel-only by design — it's a wide, analysis-oriented
         // dump, not a printable statement. The Export PDF button is disabled on
@@ -44,7 +44,7 @@ public static class ReportPdfBuilder
                 // clinic will read is paper and toner for nothing.
                 page.Header().Column(col =>
                 {
-                    col.Item().AlignCenter().Text(shop.Name).FontSize(16).Bold();
+                    col.Item().AlignCenter().Text(shopName).FontSize(16).Bold();
                     col.Item().AlignCenter().Text("OPD & Pharmacy").FontSize(10).FontColor(Colors.Grey.Darken2);
                     col.Item().PaddingTop(6).AlignCenter().Text(ReportNaming.Title(kind)).FontSize(13).SemiBold();
                     col.Item().AlignCenter()

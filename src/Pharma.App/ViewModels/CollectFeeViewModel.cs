@@ -117,8 +117,9 @@ public partial class CollectFeeViewModel : ObservableObject
             // over a form that is about to disappear from under it.
             if (!PrintReceipt) return;
 
-            var shop = await _settings.GetAsync();
-            PrintService.Preview(() => FeeReceiptDocument.Build(paid, shop), $"Receipt {paid.FeeReceiptNo}");
+            var clinic = await _settings.GetClinicAsync();
+            var theme = await _settings.GetDocumentThemeAsync();
+            PrintService.Preview(() => FeeReceiptDocument.Build(paid, clinic, theme), $"Receipt {paid.FeeReceiptNo}");
         }, "Taking the fee", m => Status = m);
     }
 

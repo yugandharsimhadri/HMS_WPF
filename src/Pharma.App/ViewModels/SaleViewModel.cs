@@ -125,7 +125,7 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
 
     public async Task LoadAsync()
     {
-        _gstRegistered = (await settings.GetAsync()).GstRegistered;
+        _gstRegistered = (await settings.GetPharmacyAsync()).GstRegistered;
 
         await FindAsync();
 
@@ -711,8 +711,9 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
                 var full = await pharmacy.GetSaleAsync(saved.Id);
                 if (full is not null)
                 {
-                    var shop = await settings.GetAsync();
-                    PrintService.Preview(() => BillPrinter.Build(full, shop), $"Bill {full.BillNo}");
+                    var pharmacy = await settings.GetPharmacyAsync();
+                    var theme = await settings.GetDocumentThemeAsync();
+                    PrintService.Preview(() => BillPrinter.Build(full, pharmacy, theme), $"Bill {full.BillNo}");
                 }
             }
 
