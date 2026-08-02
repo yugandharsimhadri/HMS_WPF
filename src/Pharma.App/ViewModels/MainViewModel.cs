@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Pharma.Data;
 
 namespace Pharma.App.ViewModels;
 
@@ -14,6 +15,7 @@ public interface IPage
 
 public partial class MainViewModel : ObservableObject
 {
+    private readonly DashboardViewModel _dashboard;
     private readonly OpdViewModel _opd;
     private readonly PatientsViewModel _patients;
     private readonly SaleViewModel _sale;
@@ -21,11 +23,33 @@ public partial class MainViewModel : ObservableObject
     private readonly InventoryViewModel _inventory;
     private readonly ReportsViewModel _reports;
     private readonly SettingsViewModel _settings;
+    private readonly DiagnosticsViewModel _diagnostics;
 
     [ObservableProperty] private object? _currentPage;
-    [ObservableProperty] private string _activeNav = "opd";
+    [ObservableProperty] private string _activeNav = "dashboard";
     [ObservableProperty] private string _title = "";
     [ObservableProperty] private string _subtitle = "";
+
+    /// <summary>
+    /// Whether the Diagnostics nav item shows at all — an optional module,
+    /// off for clinics that have no in-house lab. Read once at startup and
+    /// updated live the moment the Features toggle under Settings is saved,
+    /// so turning it on never needs a restart.
+    /// </summary>
+    [ObservableProperty] private bool _diagnosticsEnabled;
+
+    /// <summary>
+    /// The clinic's own name, read once at startup and pushed live the moment
+    /// the Clinic tab under Settings is saved — the brand shown on the window
+    /// title bar and the top of the sidebar, so both read whatever the clinic
+    /// actually typed rather than a name baked into the build.
+    /// </summary>
+    [ObservableProperty] private string _clinicDisplayName = "";
+
+    partial void OnClinicDisplayNameChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
+
+    public string WindowTitle =>
+        $"{(string.IsNullOrWhiteSpace(ClinicDisplayName) ? "Sivaayaan HMS" : ClinicDisplayName)} — OPD & Pharmacy";
 
     /// <summary>
     /// A screen shown over the shell instead of in its own window. Only one can
@@ -50,15 +74,21 @@ public partial class MainViewModel : ObservableObject
     public string DeveloperUrl => AppInfo.DeveloperUrl;
     public string VersionLabel => AppInfo.VersionLabel;
 
+    private readonly SettingsService _settingsService;
+
     public MainViewModel(
+        DashboardViewModel dashboard,
         OpdViewModel opd,
         PatientsViewModel patients,
         SaleViewModel sale,
         ProductsViewModel products,
         InventoryViewModel inventory,
         ReportsViewModel reports,
-        SettingsViewModel settings)
+        SettingsViewModel settings,
+        DiagnosticsViewModel diagnostics,
+        SettingsService settingsService)
     {
+        _dashboard = dashboard;
         _opd = opd;
         _patients = patients;
         _sale = sale;
@@ -66,9 +96,19 @@ public partial class MainViewModel : ObservableObject
         _inventory = inventory;
         _reports = reports;
         _settings = settings;
+        _diagnostics = diagnostics;
+        _settingsService = settingsService;
 
-        GoAsync("opd").Forget("Loading the first page");
+        GoAsync("dashboard").Forget("Loading the first page");
+        LoadDiagnosticsToggleAsync().Forget("Loading the Diagnostics module toggle");
+        LoadClinicDisplayNameAsync().Forget("Loading the clinic name for the title bar");
     }
+
+    private async Task LoadDiagnosticsToggleAsync()
+        => DiagnosticsEnabled = (await _settingsService.GetGeneralAsync()).DiagnosticsEnabled;
+
+    private async Task LoadClinicDisplayNameAsync()
+        => ClinicDisplayName = (await _settingsService.GetClinicAsync()).Name;
 
     [RelayCommand]
     private async Task GoAsync(string key)
@@ -79,13 +119,15 @@ public partial class MainViewModel : ObservableObject
 
         IPage page = key switch
         {
+            "opd" => _opd,
             "patients" => _patients,
             "sale" => _sale,
             "products" => _products,
             "inventory" => _inventory,
             "reports" => _reports,
             "settings" => _settings,
-            _ => _opd
+            "diagnostics" => _diagnostics,
+            _ => _dashboard
         };
 
         // Screens revise their own subtitle as the user works — the Inventory

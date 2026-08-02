@@ -81,17 +81,23 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Settle();
         Capture("consultation");
 
-        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "consultation-annotated.png"),
+        app.SelectTab("ConsultationTabs", "Diagnosis");
+        Settle();
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "consultation-diagnosis-annotated.png"),
             new Note("ConsultationHeader", "Token, patient, age and doctor. Check you have the right child."),
             new Note("RxComplaint", "Carried over from booking. Edit it freely."),
             new Note("RxDiagnosis", "Printed in bold on the prescription."),
+            new Note("ConsultationClose", "Leaves. Asks first if anything is unsaved. Esc does the same."));
+
+        app.SelectTab("ConsultationTabs", "Prescription");
+        Settle();
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "consultation-prescription-annotated.png"),
             new Note("RxMedicine", "Type two letters. Pick from the list to link it to your stock, or keep typing for one you do not carry."),
             new Note("RxMedicineHint", "Says whether it is in your pharmacy, out of stock, or not carried at all."),
             new Note("RxMorning", "Morning dose. 0, ¼, ½, 1 or 2 — picked, not typed."),
             new Note("RxDays", "Length of the course."),
             new Note("RxQuantity", "Worked out for you, in individual tablets. Change it if you want."),
-            new Note("RxAdd", "Adds the medicine to the prescription below."),
-            new Note("ConsultationClose", "Leaves. Asks first if anything is unsaved. Esc does the same."));
+            new Note("RxAdd", "Adds the medicine to the prescription below."));
 
         app.CloseConsultation();
 
@@ -272,7 +278,7 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         Capture("patient-editor");
 
         Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "patient-editor-annotated.png"),
-            new Note("PatientName", "The only field that must be filled in."),
+            new Note("PatientName", "Required, along with an age or a date of birth."),
             new Note("PatientPhone", "A whole family shares one number, and that is fine."),
             new Note("PatientAllergies", "Shown against every prescription this child is written."),
             new Note("PatientDelete", "Only for somebody already on the register, and it asks first."),

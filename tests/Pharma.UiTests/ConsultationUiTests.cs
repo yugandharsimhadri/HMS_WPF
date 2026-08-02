@@ -60,6 +60,7 @@ public class ConsultationUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.ClickTile("OpdWaitingList", "TileConsult", name);
         app.WaitForConsultation(name);
 
+        app.SelectTab("ConsultationTabs", "Diagnosis");
         app.Type("RxDiagnosis", "Viral fever, typed but not saved");
 
         app.Click("ConsultationClose");

@@ -15,6 +15,12 @@ namespace Pharma.App.ViewModels;
 /// <summary>One row of the GST summary that appears on a tax invoice and in GSTR-1.</summary>
 public record GstSlab(decimal Rate, decimal Taxable, decimal Cgst, decimal Sgst, decimal Total);
 
+/// <summary>One day's diagnostic revenue, for the Date-wise Revenue section.</summary>
+public record DiagnosticsRevenueRow(DateTime Date, int Bills, decimal Revenue);
+
+/// <summary>One test's billing frequency, for the Most Frequently Ordered Tests section.</summary>
+public record DiagnosticsTestFrequencyRow(string TestName, int TimesOrdered, decimal Revenue);
+
 /// <summary>A batch on the Expiring Soon report, with the day count worked out once for display.</summary>
 public class ExpiringRow(Batch batch)
 {
@@ -36,6 +42,7 @@ public partial class ReportsViewModel(
     PharmacyService pharmacy,
     OpdService opd,
     SettingsService settings,
+    DiagnosticsService diagnostics,
     IDbContextFactory<AppDbContext> factory) : ObservableObject, IPage
 {
     public string Title => "Reports";
@@ -62,6 +69,13 @@ public partial class ReportsViewModel(
     public ObservableCollection<H1RegisterEntry> H1Register { get; } = [];
     public ObservableCollection<Batch> StockRegister { get; } = [];
 
+    // ── Diagnostics (optional module — empty when it is switched off) ─────
+    public ObservableCollection<DiagnosticBill> DiagnosticsTodayBills { get; } = [];
+    public ObservableCollection<DiagnosticsRevenueRow> DiagnosticsRevenue { get; } = [];
+    public ObservableCollection<DiagnosticsTestFrequencyRow> DiagnosticsTopTests { get; } = [];
+    [ObservableProperty] private decimal _diagnosticsTodayTotal;
+    [ObservableProperty] private bool _diagnosticsEnabled;
+
     public int[] ExpiringDayOptions { get; } = [30, 60, 90, 180];
 
     /// <summary>The seven Reports tabs, in the exact order they appear in
@@ -85,7 +99,8 @@ public partial class ReportsViewModel(
         ReportKind.None,            // Stock to reconcile
         ReportKind.LowStock,
         ReportKind.StockRegister,
-        ReportKind.ScheduleH1
+        ReportKind.ScheduleH1,
+        ReportKind.None            // Diagnostics — no PDF/Excel export in v1
     ];
 
     // ── Filters ────────────────────────────────────────────────────────────
@@ -93,6 +108,7 @@ public partial class ReportsViewModel(
     [ObservableProperty] private Sale? _selectedSale;
     [ObservableProperty] private string _billSearch = "";
     [ObservableProperty] private Visit? _selectedVisit;
+    [ObservableProperty] private DiagnosticBill? _selectedDiagnosticsBill;
     [ObservableProperty] private DateTime _fromDate = DateTime.Today;
     [ObservableProperty] private DateTime _toDate = DateTime.Today;
     [ObservableProperty] private int _expiringDays = 90;
@@ -132,15 +148,61 @@ public partial class ReportsViewModel(
 
     public async Task LoadAsync()
     {
+        DiagnosticsEnabled = (await settings.GetGeneralAsync()).DiagnosticsEnabled;
+
         await LoadDayAsync();
         await LoadRangeAsync();
         await LoadStockRegisterAsync();
+        if (DiagnosticsEnabled) await LoadDiagnosticsReportAsync();
         OnPropertyChanged(nameof(Subtitle));
     }
 
-    partial void OnDateChanged(DateTime value) => LoadDayAsync().Forget("Loading reports");
-    partial void OnFromDateChanged(DateTime value) => LoadRangeAsync().Forget("Loading GST/H1 range");
-    partial void OnToDateChanged(DateTime value) => LoadRangeAsync().Forget("Loading GST/H1 range");
+    /// <summary>Today's bills off the Date picker; revenue-by-day and the most
+    /// frequently ordered tests off the From/To range — the same split the
+    /// day book and the GST summary already use.</summary>
+    private async Task LoadDiagnosticsReportAsync()
+    {
+        var todays = (await diagnostics.SearchBillsAsync(Date, Date))
+            .OrderByDescending(b => b.BillDate).ToList();
+
+        DiagnosticsTodayBills.Clear();
+        foreach (var b in todays) DiagnosticsTodayBills.Add(b);
+        DiagnosticsTodayTotal = todays.Sum(b => b.FinalAmount);
+
+        var from = FromDate <= ToDate ? FromDate : ToDate;
+        var to = FromDate <= ToDate ? ToDate : FromDate;
+        var ranged = await diagnostics.SearchBillsAsync(from, to);
+
+        DiagnosticsRevenue.Clear();
+        foreach (var day in ranged.GroupBy(b => b.BillDate.Date).OrderByDescending(g => g.Key))
+            DiagnosticsRevenue.Add(new DiagnosticsRevenueRow(day.Key, day.Count(), day.Sum(b => b.FinalAmount)));
+
+        DiagnosticsTopTests.Clear();
+        foreach (var test in ranged.SelectMany(b => b.Items)
+                     .GroupBy(i => i.TestName)
+                     .OrderByDescending(g => g.Sum(i => i.Quantity))
+                     .Take(15))
+            DiagnosticsTopTests.Add(new DiagnosticsTestFrequencyRow(
+                test.Key, test.Sum(i => i.Quantity), test.Sum(i => i.Amount)));
+    }
+
+    partial void OnDateChanged(DateTime value)
+    {
+        LoadDayAsync().Forget("Loading reports");
+        if (DiagnosticsEnabled) LoadDiagnosticsReportAsync().Forget("Loading diagnostics report");
+    }
+
+    partial void OnFromDateChanged(DateTime value)
+    {
+        LoadRangeAsync().Forget("Loading GST/H1 range");
+        if (DiagnosticsEnabled) LoadDiagnosticsReportAsync().Forget("Loading diagnostics report");
+    }
+
+    partial void OnToDateChanged(DateTime value)
+    {
+        LoadRangeAsync().Forget("Loading GST/H1 range");
+        if (DiagnosticsEnabled) LoadDiagnosticsReportAsync().Forget("Loading diagnostics report");
+    }
     partial void OnExpiringDaysChanged(int value) => LoadExpiringAsync().Forget("Loading expiring stock");
     partial void OnIncludeZeroStockChanged(bool value) => LoadStockRegisterAsync().Forget("Loading stock register");
     partial void OnStockSearchChanged(string value) => ApplyStockSearch();
@@ -312,6 +374,22 @@ public partial class ReportsViewModel(
         var theme = await settings.GetDocumentThemeAsync();
         PrintService.Preview(() => FeeReceiptDocument.Build(visit, clinic, theme, isReprint: true),
                              $"Receipt {visit.FeeReceiptNo} (duplicate)");
+    }
+
+    /// <summary>Reprints a diagnostic bill from Today's Diagnostic Bills,
+    /// marked as a duplicate — same shape as <see cref="ReprintBillAsync"/>.</summary>
+    [RelayCommand]
+    private async Task ReprintDiagnosticBillAsync()
+    {
+        if (SelectedDiagnosticsBill is null) return;
+
+        var bill = await diagnostics.GetBillAsync(SelectedDiagnosticsBill.Id);
+        if (bill is null) return;
+
+        var clinic = await settings.GetClinicAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => DiagnosticBillPrinter.Build(bill, clinic, theme, isReprint: true),
+                             $"Bill {bill.BillNo} (duplicate)");
     }
 
     // ── Export ─────────────────────────────────────────────────────────────

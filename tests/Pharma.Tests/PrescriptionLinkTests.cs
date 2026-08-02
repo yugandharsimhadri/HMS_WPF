@@ -55,7 +55,7 @@ public class PrescriptionLinkTests : IDisposable
             ProductId = product.Id,
             MedicineName = product.Name,
             Frequency = "1-0-1", Days = 3, Quantity = 6
-        }], complete: false);
+        }], [], complete: false);
 
         var saved = await _opd.GetVisitAsync(visit.Id);
         var line = Assert.Single(saved!.Prescription);
@@ -78,7 +78,7 @@ public class PrescriptionLinkTests : IDisposable
             ProductId = null,
             MedicineName = "Some Imported Ointment 20g",
             Frequency = "1-0-1", Days = 5, Quantity = 10
-        }], complete: false);
+        }], [], complete: false);
 
         var saved = await _opd.GetVisitAsync(visit.Id);
         var line = Assert.Single(saved!.Prescription);
@@ -104,7 +104,7 @@ public class PrescriptionLinkTests : IDisposable
         [
             new PrescriptionItem { ProductId = stocked.Id, MedicineName = stocked.Name, Quantity = 1 },
             new PrescriptionItem { ProductId = null, MedicineName = "Outside Nasal Spray", Quantity = 1 }
-        ], complete: true);
+        ], [], complete: true);
 
         var saved = await _opd.GetVisitAsync(visit.Id);
 
@@ -123,10 +123,10 @@ public class PrescriptionLinkTests : IDisposable
         var visit = await GivenVisitAsync();
 
         await _opd.SaveConsultationAsync(visit,
-            [new PrescriptionItem { MedicineName = "First Draft Syrup", Quantity = 1 }], complete: false);
+            [new PrescriptionItem { MedicineName = "First Draft Syrup", Quantity = 1 }], [], complete: false);
 
         await _opd.SaveConsultationAsync(visit,
-            [new PrescriptionItem { MedicineName = "Second Draft Syrup", Quantity = 1 }], complete: false);
+            [new PrescriptionItem { MedicineName = "Second Draft Syrup", Quantity = 1 }], [], complete: false);
 
         var saved = await _opd.GetVisitAsync(visit.Id);
         Assert.Equal("Second Draft Syrup", Assert.Single(saved!.Prescription).MedicineName);

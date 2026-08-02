@@ -4,13 +4,14 @@ namespace Pharma.UiTests;
 public class NavigationUiTests(AppFixture app) : IClassFixture<AppFixture>
 {
     [Fact]
-    public void App_opens_on_the_opd_screen()
+    public void App_opens_on_the_dashboard_screen()
     {
         // Read at launch — the suite shares one app and navigates away.
-        Assert.Equal("OPD", app.InitialPageTitle);
+        Assert.Equal("Dashboard", app.InitialPageTitle);
     }
 
     [Theory]
+    [InlineData("NavDashboard", "Dashboard", null)]
     [InlineData("NavPatients", "Patients", "PatientsGrid")]
     [InlineData("NavSale", "Pharmacy counter", "SaleLinesGrid")]
     [InlineData("NavProducts", "Medicines", "ProductsGrid")]

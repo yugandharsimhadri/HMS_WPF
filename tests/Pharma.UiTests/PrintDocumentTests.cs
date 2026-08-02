@@ -199,6 +199,43 @@ public class PrintDocumentTests
         Assert.Contains("30049099", text);      // HSN
     }
 
+    // ── Diagnostic bill ────────────────────────────────────────────────────
+
+    private static DiagnosticBill DiagnosticBill() => new()
+    {
+        BillNo = "DX00003",
+        BillDate = new DateTime(2026, 7, 25, 11, 5, 0),
+        PatientName = "Baby Anika",
+        PatientNo = "P00012",
+        PaymentMode = PaymentMode.Cash,
+        Status = DiagnosticBillStatus.Ordered,
+        TotalAmount = 450m,
+        Discount = 50m,
+        FinalAmount = 400m,
+        Items =
+        [
+            new DiagnosticBillItem { TestName = "Complete Blood Picture (CBP/CBC)", Price = 300m, Quantity = 1, Amount = 300m },
+            new DiagnosticBillItem { TestName = "ESR", Price = 150m, Quantity = 1, Amount = 150m }
+        ]
+    };
+
+    [StaFact]
+    public void A_diagnostic_bill_carries_no_gst_and_keeps_its_billed_prices()
+    {
+        var text = TextOf(DiagnosticBillPrinter.Build(DiagnosticBill(), Clinic(), Theme()));
+
+        Assert.Contains("DIAGNOSTIC BILL", text);
+        Assert.Contains("DX00003", text);
+        Assert.Contains("Complete Blood Picture (CBP/CBC)", text);
+        Assert.Contains("ESR", text);
+        Assert.Contains("400.00", text);   // final amount, after the discount
+        Assert.DoesNotContain("GST", text);
+    }
+
+    [StaFact]
+    public void A_reprinted_diagnostic_bill_is_marked_duplicate()
+        => Assert.Contains("DUPLICATE", TextOf(DiagnosticBillPrinter.Build(DiagnosticBill(), Clinic(), Theme(), isReprint: true)));
+
     [StaFact]
     public void A_bill_shows_the_licences_and_the_gst_split()
     {
@@ -426,4 +463,8 @@ public class PrintDocumentTests
     [StaFact]
     public void Every_paragraph_on_the_bill_has_its_own_brush()
         => AssertEveryParagraphHasAnExplicitBrush(BillPrinter.Build(Sale(), Pharmacy(), Theme()));
+
+    [StaFact]
+    public void Every_paragraph_on_the_diagnostic_bill_has_its_own_brush()
+        => AssertEveryParagraphHasAnExplicitBrush(DiagnosticBillPrinter.Build(DiagnosticBill(), Clinic(), Theme()));
 }

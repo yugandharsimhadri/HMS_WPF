@@ -54,6 +54,7 @@ public class AfterSaveUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         app.Type("PatientName", name);
         app.Type("PatientPhone", $"9{suffix}");
+        app.Type("PatientAge", "30");
         app.Click("PatientSave");
 
         AppFixture.WaitUntil(() => app.TextOf("PatientsStatus").Contains("saved"), "the patient to save");
@@ -132,6 +133,7 @@ public class AfterSaveUiTests(AppFixture app) : IClassFixture<AppFixture>
 
             app.Type("PatientName", $"{child} {suffix}");
             app.Type("PatientPhone", $"9{suffix}");
+            app.Type("PatientAge", "30");
             app.Click("PatientSave");
 
             AppFixture.WaitUntil(() => app.Find("PatientName") is null, $"{child} to save");

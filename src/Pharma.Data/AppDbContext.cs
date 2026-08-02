@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<Visit> Visits => Set<Visit>();
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
+    public DbSet<VisitDiagnosticRequest> VisitDiagnosticRequests => Set<VisitDiagnosticRequest>();
 
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Batch> Batches => Set<Batch>();
@@ -18,6 +19,10 @@ public class AppDbContext : DbContext
     public DbSet<StockEntryItem> StockEntryItems => Set<StockEntryItem>();
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
+
+    public DbSet<DiagnosticTest> DiagnosticTests => Set<DiagnosticTest>();
+    public DbSet<DiagnosticBill> DiagnosticBills => Set<DiagnosticBill>();
+    public DbSet<DiagnosticBillItem> DiagnosticBillItems => Set<DiagnosticBillItem>();
 
     public DbSet<Setting> Settings => Set<Setting>();
     public DbSet<Counter> Counters => Set<Counter>();
@@ -55,6 +60,8 @@ public class AppDbContext : DbContext
                 .HasForeignKey(x => x.DoctorId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(x => x.Prescription).WithOne(p => p.Visit)
                 .HasForeignKey(p => p.VisitId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.DiagnosticRequests).WithOne(r => r.Visit)
+                .HasForeignKey(r => r.VisitId).OnDelete(DeleteBehavior.Cascade);
 
             e.Ignore(x => x.IsWaiting);
             e.Ignore(x => x.PatientLine);
@@ -139,6 +146,32 @@ public class AppDbContext : DbContext
                 .HasForeignKey(i => i.SaleId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Patient).WithMany()
                 .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<DiagnosticTest>(e => e.HasIndex(x => x.Name));
+
+        b.Entity<DiagnosticBill>(e =>
+        {
+            e.HasIndex(x => x.BillNo).IsUnique();
+            e.HasIndex(x => x.BillDate);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Visit).WithMany()
+                .HasForeignKey(x => x.VisitId).OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(x => x.Items).WithOne(i => i.Bill)
+                .HasForeignKey(i => i.BillId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<DiagnosticBillItem>(e =>
+        {
+            e.HasOne<DiagnosticTest>().WithMany()
+                .HasForeignKey(x => x.TestId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<VisitDiagnosticRequest>(e =>
+        {
+            e.HasOne(x => x.Test).WithMany()
+                .HasForeignKey(x => x.TestId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<Setting>(e => e.HasIndex(x => x.Key).IsUnique());

@@ -20,6 +20,11 @@
                         <Button DockPanel.Dock="Right" Content="+ New patient" Style="{StaticResource BtnPrimary}"
                                 Margin="8,0,0,0" Command="{Binding NewPatientCommand}"
                                 AutomationProperties.AutomationId="PatientsNew"/>
+                        <Button DockPanel.Dock="Right" Content="New diagnostic bill" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,0" Command="{Binding NewDiagnosticBillCommand}"
+                                IsEnabled="{Binding HasPatient}"
+                                Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolToVisible}}"
+                                AutomationProperties.AutomationId="PatientNewDiagnosticBill"/>
                         <Button DockPanel.Dock="Right" Content="Edit" Style="{StaticResource BtnGhost}"
                                 Margin="8,0,0,0" MinWidth="80"
                                 Command="{Binding EditPatientCommand}"
@@ -153,6 +158,34 @@
                                                         HeaderStyle="{StaticResource GridNumberHeader}"/>
                                     <DataGridTextColumn Header="MODE" Binding="{Binding PaymentMode}" Width="Auto"
                                                         ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </TabItem>
+
+                    <TabItem Header="Diagnostics history"
+                             Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolToVisible}}">
+                        <DockPanel Margin="0,10,0,0">
+                            <Button DockPanel.Dock="Bottom" Content="Print bill" HorizontalAlignment="Left"
+                                    Style="{StaticResource BtnGhost}" Margin="0,10,0,0"
+                                    Command="{Binding PrintDiagnosticBillCommand}"
+                                    AutomationProperties.AutomationId="PatientPrintDiagnosticBill"/>
+
+                            <DataGrid ItemsSource="{Binding DiagnosticBills}"
+                                      SelectedItem="{Binding SelectedDiagnosticBill, Mode=TwoWay}"
+                                      AutomationProperties.AutomationId="PatientDiagnosticBillsGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="DATE" Binding="{Binding BillDate, StringFormat='dd MMM yy HH:mm'}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridName}"/>
+                                    <DataGridTextColumn Header="TESTS" Binding="{Binding Items.Count}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridNumber}"
+                                                        HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                    <DataGridTextColumn Header="AMOUNT" Binding="{Binding FinalAmount, StringFormat=N2}" Width="220*" MinWidth="90"
+                                                        ElementStyle="{StaticResource GridAmount}"
+                                                        HeaderStyle="{StaticResource GridNumberHeader}"/>
                                     <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
                                 </DataGrid.Columns>
                             </DataGrid>

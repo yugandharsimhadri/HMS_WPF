@@ -60,11 +60,13 @@ public class FeverVisitUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.ClickTile("OpdWaitingList", "TileConsult", patient);
         app.WaitForConsultation(patient);
 
+        app.SelectTab("ConsultationTabs", "Diagnosis");
         app.Type("RxComplaint", "Fever for two days");
         app.Type("RxDiagnosis", "Viral fever");
 
         // Paracetamol: one morning, one night, five days — then cut to 9 tablets,
         // because that is what the parent is asked to buy.
+        app.SelectTab("ConsultationTabs", "Prescription");
         PickPrescribed(paracetamol);
         AppFixture.WaitUntil(() => app.TextOf("RxMedicineHint").Contains("In our pharmacy"),
                              "the in-stock note");

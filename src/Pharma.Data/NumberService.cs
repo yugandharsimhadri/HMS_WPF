@@ -14,6 +14,7 @@ public static class NumberService
     public const string Bill = "Bill";
     public const string StockEntry = "StockEntry";
     public const string FeeReceipt = "FeeReceipt";
+    public const string DiagnosticBill = "DiagnosticBill";
 
     public static async Task<string> NextAsync(AppDbContext db, string name, CancellationToken ct = default)
     {
@@ -35,6 +36,7 @@ public static class NumberService
         Bill => "INV",
         StockEntry => "GRN",
         FeeReceipt => "RCP",
+        DiagnosticBill => "DX",
         _ => "DOC"
     };
 }

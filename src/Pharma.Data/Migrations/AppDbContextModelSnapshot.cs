@@ -115,6 +115,165 @@ namespace Pharma.Data.Migrations
                     b.ToTable("Counters");
                 });
 
+            modelBuilder.Entity("Pharma.Core.DiagnosticBill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("BillDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BillNo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("FinalAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PatientName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PatientNo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PaymentMode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ReferredBy")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TransactionNo")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("VisitId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BillDate");
+
+                    b.HasIndex("BillNo")
+                        .IsUnique();
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("VisitId");
+
+                    b.ToTable("DiagnosticBills");
+                });
+
+            modelBuilder.Entity("Pharma.Core.DiagnosticBillItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BillId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("TestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TestName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BillId");
+
+                    b.HasIndex("TestId");
+
+                    b.ToTable("DiagnosticBillItems");
+                });
+
+            modelBuilder.Entity("Pharma.Core.DiagnosticTest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("DiagnosticTests");
+                });
+
             modelBuilder.Entity("Pharma.Core.Doctor", b =>
                 {
                     b.Property<Guid>("Id")
@@ -264,11 +423,20 @@ namespace Pharma.Data.Migrations
                     b.Property<string>("Allergies")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BloodGroup")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Gender")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("GuardianName")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
@@ -491,6 +659,9 @@ namespace Pharma.Data.Migrations
 
                     b.Property<decimal>("TaxableAmount")
                         .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TransactionNo")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -873,7 +1044,17 @@ namespace Pharma.Data.Migrations
                     b.Property<string>("FeeReceiptNo")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FeeTransactionNo")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("FollowUpOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("HeartRateBpm")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal?>("HeightCm")
+                        .HasPrecision(12, 2)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsDeleted")
@@ -887,6 +1068,9 @@ namespace Pharma.Data.Migrations
 
                     b.Property<DateTime>("ScheduledOn")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("Spo2Percent")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
@@ -923,6 +1107,43 @@ namespace Pharma.Data.Migrations
                     b.ToTable("Visits");
                 });
 
+            modelBuilder.Entity("Pharma.Core.VisitDiagnosticRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("TestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TestName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("VisitId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TestId");
+
+                    b.HasIndex("VisitId");
+
+                    b.ToTable("VisitDiagnosticRequests");
+                });
+
             modelBuilder.Entity("Pharma.Core.Batch", b =>
                 {
                     b.HasOne("Pharma.Core.Product", "Product")
@@ -932,6 +1153,40 @@ namespace Pharma.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Pharma.Core.DiagnosticBill", b =>
+                {
+                    b.HasOne("Pharma.Core.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Pharma.Core.Visit", "Visit")
+                        .WithMany()
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("Visit");
+                });
+
+            modelBuilder.Entity("Pharma.Core.DiagnosticBillItem", b =>
+                {
+                    b.HasOne("Pharma.Core.DiagnosticBill", "Bill")
+                        .WithMany("Items")
+                        .HasForeignKey("BillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Pharma.Core.DiagnosticTest", null)
+                        .WithMany()
+                        .HasForeignKey("TestId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Bill");
                 });
 
             modelBuilder.Entity("Pharma.Core.PrescriptionItem", b =>
@@ -1046,6 +1301,29 @@ namespace Pharma.Data.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("Pharma.Core.VisitDiagnosticRequest", b =>
+                {
+                    b.HasOne("Pharma.Core.DiagnosticTest", "Test")
+                        .WithMany()
+                        .HasForeignKey("TestId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Pharma.Core.Visit", "Visit")
+                        .WithMany("DiagnosticRequests")
+                        .HasForeignKey("VisitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Test");
+
+                    b.Navigation("Visit");
+                });
+
+            modelBuilder.Entity("Pharma.Core.DiagnosticBill", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("Pharma.Core.Patient", b =>
                 {
                     b.Navigation("Visits");
@@ -1068,6 +1346,8 @@ namespace Pharma.Data.Migrations
 
             modelBuilder.Entity("Pharma.Core.Visit", b =>
                 {
+                    b.Navigation("DiagnosticRequests");
+
                     b.Navigation("Prescription");
                 });
 #pragma warning restore 612, 618

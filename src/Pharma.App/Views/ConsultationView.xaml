@@ -3,12 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Pharma.App"
              Background="{DynamicResource Bg}"
-             MinWidth="980" MinHeight="600">
+             Width="980" MinHeight="600">
 
     <!-- The overlay sizes itself to its content now, and a consultation wants
-         the room: notes on the left, the prescription on the right. The
-         minimums keep it that size; the overlay clamps them to the window on a
-         screen too small to honour them. -->
+         the room: notes on the left, the prescription on the right. Stated
+         width, not just a minimum — a Grid column of Width="*" inside an
+         unbounded MinWidth stretched to fill the whole window instead of
+         stopping at a sensible form width; MedicineEditorView already solves
+         this the same way. The overlay still clamps it down on a screen too
+         small to honour even that. -->
     <DockPanel Margin="18">
 
         <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14" Padding="16,12">
@@ -35,18 +38,14 @@
             </DockPanel>
         </Border>
 
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="330"/>
-                <ColumnDefinition Width="14"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <TabControl BorderThickness="0" Background="Transparent"
+                    AutomationProperties.AutomationId="ConsultationTabs">
 
-            <!-- Clinical notes -->
-            <Border Grid.Column="0" Style="{StaticResource Card}">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="Vitals" Style="{StaticResource H2}"/>
+            <!-- ══════════════════════════════════════════════════════ -->
+            <TabItem Header="Vitals">
+                <Border Style="{StaticResource Card}">
+                    <StackPanel MaxWidth="520" HorizontalAlignment="Left">
+                        <TextBlock Text="All optional — record whatever this visit needs." Style="{StaticResource Muted}" Margin="0,0,0,10"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -68,43 +67,39 @@
                                 <TextBox Text="{Binding Temperature, UpdateSourceTrigger=PropertyChanged}"/>
                             </StackPanel>
                         </Grid>
-
-                        <TextBlock Text="Complaint" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Complaint, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="True" Height="60" TextWrapping="Wrap"
-                                 AutomationProperties.AutomationId="RxComplaint"/>
-
-                        <TextBlock Text="Diagnosis" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Diagnosis, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="True" Height="60" TextWrapping="Wrap"
-                                 AutomationProperties.AutomationId="RxDiagnosis"/>
-
-                        <TextBlock Text="Advice / notes" Style="{StaticResource Label}"/>
-                        <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
-                                 AcceptsReturn="True" Height="70" TextWrapping="Wrap"
-                                 AutomationProperties.AutomationId="RxNotes"/>
-
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="8"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Fee" Style="{StaticResource Label}"/>
-                                <TextBox Text="{Binding Fee, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="Height cm" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="RxHeight"/>
                             </StackPanel>
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Review on" Style="{StaticResource Label}"/>
-                                <DatePicker SelectedDate="{Binding FollowUpOn, Mode=TwoWay}"/>
+                                <TextBlock Text="HR bpm" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding HeartRate, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Whole"
+                                         AutomationProperties.AutomationId="RxHeartRate"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="SpO2 %" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding Spo2, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Whole"
+                                         AutomationProperties.AutomationId="RxSpo2"/>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
-                </ScrollViewer>
-            </Border>
+                </Border>
+            </TabItem>
 
-            <!-- Prescription -->
-            <Border Grid.Column="2" Style="{StaticResource Card}">
+            <!-- ══════════════════════════════════════════════════════ -->
+            <TabItem Header="Prescription">
+            <Border Style="{StaticResource Card}">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Prescription" Style="{StaticResource H2}"/>
 
@@ -156,11 +151,16 @@
                                        TextWrapping="Wrap" Margin="0,6,0,10"
                                        AutomationProperties.AutomationId="RxMedicineHint"/>
 
-                            <Grid>
+                            <!-- Fixed widths, not Width="*" — a prescription line
+                                 does not need to stretch to fill whatever room
+                                 the window happens to have, and a trailing star
+                                 column soaks up the leftover space instead of
+                                 the fields themselves. -->
+                            <Grid HorizontalAlignment="Left">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="200"/>
                                     <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="220"/>
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="60"/>
                                     <ColumnDefinition Width="8"/>
@@ -261,6 +261,111 @@
                     </DataGrid>
                 </DockPanel>
             </Border>
-        </Grid>
+            </TabItem>
+
+            <!-- ══════════════════════════════════════════════════════ -->
+            <TabItem Header="Diagnosis">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="330"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource Card}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="Complaint" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding Complaint, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True" Height="60" TextWrapping="Wrap"
+                                         AutomationProperties.AutomationId="RxComplaint"/>
+
+                                <TextBlock Text="Diagnosis" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding Diagnosis, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True" Height="60" TextWrapping="Wrap"
+                                         AutomationProperties.AutomationId="RxDiagnosis"/>
+
+                                <TextBlock Text="Advice / notes" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                         AcceptsReturn="True" Height="70" TextWrapping="Wrap"
+                                         AutomationProperties.AutomationId="RxNotes"/>
+
+                                <TextBlock Text="Review on" Style="{StaticResource Label}"/>
+                                <DatePicker SelectedDate="{Binding FollowUpOn, Mode=TwoWay}"
+                                            AutomationProperties.AutomationId="RxFollowUpOn"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Tests requested — the diagnostics equivalent of the
+                         prescription entry, picked up later at the
+                         Diagnostics desk instead of being asked for again. -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}"
+                            Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolVis}}">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Tests requested" Style="{StaticResource H2}"/>
+
+                            <Border DockPanel.Dock="Top" Background="{DynamicResource SurfaceMuted}" BorderBrush="{DynamicResource Border}"
+                                    BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="Test" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding TestSearch, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0"
+                                             ToolTip="Type to search our test catalogue. Anything not stocked can still be requested."
+                                             local:Field.IsMissing="{Binding TestMissing}"
+                                             AutomationProperties.AutomationId="RxTestSearch"/>
+
+                                    <ItemsControl ItemsSource="{Binding TestMatches}"
+                                                  AutomationProperties.AutomationId="RxTestMatches">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button HorizontalContentAlignment="Stretch" Padding="10,7"
+                                                        FontWeight="Normal" Style="{StaticResource BtnGhost}"
+                                                        Command="{Binding DataContext.PickTestCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        AutomationProperties.AutomationId="RxTestMatch"
+                                                        AutomationProperties.Name="{Binding Name}">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock Text="{Binding TestHint}" Style="{StaticResource Muted}"
+                                               TextWrapping="Wrap" Margin="0,6,0,10"
+                                               AutomationProperties.AutomationId="RxTestHint"/>
+
+                                    <Button Content="Add" Style="{StaticResource BtnPrimary}"
+                                            HorizontalAlignment="Left" MinWidth="90"
+                                            Command="{Binding AddTestRequestCommand}"
+                                            AutomationProperties.AutomationId="RxTestAdd"/>
+                                </StackPanel>
+                            </Border>
+
+                            <DataGrid ItemsSource="{Binding RequestedTests}" RowHeight="30"
+                                      AutomationProperties.AutomationId="RxTestGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="TEST" Binding="{Binding TestName}" Width="*" MinWidth="105"
+                                                        IsReadOnly="True" ElementStyle="{StaticResource GridName}"/>
+                                    <DataGridTemplateColumn Width="Auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="✕" BorderThickness="0" Background="Transparent"
+                                                        Foreground="{DynamicResource Danger}" Cursor="Hand" ToolTip="Remove"
+                                                        Command="{Binding DataContext.RemoveTestRequestCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </DockPanel>
 </UserControl>

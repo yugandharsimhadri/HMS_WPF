@@ -60,6 +60,7 @@ public partial class App : Application
         services.AddSingleton<SettingsService>();
         services.AddSingleton<DataHealthService>();
         services.AddSingleton<Pharma.Data.Import.PurchaseImportService>();
+        services.AddSingleton<DiagnosticsService>();
 
         // Licensing. Each piece is registered against its interface, so the day
         // a signed licence file or an activation server arrives, only the
@@ -70,6 +71,7 @@ public partial class App : Application
         services.AddSingleton<ILicenseService, LicenseService>();
 
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<OpdViewModel>();
         services.AddSingleton<PatientsViewModel>();
         services.AddSingleton<SaleViewModel>();
@@ -77,6 +79,7 @@ public partial class App : Application
         services.AddSingleton<InventoryViewModel>();
         services.AddSingleton<ReportsViewModel>();
         services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<DiagnosticsViewModel>();
 
         return services.BuildServiceProvider();
     }

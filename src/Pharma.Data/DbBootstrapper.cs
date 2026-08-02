@@ -136,6 +136,7 @@ public static class DbBootstrapper
         await db.Database.MigrateAsync();
         await SeedAsync(db);
         await Import.ImportProfileSeeder.SeedAsync(db);
+        await DiagnosticTestSeeder.SeedAsync(db);
     }
 
     /// <summary>The newest backup on disk, or null if there has never been one.</summary>

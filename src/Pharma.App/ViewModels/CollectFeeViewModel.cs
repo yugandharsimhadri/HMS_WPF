@@ -65,7 +65,14 @@ public partial class CollectFeeViewModel : ObservableObject
 
     [ObservableProperty] private decimal _fee;
     [ObservableProperty] private PaymentMode _mode = PaymentMode.Cash;
+    [ObservableProperty] private string _transactionNo = "";
     [ObservableProperty] private string _status = "";
+
+    /// <summary>A reference number only means anything once money moved
+    /// electronically — cash has nothing to reconcile against.</summary>
+    public bool ShowTransactionNo => Mode is PaymentMode.Upi or PaymentMode.Card;
+
+    partial void OnModeChanged(PaymentMode value) => OnPropertyChanged(nameof(ShowTransactionNo));
 
     /// <summary>
     /// On by default. Most clinics hand over a printed receipt, and the ones
@@ -105,7 +112,7 @@ public partial class CollectFeeViewModel : ObservableObject
 
         await Safely.RunAsync(async () =>
         {
-            var paid = await _opd.CollectFeeAsync(_visit.Id, Mode, Fee);
+            var paid = await _opd.CollectFeeAsync(_visit.Id, Mode, Fee, TransactionNo);
             if (paid is null) return;
 
             Outcome = $"Receipt {paid.FeeReceiptNo} — ₹{paid.Fee:0.00} received from " +

@@ -97,11 +97,18 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     [ObservableProperty] private string _selectedSummary = "";
 
     // Bill header
-    [ObservableProperty] private string _customerName = "Cash";
+    [ObservableProperty] private string _customerName = "Guest";
     [ObservableProperty] private string _doctorName = "";
     [ObservableProperty] private PaymentMode _paymentMode = PaymentMode.Cash;
+    [ObservableProperty] private string _transactionNo = "";
     [ObservableProperty] private Visit? _selectedVisit;
     [ObservableProperty] private string _status = "";
+
+    /// <summary>A reference number only means anything once money moved
+    /// electronically — cash has nothing to reconcile against.</summary>
+    public bool ShowTransactionNo => PaymentMode is PaymentMode.Upi or PaymentMode.Card;
+
+    partial void OnPaymentModeChanged(PaymentMode value) => OnPropertyChanged(nameof(ShowTransactionNo));
 
     // What the doctor wrote but the bill could not take — out of stock, or not
     // in the catalogue at all. Kept apart from Status because the counter reads
@@ -677,9 +684,10 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
             BillDate = DateTime.Now,
             PatientId = SelectedVisit?.PatientId,
             VisitId = SelectedVisit?.Id,
-            CustomerName = string.IsNullOrWhiteSpace(CustomerName) ? "Cash" : CustomerName.Trim(),
+            CustomerName = string.IsNullOrWhiteSpace(CustomerName) ? "Guest" : CustomerName.Trim(),
             DoctorName = string.IsNullOrWhiteSpace(DoctorName) ? null : DoctorName.Trim(),
             PaymentMode = PaymentMode,
+            TransactionNo = string.IsNullOrWhiteSpace(TransactionNo) ? null : TransactionNo.Trim(),
             IsTaxInvoice = _gstRegistered
         };
 
@@ -737,8 +745,9 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         Lines.Clear();
         Search = "";
         Quantity = 1;
-        CustomerName = "Cash";
+        CustomerName = "Guest";
         DoctorName = "";
+        TransactionNo = "";
         SelectedProduct = null;
         SelectedVisit = null;
         Matches.Clear();

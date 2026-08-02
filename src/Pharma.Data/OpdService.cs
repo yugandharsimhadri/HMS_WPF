@@ -30,7 +30,7 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         }
 
         await using var db = await factory.CreateDbContextAsync();
-        var q = db.Patients.Where(p => !p.IsDeleted);
+        var q = db.Patients.AsNoTracking().Where(p => !p.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(term))
         {
@@ -70,6 +70,7 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
 
         // Numbers get stored with spaces, dashes or a +91, so compare on digits.
         var candidates = await db.Patients
+            .AsNoTracking()
             .Where(p => !p.IsDeleted && p.Phone != "")
             .ToListAsync();
 
@@ -114,6 +115,7 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
 
         var visits = await db.Visits
+            .AsNoTracking()
             .Include(v => v.Doctor)
             .Include(v => v.Prescription)
             .Where(v => !v.IsDeleted && v.PatientId == patientId)
@@ -133,7 +135,7 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         using var log = AppLog.Enter(nameof(SearchVisitsAsync), $"term='{term}' take={take}");
 
         await using var db = await factory.CreateDbContextAsync();
-        var q = db.Visits.Include(v => v.Patient).Include(v => v.Doctor).Where(v => !v.IsDeleted);
+        var q = db.Visits.AsNoTracking().Include(v => v.Patient).Include(v => v.Doctor).Where(v => !v.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(term))
         {
@@ -187,7 +189,7 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
 
         await using var db = await factory.CreateDbContextAsync();
 
-        var doctors = await db.Doctors.Where(d => !d.IsDeleted && d.IsActive)
+        var doctors = await db.Doctors.AsNoTracking().Where(d => !d.IsDeleted && d.IsActive)
                                       .OrderBy(d => d.Name).ToListAsync();
 
         log.Ok($"{doctors.Count} active");
@@ -221,10 +223,33 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         var to = from.AddDays(1);
 
         var visits = await db.Visits
+            .AsNoTracking()
             .Include(v => v.Patient)
             .Include(v => v.Doctor)
             .Where(v => !v.IsDeleted && v.ScheduledOn >= from && v.ScheduledOn < to)
             .OrderBy(v => v.TokenNo)
+            .ToListAsync();
+
+        log.Ok($"{visits.Count} visit(s)");
+        return visits;
+    }
+
+    /// <summary>Visits across a date range, for trend reports — the OPD queue
+    /// itself still uses the single-day <see cref="GetVisitsAsync(DateTime)"/>
+    /// above, ordered for token display rather than a trend. No Patient/Doctor
+    /// include here: a trend only ever sums Fee/FeePaid, never displays a name.</summary>
+    public async Task<List<Visit>> GetVisitsAsync(DateTime from, DateTime to)
+    {
+        using var log = AppLog.Enter(nameof(GetVisitsAsync), $"from={from:yyyy-MM-dd} to={to:yyyy-MM-dd}");
+
+        await using var db = await factory.CreateDbContextAsync();
+        var start = from.Date;
+        var end = to.Date.AddDays(1);
+
+        var visits = await db.Visits
+            .AsNoTracking()
+            .Where(v => !v.IsDeleted && v.ScheduledOn >= start && v.ScheduledOn < end)
+            .OrderBy(v => v.ScheduledOn)
             .ToListAsync();
 
         log.Ok($"{visits.Count} visit(s)");
@@ -238,9 +263,11 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
 
         var visit = await db.Visits
+            .AsNoTracking()
             .Include(v => v.Patient)
             .Include(v => v.Doctor)
             .Include(v => v.Prescription)
+            .Include(v => v.DiagnosticRequests)
             .FirstOrDefaultAsync(v => v.Id == id);
 
         log.Ok(visit is null
@@ -318,7 +345,7 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
     /// this writes the visit's fee as well as the receipt.
     /// </param>
     public async Task<Visit?> CollectFeeAsync(
-        Guid visitId, PaymentMode mode = PaymentMode.Cash, decimal? amount = null)
+        Guid visitId, PaymentMode mode = PaymentMode.Cash, decimal? amount = null, string? transactionNo = null)
     {
         using var log = AppLog.Enter(nameof(CollectFeeAsync), $"visit={visitId} mode={mode} amount={amount}");
 
@@ -353,6 +380,7 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         visit.FeeReceiptNo = await NumberService.NextAsync(db, NumberService.FeeReceipt);
         visit.FeePaidOn = DateTime.Now;
         visit.FeePaymentMode = mode;
+        visit.FeeTransactionNo = string.IsNullOrWhiteSpace(transactionNo) ? null : transactionNo.Trim();
 
         await db.SaveChangesAsync();
 
@@ -362,18 +390,22 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         return visit;
     }
 
-    /// <summary>Saves the consultation and replaces the prescription in one step.</summary>
-    public async Task SaveConsultationAsync(Visit edited, IEnumerable<PrescriptionItem> prescription, bool complete)
+    /// <summary>Saves the consultation and replaces the prescription and the
+    /// requested-tests list in one step.</summary>
+    public async Task SaveConsultationAsync(
+        Visit edited, IEnumerable<PrescriptionItem> prescription,
+        IEnumerable<VisitDiagnosticRequest> diagnosticRequests, bool complete)
     {
         var items = prescription.ToList();
+        var tests = diagnosticRequests.ToList();
 
         using var log = AppLog.Enter(
             nameof(SaveConsultationAsync),
-            $"visit={edited.Id} rx={items.Count} complete={complete} fee={edited.Fee}");
+            $"visit={edited.Id} rx={items.Count} tests={tests.Count} complete={complete} fee={edited.Fee}");
 
         await using var db = await factory.CreateDbContextAsync();
 
-        var visit = await db.Visits.Include(v => v.Prescription)
+        var visit = await db.Visits.Include(v => v.Prescription).Include(v => v.DiagnosticRequests)
                                    .FirstOrDefaultAsync(v => v.Id == edited.Id)
                     ?? throw new InvalidOperationException("Visit not found.");
 
@@ -383,6 +415,9 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         visit.WeightKg = edited.WeightKg;
         visit.BloodPressure = edited.BloodPressure;
         visit.TemperatureF = edited.TemperatureF;
+        visit.HeightCm = edited.HeightCm;
+        visit.HeartRateBpm = edited.HeartRateBpm;
+        visit.Spo2Percent = edited.Spo2Percent;
         visit.Fee = edited.Fee;
         visit.FollowUpOn = edited.FollowUpOn;
 
@@ -406,6 +441,18 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
                 Days = item.Days,
                 Quantity = item.Quantity,
                 Instructions = item.Instructions
+            });
+        }
+
+        db.VisitDiagnosticRequests.RemoveRange(visit.DiagnosticRequests);
+
+        foreach (var test in tests)
+        {
+            db.VisitDiagnosticRequests.Add(new VisitDiagnosticRequest
+            {
+                VisitId = visit.Id,
+                TestId = test.TestId,
+                TestName = test.TestName
             });
         }
 

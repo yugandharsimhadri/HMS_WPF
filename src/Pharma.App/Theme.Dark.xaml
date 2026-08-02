@@ -22,6 +22,16 @@
     <SolidColorBrush x:Key="SurfaceMuted" Color="#171E24"/>
     <SolidColorBrush x:Key="BadgeFill"    Color="#28323B"/>
     <SolidColorBrush x:Key="AccentSoft"   Color="#1C3A38"/>
+
+    <!-- Dashboard chart series, beyond the single Accent teal — pharmacy
+         (blue) and diagnostics (orange). Picked and validated (CVD-safe
+         against Accent, ≥3:1 on Surface) alongside Accent as a three-hue
+         categorical set; never reused for anything but a chart series. -->
+    <SolidColorBrush x:Key="SeriesBlue"       Color="#3987E5"/>
+    <SolidColorBrush x:Key="SeriesBlueSoft"   Color="#1B2A3D"/>
+    <SolidColorBrush x:Key="SeriesOrange"     Color="#D95926"/>
+    <SolidColorBrush x:Key="SeriesOrangeSoft" Color="#3A2418"/>
+
     <SolidColorBrush x:Key="WarnFill"     Color="#33281A"/>
     <!-- Lightened from #8A6428 (2.70:1 against WarnFill — under the 3:1 a
          border needs) to #C08A34 (4.75:1). -->
