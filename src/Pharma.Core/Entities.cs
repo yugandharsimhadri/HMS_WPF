@@ -510,6 +510,64 @@ public class SaleItem : BaseEntity
     public string? PackLabel { get; set; }
 }
 
+// ── Diagnostics ──────────────────────────────────────────────────────────
+
+/// <summary>
+/// One lab test the clinic can bill for. Category is plain text rather than
+/// an enum on purpose — clinic staff add tests and categories from the Test
+/// Master screen, and a fixed enum would mean a code change every time.
+/// </summary>
+public class DiagnosticTest : BaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public bool Active { get; set; } = true;
+}
+
+public class DiagnosticBill : BaseEntity
+{
+    public string BillNo { get; set; } = string.Empty;
+    public DateTime BillDate { get; set; } = DateTime.Now;
+
+    /// <summary>Always set — unlike a pharmacy sale, a diagnostic bill is
+    /// always raised against a registered patient.</summary>
+    public Guid PatientId { get; set; }
+    public Patient Patient { get; set; } = null!;
+
+    // Denormalised so history and a reprint still read correctly even if the
+    // patient record is edited later — same reasoning as SaleItem.ProductName.
+    public string PatientName { get; set; } = string.Empty;
+    public string PatientNo { get; set; } = string.Empty;
+
+    public decimal TotalAmount { get; set; }
+    public decimal Discount { get; set; }
+    public decimal FinalAmount { get; set; }
+
+    public PaymentMode PaymentMode { get; set; } = PaymentMode.Cash;
+    public DiagnosticBillStatus Status { get; set; } = DiagnosticBillStatus.Ordered;
+    public string? Remarks { get; set; }
+
+    public ICollection<DiagnosticBillItem> Items { get; set; } = [];
+}
+
+public class DiagnosticBillItem : BaseEntity
+{
+    public Guid BillId { get; set; }
+    public DiagnosticBill Bill { get; set; } = null!;
+
+    /// <summary>Null once the test master row it was billed from is deleted —
+    /// the bill keeps its own name/price below regardless.</summary>
+    public Guid? TestId { get; set; }
+
+    // Denormalised: a later master price change, or the test being deleted,
+    // must never change what an already-printed bill shows.
+    public string TestName { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public int Quantity { get; set; } = 1;
+    public decimal Amount { get; set; }
+}
+
 // ── Shared ─────────────────────────────────────────────────────────────────
 
 /// <summary>Shop identity and print details. In the database, not appsettings,

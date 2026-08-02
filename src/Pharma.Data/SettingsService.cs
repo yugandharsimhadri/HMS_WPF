@@ -8,7 +8,10 @@ namespace Pharma.Data;
 /// </summary>
 public class ClinicProfile
 {
-    public string Name { get; set; } = "Twinkle Children's Hospital";
+    // A brand-new installation only — an existing one keeps whatever it
+    // already saved, since Get() only ever falls back to this when the
+    // clinic.name row is missing outright. See SettingsService.GetClinicAsync.
+    public string Name { get; set; } = "Sivaayaan HMS";
     public string AddressLine { get; set; } = "";
     public string AddressLine2 { get; set; } = "";
     public string Phone { get; set; } = "";
@@ -136,6 +139,14 @@ public class GeneralSettings
     /// them, so it is a setting rather than something we decide.
     /// </summary>
     public Pharma.Core.AppThemeKind Theme { get; set; } = Pharma.Core.AppThemeKind.Light;
+
+    /// <summary>
+    /// Off by default. Most clinics have no in-house lab, so the Diagnostics
+    /// nav item, and everything it opens, stays out of the way until this is
+    /// switched on under Settings → Features — the same "optional module"
+    /// shape later features can reuse.
+    /// </summary>
+    public bool DiagnosticsEnabled { get; set; }
 }
 
 public enum QueueLayout
@@ -197,6 +208,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     // ── General ────────────────────────────────────────────────────────────
     private const string KeyQueueLayout = "opd.queuelayout";
     private const string KeyTheme = "ui.theme";
+    private const string KeyDiagnosticsEnabled = "features.diagnostics.enabled";
 
     // ── The old, merged identity. Read-only from here on — kept so a build
     //    older than the split still finds its data exactly where it left it,
@@ -334,7 +346,8 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
             QueueLayout = Enum.TryParse<QueueLayout>(Get(map, KeyQueueLayout, ""), out var layout)
                 ? layout : fallback.QueueLayout,
             Theme = Enum.TryParse<Pharma.Core.AppThemeKind>(Get(map, KeyTheme, ""), out var theme)
-                ? theme : fallback.Theme
+                ? theme : fallback.Theme,
+            DiagnosticsEnabled = Bool(map, KeyDiagnosticsEnabled)
         };
     }
 
@@ -344,6 +357,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
 
         await SetAsync(db, KeyQueueLayout, settings.QueueLayout.ToString());
         await SetAsync(db, KeyTheme, settings.Theme.ToString());
+        await SetAsync(db, KeyDiagnosticsEnabled, settings.DiagnosticsEnabled.ToString());
 
         await db.SaveChangesAsync();
     }

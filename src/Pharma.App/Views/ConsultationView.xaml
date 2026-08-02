@@ -3,12 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:Pharma.App"
              Background="{DynamicResource Bg}"
-             MinWidth="980" MinHeight="600">
+             Width="980" MinHeight="600">
 
     <!-- The overlay sizes itself to its content now, and a consultation wants
-         the room: notes on the left, the prescription on the right. The
-         minimums keep it that size; the overlay clamps them to the window on a
-         screen too small to honour them. -->
+         the room: notes on the left, the prescription on the right. Stated
+         width, not just a minimum — a Grid column of Width="*" inside an
+         unbounded MinWidth stretched to fill the whole window instead of
+         stopping at a sensible form width; MedicineEditorView already solves
+         this the same way. The overlay still clamps it down on a screen too
+         small to honour even that. -->
     <DockPanel Margin="18">
 
         <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14" Padding="16,12">
@@ -156,11 +159,16 @@
                                        TextWrapping="Wrap" Margin="0,6,0,10"
                                        AutomationProperties.AutomationId="RxMedicineHint"/>
 
-                            <Grid>
+                            <!-- Fixed widths, not Width="*" — a prescription line
+                                 does not need to stretch to fill whatever room
+                                 the window happens to have, and a trailing star
+                                 column soaks up the leftover space instead of
+                                 the fields themselves. -->
+                            <Grid HorizontalAlignment="Left">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="200"/>
                                     <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="220"/>
                                     <ColumnDefinition Width="8"/>
                                     <ColumnDefinition Width="60"/>
                                     <ColumnDefinition Width="8"/>

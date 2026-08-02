@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Pharma.Core;
 using Pharma.Core.Licensing;
@@ -12,13 +13,14 @@ using Pharma.Data;
 namespace Pharma.App.ViewModels;
 
 /// <summary>
-/// Settings, in five destinations rather than one scrolling screen: General
+/// Settings, in six destinations rather than one scrolling screen: General
 /// (how the software behaves), Clinic (who the doctor's documents speak as),
-/// Pharmacy (who the bill speaks as), Doctors, and Reports (how every
-/// document is branded — logo and footer).
+/// Pharmacy (who the bill speaks as), Doctors, Reports (how every document is
+/// branded — logo and footer), and Features (which optional modules, like
+/// Diagnostics, are switched on).
 ///
 /// Still one view model and one screen, with an internal tab strip rather
-/// than five sidebar entries — the sidebar is at seven items already, and
+/// than six sidebar entries — the sidebar is at seven items already, and
 /// every one of these screens is a handful of fields, not a destination
 /// someone comes back to over and over the way OPD or the pharmacy counter
 /// are. See docs/SETTINGS_REORG.md for the reasoning.
@@ -27,7 +29,7 @@ public partial class SettingsViewModel(
     SettingsService settings, OpdService opd, ILicenseService licence) : ObservableObject, IPage
 {
     public string Title => "Settings";
-    public string Subtitle => "General, clinic, pharmacy, doctors and document branding";
+    public string Subtitle => "General, clinic, pharmacy, doctors, document branding and features";
 
     [ObservableProperty] private string _status = "";
 
@@ -36,6 +38,7 @@ public partial class SettingsViewModel(
         var general = await settings.GetGeneralAsync();
         QueueLayout = general.QueueLayout;
         Theme = general.Theme;
+        DiagnosticsEnabled = general.DiagnosticsEnabled;
 
         var clinic = await settings.GetClinicAsync();
         ClinicName = clinic.Name;
@@ -87,9 +90,38 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task SaveGeneralAsync()
     {
-        await settings.SaveGeneralAsync(new GeneralSettings { QueueLayout = QueueLayout, Theme = Theme });
+        await settings.SaveGeneralAsync(new GeneralSettings
+        {
+            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled
+        });
         Status = $"Saved. The OPD queue will use {QueueLayout.ToString().ToLowerInvariant()}, " +
                  $"in the {Theme.ToString().ToLowerInvariant()} theme.";
+    }
+
+    // ── Features ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Off by default. Every optional module — Diagnostics today, more later —
+    /// gets one row here rather than its own settings screen, so turning one on
+    /// is never more than a checkbox and a save.
+    /// </summary>
+    [ObservableProperty] private bool _diagnosticsEnabled;
+
+    [RelayCommand]
+    private async Task SaveFeaturesAsync()
+    {
+        await settings.SaveGeneralAsync(new GeneralSettings
+        {
+            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled
+        });
+
+        // The shell reads this once at startup; poke it directly so the nav
+        // button appears or disappears immediately rather than after a restart.
+        App.Services.GetRequiredService<MainViewModel>().DiagnosticsEnabled = DiagnosticsEnabled;
+
+        Status = DiagnosticsEnabled
+            ? "Saved. The Diagnostics module is now available from the sidebar."
+            : "Saved. The Diagnostics module is hidden from the sidebar.";
     }
 
     /// <summary>One line about the licence, so the state is visible without opening the dialog.</summary>
@@ -293,6 +325,10 @@ public partial class SettingsViewModel(
             EveningFrom = Session(EveningFrom, saved.EveningFrom),
             EveningTo = Session(EveningTo, saved.EveningTo)
         });
+
+        // The window title bar and the sidebar tile read this live — no
+        // restart to see a renamed clinic reflected there.
+        App.Services.GetRequiredService<MainViewModel>().ClinicDisplayName = ClinicName.Trim();
 
         Status = "Clinic details saved.";
     }

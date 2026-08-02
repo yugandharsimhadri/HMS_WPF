@@ -54,6 +54,12 @@ public partial class PatientEditorViewModel : ObservableObject
     /// <summary>What the register should say. Null when nothing was written.</summary>
     public string? Outcome { get; private set; }
 
+    /// <summary>The patient that was actually saved, so a caller that opened
+    /// this to add someone new — the Diagnostics billing screen, for one —
+    /// can select them the moment this closes instead of asking the desk to
+    /// search for the person they just typed in.</summary>
+    public Patient? Saved { get; private set; }
+
     [ObservableProperty] private string _patientNo = "";
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _phone = "";
@@ -98,6 +104,7 @@ public partial class PatientEditorViewModel : ObservableObject
         {
             var saved = await _opd.SavePatientAsync(patient);
 
+            Saved = saved;
             Outcome = $"{saved.Name} saved as {saved.PatientNo}.";
             RequestClose?.Invoke();
         }

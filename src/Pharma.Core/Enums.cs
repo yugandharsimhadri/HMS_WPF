@@ -120,6 +120,16 @@ public enum SaleStatus
     Cancelled
 }
 
+/// <summary>Where a diagnostic bill's sample is in the lab workflow. Editing
+/// or deleting a bill is only allowed before it reaches <see cref="Completed"/>.</summary>
+public enum DiagnosticBillStatus
+{
+    Ordered = 1,
+    SampleCollected,
+    ResultReceived,
+    Completed
+}
+
 /// <summary>Which palette the application draws itself in.</summary>
 public enum AppThemeKind
 {

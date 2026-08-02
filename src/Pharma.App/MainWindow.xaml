@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:Pharma.App"
         xmlns:vm="clr-namespace:Pharma.App.ViewModels"
         xmlns:views="clr-namespace:Pharma.App.Views"
-        Title="Twinkle Children's Hospital — OPD &amp; Pharmacy"
+        Title="{Binding WindowTitle}"
         Icon="twinkle.ico"
         Height="820" Width="1360"
         MinHeight="620" MinWidth="1000"
@@ -46,6 +46,14 @@
             <views:CorrectStockView/>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:DiagnosticTestEditorViewModel}">
+            <views:DiagnosticTestEditorView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:DiagnosticTestPickerViewModel}">
+            <views:DiagnosticTestPickerView/>
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:OpdViewModel}">
             <views:OpdView/>
         </DataTemplate>
@@ -66,6 +74,9 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DiagnosticsViewModel}">
+            <views:DiagnosticsView/>
         </DataTemplate>
 
         <!--
@@ -123,9 +134,13 @@
         <Border Grid.Column="0" Background="{DynamicResource NavBg}">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="18,22,18,18">
-                    <TextBlock Text="Twinkle" FontSize="{StaticResource FontFigure}" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="Children's Hospital" FontSize="{StaticResource FontBody}" FontWeight="SemiBold"
-                               Foreground="{DynamicResource NavInkBright}" Margin="0,1,0,0"/>
+                    <!-- The clinic's own name, not one baked into the build —
+                         same value the window title bar shows. Wraps rather
+                         than a fixed two-line split, since a real clinic name
+                         is not always two words the way the old default was. -->
+                    <TextBlock Text="{Binding ClinicDisplayName}" FontSize="{StaticResource FontFigure}" FontWeight="Bold"
+                               Foreground="White" TextWrapping="Wrap"
+                               AutomationProperties.AutomationId="ClinicBrandTile"/>
                     <TextBlock Text="OPD &amp; Pharmacy" FontSize="{StaticResource FontSmall}" Foreground="{DynamicResource NavInkFaint}" Margin="0,4,0,0"/>
                 </StackPanel>
 
@@ -191,6 +206,12 @@
                             AutomationProperties.AutomationId="NavReports"
                             Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=reports}"
                             Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=reports}"/>
+                    <Button Style="{StaticResource NavButton}" Content="Diagnostics"
+                            Command="{Binding GoCommand}" CommandParameter="diagnostics"
+                            AutomationProperties.AutomationId="NavDiagnostics"
+                            Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolToVisible}}"
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=diagnostics}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=diagnostics}"/>
                     <Button Style="{StaticResource NavButton}" Content="Settings"
                             Command="{Binding GoCommand}" CommandParameter="settings"
                             AutomationProperties.AutomationId="NavSettings"

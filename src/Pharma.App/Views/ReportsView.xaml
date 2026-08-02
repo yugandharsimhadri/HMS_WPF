@@ -380,6 +380,62 @@
                         </DockPanel>
                     </TabItem>
 
+                    <!-- Only the optional Diagnostics module has anything to show
+                         here — hidden along with the sidebar item when it is off. -->
+                    <TabItem Header="Diagnostics"
+                             Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolToVisible}}">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Today's diagnostic bills" Style="{StaticResource H2}"/>
+                                <TextBlock Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                           Text="Off the Date picker above — same day the day book and OPD register use."/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,4">
+                                    <TextBlock Text="Total: " Style="{StaticResource Muted}"/>
+                                    <TextBlock Text="{Binding DiagnosticsTodayTotal, StringFormat=N2}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <DataGrid ItemsSource="{Binding DiagnosticsTodayBills}" MaxHeight="220"
+                                          AutomationProperties.AutomationId="ReportsDiagnosticsTodayGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="TIME" Binding="{Binding BillDate, StringFormat='HH:mm'}" Width="Auto" ElementStyle="{StaticResource GridMuted}"/>
+                                        <DataGridTextColumn Header="BILL NO" Binding="{Binding BillNo}" Width="Auto" ElementStyle="{StaticResource GridName}"/>
+                                        <DataGridTextColumn Header="PATIENT" Binding="{Binding PatientName}" Width="220*" MinWidth="105" ElementStyle="{StaticResource GridText}"/>
+                                        <DataGridTextColumn Header="TESTS" Binding="{Binding Items.Count}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                        <DataGridTextColumn Header="AMOUNT" Binding="{Binding FinalAmount, StringFormat=N2}" Width="Auto" ElementStyle="{StaticResource GridAmount}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                        <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,16,0,14"/>
+
+                                <TextBlock Text="Date-wise revenue" Style="{StaticResource H2}"/>
+                                <TextBlock Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                           Text="Over the From/To range above — same range the GST summary and Schedule H1 register use."/>
+                                <DataGrid ItemsSource="{Binding DiagnosticsRevenue}" MaxHeight="200"
+                                          AutomationProperties.AutomationId="ReportsDiagnosticsRevenueGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="DATE" Binding="{Binding Date, StringFormat='dd MMM yy'}" Width="Auto" ElementStyle="{StaticResource GridMuted}"/>
+                                        <DataGridTextColumn Header="BILLS" Binding="{Binding Bills}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                        <DataGridTextColumn Header="REVENUE" Binding="{Binding Revenue, StringFormat=N2}" Width="220*" MinWidth="90" ElementStyle="{StaticResource GridAmount}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,16,0,14"/>
+
+                                <TextBlock Text="Most frequently ordered tests" Style="{StaticResource H2}"/>
+                                <TextBlock Style="{StaticResource Muted}" Margin="2,0,0,8"
+                                           Text="Top 15 over the same From/To range, by how many times each test was ordered."/>
+                                <DataGrid ItemsSource="{Binding DiagnosticsTopTests}" MaxHeight="260"
+                                          AutomationProperties.AutomationId="ReportsDiagnosticsTopTestsGrid">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="TEST" Binding="{Binding TestName}" Width="260*" MinWidth="120" ElementStyle="{StaticResource GridName}"/>
+                                        <DataGridTextColumn Header="TIMES ORDERED" Binding="{Binding TimesOrdered}" Width="Auto" ElementStyle="{StaticResource GridNumber}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                        <DataGridTextColumn Header="REVENUE" Binding="{Binding Revenue, StringFormat=N2}" Width="Auto" ElementStyle="{StaticResource GridAmount}" HeaderStyle="{StaticResource GridNumberHeader}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </TabItem>
+
                 </TabControl>
             </DockPanel>
         </Border>
