@@ -108,6 +108,7 @@ public partial class ReportsViewModel(
     [ObservableProperty] private Sale? _selectedSale;
     [ObservableProperty] private string _billSearch = "";
     [ObservableProperty] private Visit? _selectedVisit;
+    [ObservableProperty] private DiagnosticBill? _selectedDiagnosticsBill;
     [ObservableProperty] private DateTime _fromDate = DateTime.Today;
     [ObservableProperty] private DateTime _toDate = DateTime.Today;
     [ObservableProperty] private int _expiringDays = 90;
@@ -373,6 +374,22 @@ public partial class ReportsViewModel(
         var theme = await settings.GetDocumentThemeAsync();
         PrintService.Preview(() => FeeReceiptDocument.Build(visit, clinic, theme, isReprint: true),
                              $"Receipt {visit.FeeReceiptNo} (duplicate)");
+    }
+
+    /// <summary>Reprints a diagnostic bill from Today's Diagnostic Bills,
+    /// marked as a duplicate — same shape as <see cref="ReprintBillAsync"/>.</summary>
+    [RelayCommand]
+    private async Task ReprintDiagnosticBillAsync()
+    {
+        if (SelectedDiagnosticsBill is null) return;
+
+        var bill = await diagnostics.GetBillAsync(SelectedDiagnosticsBill.Id);
+        if (bill is null) return;
+
+        var clinic = await settings.GetClinicAsync();
+        var theme = await settings.GetDocumentThemeAsync();
+        PrintService.Preview(() => DiagnosticBillPrinter.Build(bill, clinic, theme, isReprint: true),
+                             $"Bill {bill.BillNo} (duplicate)");
     }
 
     // ── Export ─────────────────────────────────────────────────────────────

@@ -318,4 +318,62 @@ public class DiagnosticsUiTests(AppFixture app) : IClassFixture<AppFixture>
         Assert.Equal("Ordered", app.TextOf("DiagnosticsStatusFixed"));
         Assert.Null(app.Find("DiagnosticsStatus"));
     }
+
+    /// <summary>A "Print preview" modal is up, the same signal
+    /// <see cref="ReprintUiTests"/> uses for the pharmacy and OPD side.</summary>
+    private FlaUI.Core.AutomationElements.Window WaitForPreview()
+    {
+        var preview = FlaUI.Core.Tools.Retry.WhileNull(
+            () => app.MainWindow.ModalWindows.FirstOrDefault(
+                w => w.Title.StartsWith("Print preview", StringComparison.OrdinalIgnoreCase)),
+            TimeSpan.FromSeconds(15)).Result;
+
+        Assert.NotNull(preview);
+        return preview!;
+    }
+
+    [Fact]
+    public void A_diagnostic_bill_can_be_reprinted_from_the_reports_screen()
+    {
+        EnsureDiagnosticsEnabled();
+
+        var suffix = DateTime.Now.ToString("HHmmssfff");
+        var name = NewPatient($"ZDiagReprint {suffix}");
+
+        app.Navigate("NavDiagnostics", "Diagnostics");
+        app.Type("DiagnosticsPatientSearch", name);
+        AppFixture.WaitUntil(
+            () => app.TextOf("DiagnosticsSelectedPatient").Contains(name), "the patient to be selected");
+
+        app.Click("DiagnosticsAddTest");
+        AppFixture.WaitUntil(() => app.Find("TestPickerGrid") is not null, "the test picker to open");
+        app.Type("TestPickerSearch", "ESR");
+        AppFixture.WaitUntil(() => app.Grid("TestPickerGrid").RowCount == 1, "just ESR");
+        app.Grid("TestPickerGrid").Rows[0]
+            .FindFirstDescendant(cf => cf.ByControlType(ControlType.Button))!
+            .AsButton().Invoke();
+        app.Click("TestPickerDone");
+        AppFixture.WaitUntil(() => app.Find("TestPickerGrid") is null, "the picker to close");
+
+        // Saved without printing, so the only preview this test sees is the
+        // one raised later from Reports — proving that path on its own.
+        app.Click("DiagnosticsSave");
+        AppFixture.WaitUntil(() => app.TextOf("DiagnosticsStatusMessage").Contains("saved"), "the bill to save");
+
+        app.Navigate("NavReports", "Reports");
+        app.SelectTab("ReportsTabs", "Diagnostics");
+
+        AppFixture.WaitUntil(
+            () => (app.Grid("ReportsDiagnosticsTodayGrid").Rows.FirstOrDefault(r => (r.Cells[2].Value ?? "").Contains(name))) is not null,
+            "the new bill to show up in today's diagnostic bills");
+
+        app.Grid("ReportsDiagnosticsTodayGrid").Rows
+            .Single(r => (r.Cells[2].Value ?? "").Contains(name)).Select();
+
+        app.Click("ReprintDiagnosticBill");
+
+        var preview = WaitForPreview();
+        Assert.Contains("duplicate", preview.Title, StringComparison.OrdinalIgnoreCase);
+        preview.FindFirstDescendant(cf => cf.ByAutomationId("PreviewClose"))?.AsButton().Invoke();
+    }
 }
