@@ -135,24 +135,28 @@
                                          place, as the pharmacy counter's "today's OPD
                                          prescription" list, so tests the doctor
                                          requested during consultation do not need the
-                                         patient searched for by hand. -->
-                                    <TextBlock Text="Or pull today's OPD test requests" Style="{StaticResource Label}" Margin="0,4,0,3"/>
-                                    <ComboBox ItemsSource="{Binding RequestedTestVisits}" SelectedItem="{Binding SelectedRequestVisit, Mode=TwoWay}"
-                                              AutomationProperties.AutomationId="DiagnosticsRequestedVisit">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock>
-                                                    <Run Text="Token"/><Run Text=" "/><Run Text="{Binding TokenNo}"/>
-                                                    <Run Text=" · "/><Run Text="{Binding Patient.Name}"/>
-                                                </TextBlock>
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
-                                    <Button Content="Load diagnostic tests" Style="{StaticResource BtnGhost}"
-                                            Command="{Binding LoadDiagnosticTestsCommand}" Margin="0,0,0,14"
-                                            AutomationProperties.AutomationId="DiagnosticsLoadTests"/>
-
-                                    <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,12"/>
+                                         patient searched for by hand. Shown only when
+                                         there is something to load — a patient with
+                                         requested-but-unbilled tests is the exception,
+                                         not the everyday case the pharmacy list is. -->
+                                    <StackPanel Visibility="{Binding HasRequestedTestVisits, Converter={StaticResource BoolVis}}">
+                                        <TextBlock Text="Or pull today's OPD test requests" Style="{StaticResource Label}"/>
+                                        <ComboBox ItemsSource="{Binding RequestedTestVisits}" SelectedItem="{Binding SelectedRequestVisit, Mode=TwoWay}"
+                                                  Margin="0,0,0,6"
+                                                  AutomationProperties.AutomationId="DiagnosticsRequestedVisit">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock>
+                                                        <Run Text="Token"/><Run Text=" "/><Run Text="{Binding TokenNo}"/>
+                                                        <Run Text=" · "/><Run Text="{Binding Patient.Name}"/>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <Button Content="Load diagnostic tests" Style="{StaticResource BtnGhost}"
+                                                Command="{Binding LoadDiagnosticTestsCommand}" Margin="0,0,0,10"
+                                                AutomationProperties.AutomationId="DiagnosticsLoadTests"/>
+                                    </StackPanel>
 
                                     <TextBlock Text="{Binding BillNo, StringFormat='Bill No {0}'}"
                                                Style="{StaticResource Muted}"
@@ -167,31 +171,35 @@
                                          status as plain text instead of a disabled control,
                                          and only becomes a real dropdown once there is a
                                          saved bill whose status can actually move on. -->
-                                    <TextBlock Text="{Binding BillStatus}" FontWeight="SemiBold"
+                                    <TextBlock Text="{Binding BillStatus}" FontWeight="SemiBold" Margin="0,0,0,6"
                                                Visibility="{Binding HasBillId, Converter={StaticResource BoolVis}, ConverterParameter=invert}"
                                                ToolTip="Every new bill starts as Ordered. Save it first to move it along."
                                                AutomationProperties.AutomationId="DiagnosticsStatusFixed"/>
                                     <ComboBox ItemsSource="{Binding BillStatuses}" SelectedItem="{Binding BillStatus, Mode=TwoWay}"
+                                              Margin="0,0,0,6"
                                               Visibility="{Binding HasBillId, Converter={StaticResource BoolVis}}"
                                               AutomationProperties.AutomationId="DiagnosticsStatus"/>
 
                                     <TextBlock Text="Discount" Style="{StaticResource Label}"/>
                                     <TextBox Text="{Binding Discount, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,6"
                                              local:NumericInput.Mode="Money"
                                              AutomationProperties.AutomationId="DiagnosticsDiscount"/>
 
                                     <StackPanel Visibility="{Binding HasVisitId, Converter={StaticResource BoolVis}, ConverterParameter=invert}">
                                         <TextBlock Text="Referred by" Style="{StaticResource Label}"/>
                                         <TextBox Text="{Binding ReferredBy, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,6"
                                                  ToolTip="Optional — the outside doctor who sent this patient in for tests"
                                                  AutomationProperties.AutomationId="DiagnosticsReferredBy"/>
                                     </StackPanel>
 
                                     <TextBlock Text="Remarks" Style="{StaticResource Label}"/>
                                     <TextBox Text="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,6"
                                              AutomationProperties.AutomationId="DiagnosticsRemarks"/>
 
-                                    <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,10,0,12"/>
+                                    <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,6,0,10"/>
 
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -202,7 +210,7 @@
                                         <TextBlock Grid.Column="1" Text="{Binding TotalAmount, StringFormat=N2}"/>
                                     </Grid>
 
-                                    <Border Background="#0F766E" CornerRadius="6" Padding="14,10" Margin="0,10,0,14">
+                                    <Border Background="#0F766E" CornerRadius="6" Padding="14,10" Margin="0,8,0,12">
                                         <DockPanel>
                                             <TextBlock DockPanel.Dock="Left" Text="FINAL AMOUNT" Foreground="{DynamicResource NavInkBright}"
                                                        FontSize="{StaticResource FontSmall}" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -214,28 +222,30 @@
 
                                     <TextBlock Text="Payment" Style="{StaticResource Label}"/>
                                     <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding PaymentMode, Mode=TwoWay}"
+                                              Margin="0,0,0,6"
                                               AutomationProperties.AutomationId="DiagnosticsPaymentMode"/>
 
                                     <StackPanel Visibility="{Binding ShowTransactionNo, Converter={StaticResource BoolVis}}">
                                         <TextBlock Text="Transaction / reference no." Style="{StaticResource Label}"/>
                                         <TextBox Text="{Binding TransactionNo, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,6"
                                                  ToolTip="Optional — for reconciling against the gateway or bank statement"
                                                  AutomationProperties.AutomationId="DiagnosticsTransactionNo"/>
                                     </StackPanel>
 
                                     <Button Content="Save &amp; print bill" Style="{StaticResource BtnPrimaryLarge}"
-                                            Margin="0,10,0,0"
+                                            Margin="0,4,0,0"
                                             Command="{Binding SaveAndPrintCommand}"
                                             AutomationProperties.AutomationId="DiagnosticsSaveAndPrint"/>
-                                    <Button Content="Save without printing" Style="{StaticResource BtnGhost}" Margin="0,8,0,0"
+                                    <Button Content="Save without printing" Style="{StaticResource BtnGhost}" Margin="0,6,0,0"
                                             Command="{Binding SaveCommand}"
                                             AutomationProperties.AutomationId="DiagnosticsSave"/>
-                                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,8,0,0"
+                                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,6,0,0"
                                             Command="{Binding NewBillCommand}"
                                             AutomationProperties.AutomationId="DiagnosticsNewBill"/>
 
                                     <TextBlock Text="{Binding Status}" Style="{StaticResource Muted}"
-                                               TextWrapping="Wrap" Margin="0,12,0,0"
+                                               TextWrapping="Wrap" Margin="0,8,0,0"
                                                AutomationProperties.AutomationId="DiagnosticsStatusMessage"/>
                                 </StackPanel>
                             </ScrollViewer>

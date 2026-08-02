@@ -45,6 +45,7 @@ public partial class DiagnosticsViewModel(
         RequestedTestVisits.Clear();
         foreach (var v in await diagnostics.GetVisitsWithPendingRequestsAsync(DateTime.Today))
             RequestedTestVisits.Add(v);
+        OnPropertyChanged(nameof(HasRequestedTestVisits));
 
         NewBill();
     }
@@ -93,6 +94,14 @@ public partial class DiagnosticsViewModel(
     /// billed — the diagnostics equivalent of the pharmacy counter's "today's
     /// OPD prescription" list.</summary>
     public ObservableCollection<Visit> RequestedTestVisits { get; } = [];
+
+    /// <summary>Hides the whole "load from consultation" block when there is
+    /// nothing pending — unlike the pharmacy counter's prescription list,
+    /// which is populated most of the day, a patient with requested-but-
+    /// unbilled tests is the exception rather than the rule, so an always-
+    /// visible block would spend real estate on a dead control most of the
+    /// time.</summary>
+    public bool HasRequestedTestVisits => RequestedTestVisits.Count > 0;
 
     [ObservableProperty] private Visit? _selectedRequestVisit;
 

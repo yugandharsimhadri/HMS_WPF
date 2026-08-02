@@ -87,7 +87,19 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
             new Note("ConsultationHeader", "Token, patient, age and doctor. Check you have the right child."),
             new Note("RxComplaint", "Carried over from booking. Edit it freely."),
             new Note("RxDiagnosis", "Printed in bold on the prescription."),
+            new Note("RxTestSearch", "A lab test the doctor wants run. Picked from the catalogue or typed."),
+            new Note("RxTestAdd", "Adds it to the list below — for the Diagnostics desk to load later, not billed here."),
             new Note("ConsultationClose", "Leaves. Asks first if anything is unsaved. Esc does the same."));
+
+        // Requested here, loaded later at the Diagnostics desk — see the
+        // Diagnostics section further down.
+        app.Type("RxTestSearch", "Complete Blood");
+        AppFixture.WaitUntil(
+            () => (app.Find("RxTestMatches")?.FindAllDescendants(cf => cf.ByAutomationId("RxTestMatch")) ?? []).Length > 0,
+            "the test search results");
+        app.Find("RxTestMatches")!.FindAllDescendants(cf => cf.ByAutomationId("RxTestMatch"))[0].AsButton().Invoke();
+        app.Click("RxTestAdd");
+        AppFixture.WaitUntil(() => app.Grid("RxTestGrid").RowCount == 1, "the requested test");
 
         app.SelectTab("ConsultationTabs", "Prescription");
         Settle();
@@ -98,6 +110,11 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
             new Note("RxDays", "Length of the course."),
             new Note("RxQuantity", "Worked out for you, in individual tablets. Change it if you want."),
             new Note("RxAdd", "Adds the medicine to the prescription below."));
+
+        // Saved, so the requested test is really there to load at the
+        // Diagnostics desk later in this walkthrough.
+        app.Click("ConsultationSave");
+        Settle();
 
         app.CloseConsultation();
 
@@ -258,6 +275,39 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         app.Click("SaleSave");
         AppFixture.WaitUntil(() => app.TextOf("SaleStatus").Contains("INV"), "the bill to save");
 
+        // ── Diagnostics ────────────────────────────────────────────────────
+        app.Navigate("NavDiagnostics", "Diagnostics");
+        Settle();
+        Capture("diagnostics");
+
+        Annotate.Draw(app.MainWindow, Path.Combine(OutputDir, "diagnostics-annotated.png"),
+            new Note("DiagnosticsPatientSearch", "Name or phone, same as everywhere else — or pick a patient below instead."),
+            new Note("DiagnosticsRequestedVisit", "Today's OPD visits that requested tests. Same idea as loading a prescription."),
+            new Note("DiagnosticsLoadTests", "Picks the patient and pulls in every test requested for that visit."),
+            new Note("DiagnosticsAddTest", "Add tests one at a time instead, searchable, for a walk-in with no OPD visit."),
+            new Note("DiagnosticsFinalAmount", "What the patient pays."));
+
+        // Pulls in the test requested during Baby Anika's consultation, above.
+        var requestedVisits = app.ComboBox("DiagnosticsRequestedVisit");
+        AppFixture.WaitUntil(() => requestedVisits.Items.Any(i => (i.Text ?? "").Contains("Anika")),
+                             "Baby Anika's requested test");
+        requestedVisits.Items.First(i => (i.Text ?? "").Contains("Anika")).Select();
+        app.Click("DiagnosticsLoadTests");
+        AppFixture.WaitUntil(() => app.Grid("DiagnosticsLinesGrid").RowCount == 1, "the loaded test");
+        Settle();
+        Capture("diagnostics-loaded");
+
+        app.Click("DiagnosticsSave");
+        AppFixture.WaitUntil(() => app.TextOf("DiagnosticsStatusMessage").Contains("saved"), "the bill to save");
+
+        // Test Master — the list a "+ Add test" search or "Load diagnostic
+        // tests" draws from.
+        app.SelectTab("DiagnosticsTabs", "Test Master");
+        Settle();
+        Capture("diagnostics-test-master");
+
+        app.SelectTab("DiagnosticsTabs", "Billing");
+
         // ── Reports, patients, settings ────────────────────────────────────
         app.Navigate("NavReports", "Reports");
         Settle();
@@ -337,6 +387,14 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
         app.SelectTab("SettingsTabs", "General");
         app.ComboBox("QueueLayout").Select("Tiles");
         app.Click("GeneralSave");
+
+        // ── Dashboard, captured last of all ─────────────────────────────────
+        // The landing screen, deliberately shot at the end once the day has
+        // real OPD, pharmacy and diagnostics activity behind it — an
+        // all-zero dashboard is not what anyone using this guide will see.
+        app.Navigate("NavDashboard", "Dashboard");
+        Settle();
+        Capture("dashboard");
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -344,6 +402,11 @@ public class ScreenshotCapture(AppFixture app) : IClassFixture<AppFixture>
     private void SetUpShop()
     {
         app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "Features");
+        app.CheckBox("DiagnosticsEnabled").IsChecked = true;
+        app.Click("FeaturesSave");
+        AppFixture.WaitUntil(() => app.Find("NavDiagnostics") is not null, "the Diagnostics nav button");
+
         app.SelectTab("SettingsTabs", "Clinic");
         app.Type("ClinicName", "Twinkle Children's Hospital");
         app.Click("ClinicSave");

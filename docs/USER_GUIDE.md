@@ -31,13 +31,16 @@ dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
 9. [Importing a supplier bill](#9-importing-a-supplier-bill)
 10. [The pharmacy counter](#10-the-pharmacy-counter)
 
+**The lab**
+11. [Diagnostics](#11-diagnostics) — optional, switched on from Settings → Features
+
 **Everything else**
-11. [Patients](#11-patients)
-12. [Reports](#12-reports)
-13. [Printing](#13-printing)
-14. [Worked examples](#14-worked-examples)
-15. [What the system will and will not do](#15-what-the-system-will-and-will-not-do)
-16. [When something goes wrong](#16-when-something-goes-wrong)
+12. [Patients](#12-patients)
+13. [Reports](#13-reports)
+14. [Printing](#14-printing)
+15. [Worked examples](#15-worked-examples)
+16. [What the system will and will not do](#16-what-the-system-will-and-will-not-do)
+17. [When something goes wrong](#17-when-something-goes-wrong)
 
 **[Common tasks, step by step](#common-tasks-step-by-step)** — the short version of
 everything above. Start here if you just want to get through a day.
@@ -52,15 +55,19 @@ sections 1 to 16.
 ## A. Set the clinic up — once, before anything else
 
 1. Click **Settings**.
-2. Fill in **clinic name**, **address**, **phone**.
-3. Tick **Registered for GST** only if the clinic actually is. Then enter the
-   **GSTIN**. Leave it unticked and bills print as a plain invoice.
-4. Enter the **drug licence number** and the **pharmacist's name**.
-5. Click **Save Clinic / Pharmacy details**.
-6. On the right, enter the first **doctor** — name, speciality, registration
-   number, usual fee — and click **Save doctor**.
+2. **Clinic tab** — clinic name, address, phone. Tick **Registered for GST**
+   only if the clinic actually is, then enter the **GSTIN**; leave it unticked
+   and OPD documents print as a plain document. Click **Save Clinic details**.
+3. **Pharmacy tab** — pharmacy name, address, phone, the same GST tick, the
+   **drug licence number** and the **pharmacist's name**. Click **Save
+   Pharmacy details**.
+4. **Doctors tab** — enter the first **doctor**: name, speciality,
+   registration number, usual fee. Click **Save doctor**.
 
 You cannot book a visit until at least one doctor exists.
+
+Switch on **Diagnostics** under the **Features** tab too, if this clinic runs
+its own lab tests — see task J.
 
 ## B. Book a walk-in patient
 
@@ -82,8 +89,10 @@ You cannot book a visit until at least one doctor exists.
 4. The **fee** is already filled in from the booking. Change it if you are taking
    something else — a follow-up at half fee, a family concession.
 5. Set **Paid by** — Cash, UPI or Card.
-6. Leave **Print the receipt** ticked unless you do not want paper.
-7. Click **Take fee**. It asks once more, naming the amount and the child.
+6. For UPI or Card, optionally note the **Transaction / reference no.** — never
+   required, just handy for reconciling against the gateway or bank statement.
+7. Leave **Print the receipt** ticked unless you do not want paper.
+8. Click **Take fee**. It asks once more, naming the amount and the child.
    Answer **Yes**.
 
 The badge changes to **Fee paid**. Clicking Fee twice does nothing.
@@ -95,9 +104,11 @@ software makes you look at it first.
 
 ## D. See a patient and write a prescription
 
+The consultation is three tabs: **Vitals**, **Prescription**, **Diagnosis**.
+
 1. Click **Consult** on the patient's tile.
-2. Fill in **vitals**, **complaint**, **diagnosis**, **advice** — all optional.
-3. For each medicine:
+2. **Vitals tab** — weight, BP, temperature, height, heart rate, SpO2. All optional.
+3. **Prescription tab** — for each medicine:
    - Type two letters or more into **Medicine**.
    - **Click a match** to use one you stock, or keep typing for one you do not.
    - Enter the **dose**.
@@ -105,8 +116,13 @@ software makes you look at it first.
      `1/2`, `1` or `2`. One in the morning and one at night is `1`, `0`, `1`.
    - Enter **days**.
    - **Qty is filled in for you** in individual tablets — change it if you want.
-   - Click **Add**.
-4. Set a **review date** if there is one.
+   - Click **Add**. The whole row then empties, dose and days included, ready
+     for the next medicine.
+4. **Diagnosis tab** — complaint, diagnosis, advice, a review date if there is
+   one, and, if the **Diagnostics** module is switched on, any lab tests the
+   patient needs. Search or type a test and click **Add** to put it on the
+   list — this does not bill anything; it is picked up later at the
+   Diagnostics desk. See [section 11](#11-diagnostics).
 5. Click **Save & complete**. The tile moves to **Completed**.
 
 The consultation covers the whole window while it is open, and the rest of the
@@ -179,8 +195,10 @@ twice.
 5. Click **Add to bill**. The search box empties and the medicine is let go of —
    the line is on the bill, so start the next one by typing its name.
 6. Repeat 2–5 for each medicine. The bill builds up; only the search clears.
-7. Leave the customer as **Cash**, or type their name.
-8. Choose **Payment**, then **Save & print bill**.
+7. Leave the customer as **Guest**, or type their name.
+8. Choose **Payment**. For UPI or Card, optionally note the **Transaction /
+   reference no.**
+9. Click **Save & print bill**.
 
 ## H. Sell part of a strip
 
@@ -200,7 +218,7 @@ strips; it becomes 20 tablets.
 > That medicine has **Units in one pack** set to 1, so the software believes one
 > strip *is* one tablet — and nine tablets will be charged as nine strips.
 > **Settings → Check data health** finds every medicine in that state and fixes
-> them together. See task N.
+> them together. See task P.
 
 ## I. Dispense what a doctor prescribed
 
@@ -211,7 +229,35 @@ strips; it becomes 20 tablets.
 4. Anything missing is named on screen — tell the parent to buy it outside.
 5. Choose **Payment**, then **Save & print bill**.
 
-## J. Correct a stock count
+## J. Bill a patient for a lab test
+
+1. Turn the module on once, if it is not already: **Settings → Features →
+   Diagnostics**, then **Save features**. A **Diagnostics** item appears in
+   the sidebar immediately.
+2. Click **Diagnostics**.
+3. Search for the patient by **name or phone**, same as everywhere else — or,
+   if the doctor already requested tests for them during today's
+   consultation, skip straight to step 5.
+4. Click **+ Add test**, tick every test wanted, **Done**.
+5. **Or**, under **Or pull today's OPD test requests**, choose the visit and
+   click **Load diagnostic tests** — this picks the patient and the tests
+   together, in one click.
+6. Adjust **Discount** if needed. **Referred by** only appears for a patient
+   who did not come through this clinic's own OPD.
+7. Choose **Payment**, then **Save & print bill**.
+
+## K. Load the tests a doctor requested during consultation
+
+The lab equivalent of task I.
+
+1. **Diagnostics**, under **Or pull today's OPD test requests**.
+2. Choose the visit — it only lists visits with tests requested and not yet
+   billed.
+3. Click **Load diagnostic tests**. Every test from that consultation is
+   added, and the patient is selected automatically.
+4. Choose **Payment**, then **Save & print bill**.
+
+## L. Correct a stock count
 
 1. Click **Inventory** and select the medicine.
 2. Click **Correct count**. A form opens over the screen.
@@ -234,7 +280,7 @@ batch means opening it again — which is the point: a correction made against a
 batch you had forgotten was still selected writes off the wrong stock, and the
 trail then says you meant to.
 
-## K. Print something again, however long ago
+## M. Print something again, however long ago
 
 1. Click **Patients** and search by name or phone.
 2. Select the patient.
@@ -245,7 +291,7 @@ trail then says you meant to.
 For a walk-in with no patient record: **Reports → Day book → Find any bill**,
 search the bill number or customer name across all dates, then **Reprint**.
 
-## L. Close the day
+## N. Close the day
 
 1. Click **Reports**.
 2. Check the totals along the top — pharmacy sales, cash, UPI, fees collected.
@@ -257,7 +303,7 @@ search the bill number or customer name across all dates, then **Reprint**.
    bill. Match each to the bill when it arrives.
 8. **Schedule H1 register** — keep for three years.
 
-## M. Sell something the system says you do not have
+## O. Sell something the system says you do not have
 
 1. At the **Pharmacy counter**, find the medicine and click it.
 2. Click **Stock came in — add it**.
@@ -267,7 +313,7 @@ search the bill number or customer name across all dates, then **Reprint**.
 It appears under **Reports → Stock to reconcile** until you match it to the
 supplier bill.
 
-## N. Put the medicine records right
+## P. Put the medicine records right
 
 Do this **once**, before you rely on the counter. It is the difference between
 nine tablets costing ₹108 and costing ₹1,080.
@@ -292,7 +338,7 @@ changes quietly.
 > *"59 → 885"* is right **only if the 59 means 59 strips**. If it means 59 loose
 > tablets, untick that row — it would multiply your stock by fifteen.
 
-## O. Merge a medicine that appears twice
+## Q. Merge a medicine that appears twice
 
 1. **Settings → Check data health**.
 2. Find the row marked **Duplicate** and click **Merge…**.
@@ -308,17 +354,39 @@ is refused, and you are offered the existing one instead.
 
 # 1. The window
 
-Seven screens down the left. The one you are on is highlighted.
+Screens down the left. The one you are on is highlighted. **Dashboard** is
+what opens first.
 
 | Button | What it is for |
 |---|---|
+| **Dashboard** | Today at a glance — see below |
 | **OPD** | The day's queue. Book visits, take fees, open consultations |
 | **Patients** | Everyone ever registered, with their whole history |
 | **Pharmacy counter** | Selling medicines |
 | **Medicines** | The catalogue — what each medicine *is*. Set up once |
 | **Inventory** | Stock — what is on the shelf. Receiving, batches, corrections |
 | **Reports** | End of day, GST, expiry, low stock |
-| **Settings** | Clinic details, doctors, screen layout |
+| **Diagnostics** | Lab test billing. Only shown once switched on — [section 11](#11-diagnostics) |
+| **Settings** | Clinic details, doctors, screen layout, optional modules |
+
+## The Dashboard
+
+![Dashboard](images/dashboard.png)
+
+The landing screen — a five-second read of how the day is going, not another
+place to do work. Every figure on it already has a real screen behind it for
+the detail.
+
+| Card | Shows |
+|---|---|
+| The four tiles | Patients today, how many are in queue right now, revenue today, and medicines running low — each against yesterday where that means anything |
+| **Revenue trend** | One line per department — OPD, Pharmacy, Diagnostics — over the last 14 days, all three drawn to the same scale so they are honestly comparable |
+| **Today's revenue split** | The same three departments, as a proportion of today's collection |
+| **Recent activity** | The day's OPD fees, pharmacy bills and diagnostic bills, newest first |
+| **Low stock** | The five medicines closest to running out |
+
+The Diagnostics line, slice and legend entry only appear once that module is
+switched on.
 
 **Medicines and Inventory are deliberately separate.** Describing a medicine is
 a one-off job usually done by whoever sets the shop up; receiving stock happens
@@ -397,26 +465,43 @@ a batch is worse than a blank one.
 
 # 2. Settings — set this up first
 
-Everything here prints on your bills, receipts and prescriptions.
+Everything here prints on your bills, receipts and prescriptions. Six tabs:
+**General**, **Clinic**, **Pharmacy**, **Doctors**, **Reports**, **Features**.
 
 ![Settings](images/settings.png)
 
-## Clinic / Pharmacy details (left card)
+## General
+
+Not who the clinic or pharmacy is — that is the Clinic and Pharmacy tabs. This
+tab is how the software behaves, plus housekeeping.
+
+| Control | What it does |
+|---|---|
+| **OPD queue layout** | `Tiles` or `Rows` — see [section 3](#choosing-tiles-or-rows) |
+| **Appearance** | `Light` or `Dark`. Changes immediately; **Save general settings** makes it stick for next time |
+| **Check data health** | Finds medicines whose pack size and units-per-pack disagree, and puts them right — see task P |
+| **Back up now** | An extra backup beyond the automatic daily one. Shows where backups are kept and when the last one ran |
+| **Database file**, **Activity log** | Exact paths, with an **Open log folder** button. You need these only when reporting a problem |
+| **Licence** | What you are licensed for, and how long is left on it |
+
+Printed bills, receipts and prescriptions are always black on white whatever
+you choose for Appearance. Paper is paper.
+
+![The dark theme](images/counter-dark.png)
+
+## Clinic
+
+Everything printed on an OPD prescription and fee receipt.
 
 | Control | What to enter |
 |---|---|
-| **Clinic / Pharmacy name** | Printed largest, at the top of every document |
-| **Address** | One line, under the name |
-| **Phone** | Shown beside the address |
-| **Registered for GST** | Off by default. See below — this changes what your bills are |
-| **GSTIN** | Your GST number. Only enabled when registered |
-| **Drug licence no** | Your 20B/21B number. **Required on a chemist's bill** |
-| **Pharmacist** | Printed at the foot of the bill |
+| **Clinic name** | Printed largest, at the top of every OPD document |
+| **Address line 1 / 2**, **Phone** | Under the name |
+| **Registered for GST** | Off by default — see below |
+| **GSTIN** | Only enabled when registered |
 | **Consulting hours** | When the doctor sits, morning and evening. See below |
-| **OPD queue layout** | `Tiles` or `Rows` — see [section 3](#choosing-tiles-or-rows) |
-| **Appearance** | `Light` or `Dark`. Changes the whole application straight away |
-| **Bill footer** | Free text at the bottom of a bill, e.g. "Get well soon" |
-| **Save Clinic / Pharmacy details** | Applies everything above. New documents use it immediately |
+| **Footer / disclaimer** | Free text at the bottom of a prescription, e.g. "Get well soon" |
+| **Save Clinic details** | New documents use it immediately |
 
 ### Consulting hours
 
@@ -436,19 +521,6 @@ morning ending at 13:00 does not also claim the one o'clock patient.
 These are only a filter on the OPD screen. Nothing stops you booking a visit
 outside them, and a visit booked outside both sittings still shows on **Full
 day** — see [section 3](#3-the-opd-screen).
-
-**Appearance** is worth trying if the counter sits under a bright window or, more
-often, in a dim corner in the evening. The change is immediate — you do not have
-to save or restart to see it — but **Save Clinic / Pharmacy details** is what
-makes it stick for next time.
-
-Printed bills, receipts and prescriptions are always black on white whatever you
-choose here. Paper is paper.
-
-![The dark theme](images/counter-dark.png)
-
-Below the button it shows the **database file** and the **activity log** path, with
-an **Open log folder** button. You need those only if reporting a problem.
 
 > The application works with these blank — the GSTIN line simply does not print.
 > Fill them in before you issue a real bill to a customer.
@@ -471,7 +543,22 @@ an **Open log folder** button. You need those only if reporting a problem.
 > Turning it on later does not rewrite old bills. Each bill remembers what it was
 > when it was issued, so a reprint always shows what the customer was given.
 
-## Doctors (right card)
+## Pharmacy
+
+Everything printed on a medicine bill.
+
+| Control | What to enter |
+|---|---|
+| **Pharmacy name** | Printed largest, at the top of every pharmacy bill |
+| **Address line 1 / 2**, **Phone** | Under the name |
+| **Registered for GST** | Off by default — same rule as the Clinic tab, see above |
+| **GSTIN** | Only enabled when registered |
+| **Drug licence no** | Your 20B/21B number. **Required on a chemist's bill** |
+| **Pharmacist** | Printed at the foot of the bill |
+| **Footer / disclaimer** | Free text at the bottom of a bill |
+| **Save Pharmacy details** | New bills use it immediately |
+
+## Doctors
 
 | Control | What it does |
 |---|---|
@@ -479,11 +566,36 @@ an **Open log folder** button. You need those only if reporting a problem.
 | **Name** | Appears as an OPD tab and on the prescription |
 | **Speciality** | Printed under the doctor's name on the prescription |
 | **Registration no** | Printed on the prescription. Required on a real one |
+| **Phone (optional)** | Not printed |
 | **Default consultation fee** | Fills in automatically when booking for this doctor |
 | **Save doctor** | Saves the one being edited, then clears the form |
+| **Clear** | Empties the form. Saved doctors are unchanged |
 | **+ New doctor** | Clears the form to add another |
 
 **At least one doctor is needed before any visit can be booked.**
+
+## Reports — document branding
+
+Despite the name, this tab is about how documents look, not the Reports
+screen. It is the shared branding behind every prescription, receipt and
+bill.
+
+| Control | What it does |
+|---|---|
+| **Logo** | Printed at the left of the header, beside the clinic or pharmacy name. PNG or JPEG, under 1 MB, wide rather than square works best. No logo prints the name centred in text only |
+| **Upload logo** / **Remove logo** | |
+| **Bottom message** | Printed at the foot of every document — a returns policy, a thank-you |
+| **Save document branding** | |
+
+## Features
+
+Optional modules — off by default, and off means gone from the sidebar and
+everywhere else, not just hidden.
+
+| Control | What it does |
+|---|---|
+| **Diagnostics — lab test billing** | Adds **Diagnostics** to the sidebar: a test master and diagnostic billing, for clinics that run their own lab tests — [section 11](#11-diagnostics) |
+| **Save features** | Applies immediately. The nav button appears or disappears without a restart |
 
 ---
 
@@ -688,28 +800,27 @@ print it a second time.
 
 # 6. The consultation
 
-Click **Consult** on a tile.
+Click **Consult** on a tile. Three tabs: **Vitals**, **Prescription**,
+**Diagnosis**.
 
 ![Consultation](images/consultation.png)
 
-Every control, ringed and explained:
-
-![The consultation, explained](images/consultation-annotated.png)
-
 The heading shows the token, the patient, their age and sex, and the doctor.
 
-## Left — clinical notes
+## Vitals
 
-| Control | Notes |
+| Field | Notes |
 |---|---|
-| **Weight kg**, **BP**, **Temp °F** | Vitals. All optional |
-| **Complaint** | Carried over from booking; edit freely |
-| **Diagnosis** | Printed in bold on the prescription |
-| **Advice / notes** | Printed under the medicines |
-| **Fee** | Can be changed here |
-| **Review on** | Follow-up date. Printed as "Review on 01 Aug 2026" |
+| **Weight kg**, **BP**, **Temp °F** | |
+| **Height cm**, **HR bpm**, **SpO2 %** | |
 
-## Right — the prescription
+All six are optional. Record whatever this visit needs.
+
+## Prescription
+
+Every control, ringed and explained:
+
+![The consultation, prescription tab, explained](images/consultation-prescription-annotated.png)
 
 Fill the form at the top and press **Add**. Each medicine then appears in the
 list below.
@@ -732,8 +843,10 @@ anyone who already knew the notation and a guess for everyone else; picking from
 three lists cannot be mistyped, and the prescription still prints in the
 familiar `1-0-1` form.
 
-Frequency and days are **kept after adding**, because a prescription usually
-repeats the same course — only the medicine changes.
+**Add empties the whole row — dose, frequency, days and quantity included —**
+not just the medicine name. A dose left behind from the last medicine would
+read as chosen for this one, and a wrong dose nobody typed is worse than
+retyping a right one.
 
 > ### Quantity is always in individual units
 >
@@ -758,6 +871,29 @@ repeats the same course — only the medicine changes.
 > A medicine you **do** pick from the list shows *"In our pharmacy · 60 in stock"*
 > and can be pulled straight onto a bill at the counter, with the quantity already
 > correct. One prescription can mix the two freely.
+
+## Diagnosis
+
+Every control, ringed and explained:
+
+![The consultation, diagnosis tab, explained](images/consultation-diagnosis-annotated.png)
+
+| Field | Notes |
+|---|---|
+| **Complaint** | Carried over from booking; edit freely |
+| **Diagnosis** | Printed in bold on the prescription |
+| **Advice / notes** | Printed under the medicines |
+| **Review on** | Follow-up date. Printed as "Review on 01 Aug 2026" |
+| **Tests requested** | Only shown once the **Diagnostics** module is switched on — [section 11](#11-diagnostics) |
+
+**Tests requested** works like the prescription: type two letters to search the
+test catalogue, click a match or keep typing for one not in it, and click
+**Add**. Nothing is billed here — the list is picked up later at the
+Diagnostics desk with **Load diagnostic tests**, the same way a prescription
+is picked up at the pharmacy counter.
+
+Fee is no longer set here — it is taken from the tile's own **Fee** button,
+[section 5](#5-taking-the-consultation-fee).
 
 ## Bottom buttons
 
@@ -1071,7 +1207,7 @@ onto the shelf"* — before anything is committed.
 
 | Control | Notes |
 |---|---|
-| **Name** | Defaults to `Cash`. **A walk-in needs no patient record** |
+| **Name** | Defaults to `Guest`. **A walk-in needs no patient record** |
 | **Prescribed by** | Doctor's name. Required on the bill for a Schedule H1 drug |
 | **Or pull today's OPD prescription** | Pick a patient seen today |
 | **Load prescription** | Puts every prescribed medicine that is in stock on the bill |
@@ -1090,6 +1226,7 @@ NET PAYABLE      what the customer hands over
 | Control | What it does |
 |---|---|
 | **Payment** | Cash, UPI or Card |
+| **Transaction / reference no.** | Only shown for UPI or Card. Never required — for reconciling against the gateway or bank statement |
 | **Save & print bill** | Saves and opens the preview |
 | **Save without printing** | Saves only |
 | **Clear bill** | Empties the counter without saving |
@@ -1114,7 +1251,73 @@ NET PAYABLE      what the customer hands over
 
 ---
 
-# 11. Patients
+# 11. Diagnostics
+
+Optional — off by default. Switched on from **Settings → Features**, and once
+on it stays on; the nav button appears immediately, no restart needed. Two
+tabs: **Billing** and **Test Master**.
+
+## Billing
+
+Every control, ringed and explained:
+
+![Diagnostics, explained](images/diagnostics-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Patient** | Search by name or phone, same as everywhere else |
+| 2 | **Or pull today's OPD test requests** | Today's OPD visits that requested tests and are not yet billed |
+| 3 | **Load diagnostic tests** | Picks the patient from that visit and pulls in every test requested for it |
+| 4 | **+ Add test** | A searchable popup listing every active test — tick as many as needed. Only enabled once a patient is chosen |
+| 5 | **Final amount** | What the patient pays |
+
+With a patient chosen and at least one test on the bill:
+
+![Diagnostics with a loaded bill](images/diagnostics-loaded.png)
+
+| Field | Notes |
+|---|---|
+| **Status** | `Ordered` until first saved — shown as plain text, since there is nothing yet to move it along. A saved bill gets a real dropdown: `Ordered → Sample Collected → Result Received → Completed` |
+| **Discount** | |
+| **Referred by** | **Only shown for a patient who did not come through this clinic's own OPD** — one loaded via **Load diagnostic tests** is referred by the clinic itself, so there is nothing to ask |
+| **Remarks** | |
+| **Payment** | Cash, UPI or Card |
+| **Transaction / reference no.** | Only shown for UPI or Card. Never required |
+| **Save & print bill** / **Save without printing** / **Clear** | |
+
+A bill **Completed** can no longer be edited — the fields grey out. Move it
+along the status list only as far as it has actually got.
+
+> ### Two ways in, same result
+>
+> **+ Add test** is for a walk-in with no OPD visit today — search the patient,
+> then search and tick tests one at a time. **Load diagnostic tests** is for
+> a patient the doctor has already seen — it does the patient and every
+> requested test together in one click, the diagnostics equivalent of
+> **Load prescription** at the pharmacy counter. Either can add more tests
+> to the same bill afterwards.
+
+## Test Master
+
+The list **+ Add test** and **Load diagnostic tests** both draw from.
+
+![Test Master](images/diagnostics-test-master.png)
+
+| Control | What it does |
+|---|---|
+| **Search** | By name or category |
+| **+ New test** | Opens a popup: name, category, price |
+| **Edit** | Opens the highlighted test. Double-clicking the row does the same |
+| **Active** | Tick to show it in billing. Deactivate a test rather than delete it once it has been billed — past bills keep their own price regardless |
+
+A set of common tests is preloaded on first run — complete blood picture,
+blood sugar variants, liver and kidney function, thyroid, dengue and malaria
+screens, urine and stool routine, vitamins, and more — editable from here.
+Nothing is ever re-inserted or overwritten on a later update.
+
+---
+
+# 12. Patients
 
 ![Patients](images/patients.png)
 
@@ -1127,7 +1330,9 @@ Patient no, name, phone, age, sex and allergies, across the whole window. Click 
 row to select it — the history underneath fills in with that patient's visits and
 bills.
 
-Along the top: **Search**, **Clear**, **Edit** and **+ New patient**.
+Along the top: **Search**, **Clear**, **Edit**, **New diagnostic bill** (only
+once that module is on — jumps straight to Diagnostics with this patient
+already chosen) and **+ New patient**.
 
 ## The patient form
 
@@ -1143,13 +1348,19 @@ Every control, ringed and explained:
 | Field | Notes |
 |---|---|
 | **Patient no** | Top right. Allocated on save, e.g. `P00012` |
-| **Name** | The only field that is required |
+| **Name** | Required |
 | **Phone** | The parent's number. Shared across siblings is normal |
-| **Age**, **Sex** | |
+| **Date of birth** | Optional — set it and **Age fills in and locks itself**, worked out from it |
+| **Age** | Required **unless a date of birth is set**. Typed directly otherwise |
+| **Sex** | |
+| **Blood group** | Optional |
+| **Parent / guardian** | Optional, and only shown once the age is under 18 |
 | **Address**, **Allergies** | Optional. Allergies show against every prescription |
 | **Save patient** | Saves and closes. The register clears — search box included — for the next patient |
 | **Cancel** | Closes without saving. Nothing already saved is changed |
 | **Remove** | Only for somebody already registered, and it asks first. Refused if they have visits on record |
+
+**Name, and either an age or a date of birth, are required.** Nothing else is.
 
 > **The register clearing after Save is deliberate.** This screen used to keep the
 > patient loaded in a column on the right, and typing the next child's name over
@@ -1168,11 +1379,14 @@ number. Select one, then:
 
 **Medicine bills** — every bill for this patient, with **Print bill**.
 
+**Diagnostics history** — every diagnostic bill for this patient, with its
+status and **Print bill**. Only shown once that module is on.
+
 > This is where you go when someone returns weeks later having lost a receipt.
 
 ---
 
-# 12. Reports
+# 13. Reports
 
 ![Reports](images/reports.png)
 
@@ -1205,7 +1419,7 @@ The list is not a warning and does not have to be empty. It is a worklist.
 
 ---
 
-# 13. Printing
+# 14. Printing
 
 Everything previews before any paper moves.
 
@@ -1225,7 +1439,7 @@ it cannot be mistaken for the original.
 
 ---
 
-# 14. Worked examples
+# 15. Worked examples
 
 Real situations, start to finish, with the numbers.
 
@@ -1251,7 +1465,7 @@ Real situations, start to finish, with the numbers.
 
 > **Why not ₹270?** Because the medicine says ten tablets per pack, so a tablet
 > costs ₹3.00, not ₹30.00. If it charged ₹270, that medicine has **Units in one
-> pack** set to 1 — see task N.
+> pack** set to 1 — see task P.
 
 ---
 
@@ -1365,7 +1579,7 @@ batch numbers and expiry printed on it.
 
 ---
 
-# 15. What the system will and will not do
+# 16. What the system will and will not do
 
 Worth reading once. It is the difference between trusting a number and checking it.
 
@@ -1379,6 +1593,8 @@ Worth reading once. It is the difference between trusting a number and checking 
 | **A strip of 15 and a strip of 10 of the same drug** | Each batch prices against the pack it actually came in. Old stock is never repriced |
 | **A medicine is prescribed that you do not stock** | Written on the prescription, named at the counter, never added to your records |
 | **A medicine has run out mid-queue** | Add it from the counter — see [section 10](#the-medicine-is-in-the-shop-but-the-screen-says-none) |
+| **A doctor requests a lab test during consultation** | **Load diagnostic tests** at the Diagnostics desk pulls it in with the patient already chosen — see [section 11](#11-diagnostics) |
+| **A patient's age is not known exactly** | Enter a date of birth instead and age is worked out and kept current, not typed once and left to go stale |
 | **Stock is expired** | Never dispensed. It stays on the shelf listing so you can see it and return it |
 | **A sealed pack that cannot be split** | Untick **Sell loose units** and the counter insists on whole packs, telling you the number to type |
 | **A Schedule H1 medicine** | Cannot be saved without the prescribing doctor. It goes in the register automatically |
@@ -1416,7 +1632,7 @@ Worth reading once. It is the difference between trusting a number and checking 
 
 ---
 
-# 16. When something goes wrong
+# 17. When something goes wrong
 
 ## The application does not close on an error
 
