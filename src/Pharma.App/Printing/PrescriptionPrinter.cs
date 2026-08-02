@@ -81,6 +81,21 @@ public static class PrescriptionPrinter
             doc.Blocks.Add(Text("No medicines prescribed.", 8.5, brush: Muted));
         }
 
+        if (visit.DiagnosticRequests.Count > 0)
+        {
+            doc.Blocks.Add(Text("Investigations advised", 12, FontWeights.Bold, topMargin: 8, bottomMargin: 1));
+
+            var testTable = NewTable(1);
+            var testRows = new TableRowGroup();
+            testRows.Rows.Add(Row(true, "TEST"));
+
+            foreach (var request in visit.DiagnosticRequests)
+                testRows.Rows.Add(Row(false, request.TestName));
+
+            testTable.RowGroups.Add(testRows);
+            doc.Blocks.Add(testTable);
+        }
+
         if (!string.IsNullOrWhiteSpace(visit.Notes))
             doc.Blocks.Add(Text($"Advice: {visit.Notes}", 8.5, topMargin: 4));
 

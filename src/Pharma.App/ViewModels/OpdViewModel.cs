@@ -304,7 +304,7 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
         var full = await opd.GetVisitAsync(visit.Id);
         if (full is null) return;
 
-        if (full.Prescription.Count == 0)
+        if (full.Prescription.Count == 0 && full.DiagnosticRequests.Count == 0)
         {
             Status = $"Token {full.TokenNo} has no prescription yet.";
             return;

@@ -102,7 +102,7 @@ public partial class PatientsViewModel(
         var visit = await opd.GetVisitAsync(SelectedVisit.Id);
         if (visit is null) return;
 
-        if (visit.Prescription.Count == 0)
+        if (visit.Prescription.Count == 0 && visit.DiagnosticRequests.Count == 0)
         {
             Status = $"Visit {visit.VisitNo} has no prescription recorded.";
             return;

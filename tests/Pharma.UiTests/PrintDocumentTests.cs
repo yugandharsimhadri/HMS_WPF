@@ -119,6 +119,20 @@ public class PrintDocumentTests
     }
 
     [StaFact]
+    public void A_prescription_lists_every_test_the_doctor_requested()
+    {
+        var visit = Visit();
+        visit.DiagnosticRequests.Add(new VisitDiagnosticRequest { TestName = "Complete Blood Picture (CBP/CBC)" });
+        visit.DiagnosticRequests.Add(new VisitDiagnosticRequest { TestName = "CRP" });
+
+        var text = TextOf(PrescriptionPrinter.Build(visit, Clinic(), Theme()));
+
+        Assert.Contains("Investigations advised", text);
+        Assert.Contains("Complete Blood Picture (CBP/CBC)", text);
+        Assert.Contains("CRP", text);
+    }
+
+    [StaFact]
     public void A_prescription_with_no_medicines_still_prints()
     {
         var text = TextOf(PrescriptionPrinter.Build(Visit(), Clinic(), Theme()));
