@@ -49,7 +49,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         using var log = AppLog.Enter(nameof(SearchProductsAsync), $"term='{term}' take={take}");
 
         await using var db = await factory.CreateDbContextAsync();
-        var q = db.Products.Include(p => p.Batches).Where(p => !p.IsDeleted);
+        var q = db.Products.AsNoTracking().Include(p => p.Batches).Where(p => !p.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(term))
         {
@@ -142,6 +142,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
 
         var batches = await db.Batches
+            .AsNoTracking()
             .Where(b => !b.IsDeleted && b.ProductId == productId && b.QtyOnHand > 0)
             .OrderBy(b => b.ExpiryDate)
             .ToListAsync();
@@ -244,7 +245,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
 
         await using var db = await factory.CreateDbContextAsync();
 
-        var q = db.Batches.Include(b => b.Product).Where(b => !b.IsDeleted);
+        var q = db.Batches.AsNoTracking().Include(b => b.Product).Where(b => !b.IsDeleted);
 
         // The stock register can show batches that have run down to nothing;
         // everywhere else only wants what can actually be sold.
@@ -515,6 +516,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
 
         var batches = await db.Batches
+            .AsNoTracking()
             .Include(b => b.Product)
             .Where(b => !b.IsDeleted && b.QtyOnHand > 0 && b.UnitsPerPack > 1 && b.QtyOnHand < b.UnitsPerPack)
             .OrderBy(b => b.ExpiryDate)
@@ -535,6 +537,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
 
         var batches = await db.Batches
+            .AsNoTracking()
             .Include(b => b.Product)
             .Where(b => !b.IsDeleted && b.IsProvisional)
             .OrderByDescending(b => b.ReceivedOn)
@@ -645,6 +648,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
 
         var adjustments = await db.StockAdjustments
+            .AsNoTracking()
             .OrderByDescending(a => a.AdjustedOn)
             .Take(take)
             .ToListAsync();
@@ -798,7 +802,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         using var log = AppLog.Enter(nameof(GetSalesByPatientAsync), $"patient={patientId}");
 
         await using var db = await factory.CreateDbContextAsync();
-        var sales = await db.Sales.Include(s => s.Items)
+        var sales = await db.Sales.AsNoTracking().Include(s => s.Items)
             .Where(s => s.PatientId == patientId)
             .OrderByDescending(s => s.BillDate)
             .ToListAsync();
@@ -817,7 +821,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         using var log = AppLog.Enter(nameof(SearchSalesAsync), $"term='{term}' take={take}");
 
         await using var db = await factory.CreateDbContextAsync();
-        var q = db.Sales.Include(s => s.Items).AsQueryable();
+        var q = db.Sales.AsNoTracking().Include(s => s.Items).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(term))
         {
@@ -846,7 +850,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         var start = from.Date;
         var end = to.Date.AddDays(1);
 
-        var sales = await db.Sales.Include(s => s.Items)
+        var sales = await db.Sales.AsNoTracking().Include(s => s.Items)
             .Where(s => s.BillDate >= start && s.BillDate < end)
             .OrderByDescending(s => s.BillDate)
             .ToListAsync();
@@ -863,6 +867,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         var end = to.Date.AddDays(1);
 
         return await db.H1Register
+            .AsNoTracking()
             .Where(h => h.SoldOn >= start && h.SoldOn < end)
             .OrderBy(h => h.SoldOn)
             .ToListAsync();
@@ -877,7 +882,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
         var cutoff = DateTime.Today.AddDays(withinDays);
 
-        var batches = await db.Batches.Include(b => b.Product)
+        var batches = await db.Batches.AsNoTracking().Include(b => b.Product)
             .Where(b => !b.IsDeleted && b.QtyOnHand > 0 && b.ExpiryDate <= cutoff)
             .OrderBy(b => b.ExpiryDate)
             .ToListAsync();
@@ -891,7 +896,7 @@ public class PharmacyService(IDbContextFactory<AppDbContext> factory)
         using var log = AppLog.Enter(nameof(GetLowStockAsync));
 
         await using var db = await factory.CreateDbContextAsync();
-        var products = await db.Products.Include(p => p.Batches)
+        var products = await db.Products.AsNoTracking().Include(p => p.Batches)
             .Where(p => !p.IsDeleted && p.IsActive && p.ReorderLevel > 0)
             .ToListAsync();
 

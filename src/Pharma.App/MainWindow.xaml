@@ -54,6 +54,9 @@
             <views:DiagnosticTestPickerView/>
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <views:DashboardView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:OpdViewModel}">
             <views:OpdView/>
         </DataTemplate>
@@ -176,6 +179,11 @@
                 </StackPanel>
 
                 <StackPanel>
+                    <Button Style="{StaticResource NavButton}" Content="Dashboard"
+                            Command="{Binding GoCommand}" CommandParameter="dashboard"
+                            AutomationProperties.AutomationId="NavDashboard"
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=dashboard}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=dashboard}"/>
                     <Button Style="{StaticResource NavButton}" Content="OPD"
                             Command="{Binding GoCommand}" CommandParameter="opd"
                             AutomationProperties.AutomationId="NavOpd"

@@ -22,6 +22,7 @@ public class PrescriptionUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         app.ClickTile("OpdWaitingList", "TileConsult", patient);
         app.WaitForConsultation(patient);
+        app.SelectTab("ConsultationTabs", "Prescription");
     }
 
     private AutomationElement[] Matches()

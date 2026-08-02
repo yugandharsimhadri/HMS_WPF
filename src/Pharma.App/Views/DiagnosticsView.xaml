@@ -131,6 +131,29 @@
                                 <StackPanel IsEnabled="{Binding CanEdit}">
                                     <TextBlock Text="Bill" Style="{StaticResource H2}"/>
 
+                                    <!-- A second, parallel way in — same idea, same
+                                         place, as the pharmacy counter's "today's OPD
+                                         prescription" list, so tests the doctor
+                                         requested during consultation do not need the
+                                         patient searched for by hand. -->
+                                    <TextBlock Text="Or pull today's OPD test requests" Style="{StaticResource Label}" Margin="0,4,0,3"/>
+                                    <ComboBox ItemsSource="{Binding RequestedTestVisits}" SelectedItem="{Binding SelectedRequestVisit, Mode=TwoWay}"
+                                              AutomationProperties.AutomationId="DiagnosticsRequestedVisit">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock>
+                                                    <Run Text="Token"/><Run Text=" "/><Run Text="{Binding TokenNo}"/>
+                                                    <Run Text=" · "/><Run Text="{Binding Patient.Name}"/>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Content="Load diagnostic tests" Style="{StaticResource BtnGhost}"
+                                            Command="{Binding LoadDiagnosticTestsCommand}" Margin="0,0,0,14"
+                                            AutomationProperties.AutomationId="DiagnosticsLoadTests"/>
+
+                                    <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,12"/>
+
                                     <TextBlock Text="{Binding BillNo, StringFormat='Bill No {0}'}"
                                                Style="{StaticResource Muted}"
                                                Visibility="{Binding BillNo, Converter={StaticResource TextToVisible}}"
@@ -156,6 +179,13 @@
                                     <TextBox Text="{Binding Discount, UpdateSourceTrigger=PropertyChanged}"
                                              local:NumericInput.Mode="Money"
                                              AutomationProperties.AutomationId="DiagnosticsDiscount"/>
+
+                                    <StackPanel Visibility="{Binding HasVisitId, Converter={StaticResource BoolVis}, ConverterParameter=invert}">
+                                        <TextBlock Text="Referred by" Style="{StaticResource Label}"/>
+                                        <TextBox Text="{Binding ReferredBy, UpdateSourceTrigger=PropertyChanged}"
+                                                 ToolTip="Optional — the outside doctor who sent this patient in for tests"
+                                                 AutomationProperties.AutomationId="DiagnosticsReferredBy"/>
+                                    </StackPanel>
 
                                     <TextBlock Text="Remarks" Style="{StaticResource Label}"/>
                                     <TextBox Text="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
@@ -183,7 +213,15 @@
                                     </Border>
 
                                     <TextBlock Text="Payment" Style="{StaticResource Label}"/>
-                                    <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding PaymentMode, Mode=TwoWay}"/>
+                                    <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding PaymentMode, Mode=TwoWay}"
+                                              AutomationProperties.AutomationId="DiagnosticsPaymentMode"/>
+
+                                    <StackPanel Visibility="{Binding ShowTransactionNo, Converter={StaticResource BoolVis}}">
+                                        <TextBlock Text="Transaction / reference no." Style="{StaticResource Label}"/>
+                                        <TextBox Text="{Binding TransactionNo, UpdateSourceTrigger=PropertyChanged}"
+                                                 ToolTip="Optional — for reconciling against the gateway or bank statement"
+                                                 AutomationProperties.AutomationId="DiagnosticsTransactionNo"/>
+                                    </StackPanel>
 
                                     <Button Content="Save &amp; print bill" Style="{StaticResource BtnPrimaryLarge}"
                                             Margin="0,10,0,0"

@@ -42,10 +42,21 @@ public partial class PrescriptionRow : ObservableObject
     partial void OnQuantityChanged(int value) => OnPropertyChanged(nameof(Course));
 }
 
+/// <summary>One test requested for this consultation, picked from the
+/// catalogue or typed free-text — the diagnosis-tab equivalent of a
+/// <see cref="PrescriptionRow"/>. Nothing is billed here; this is only a
+/// list for the Diagnostics desk to load later.</summary>
+public partial class DiagnosticRequestRow : ObservableObject
+{
+    public Guid? TestId { get; init; }
+    [ObservableProperty] private string _testName = "";
+}
+
 public partial class ConsultationViewModel : ObservableObject
 {
     private readonly OpdService _opd;
     private readonly PharmacyService _pharmacy;
+    private readonly DiagnosticsService _diagnostics;
     private readonly SettingsService _settings;
     private readonly Guid _visitId;
 
@@ -60,9 +71,99 @@ public partial class ConsultationViewModel : ObservableObject
     [ObservableProperty] private string _weight = "";
     [ObservableProperty] private string _bloodPressure = "";
     [ObservableProperty] private string _temperature = "";
+    [ObservableProperty] private string _height = "";
+    [ObservableProperty] private string _heartRate = "";
+    [ObservableProperty] private string _spo2 = "";
     [ObservableProperty] private decimal _fee;
     [ObservableProperty] private DateTime? _followUpOn;
     [ObservableProperty] private string _status = "";
+
+    // ── Diagnosis tab: tests requested ────────────────────────────────────
+
+    public ObservableCollection<DiagnosticRequestRow> RequestedTests { get; } = [];
+    public ObservableCollection<DiagnosticTest> TestMatches { get; } = [];
+
+    [ObservableProperty] private bool _diagnosticsEnabled;
+    [ObservableProperty] private string _testSearch = "";
+    [ObservableProperty] private DiagnosticTest? _newTest;
+    [ObservableProperty] private string _testHint = "";
+    [ObservableProperty] private bool _testMissing;
+
+    private List<DiagnosticTest> _testCatalogue = [];
+
+    partial void OnTestSearchChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) TestMissing = false;
+
+        if (NewTest is not null && !string.Equals(NewTest.Name, value, StringComparison.OrdinalIgnoreCase))
+            NewTest = null;
+
+        TestMatches.Clear();
+        var term = value?.Trim() ?? "";
+
+        if (term.Length >= 2 && NewTest is null)
+        {
+            foreach (var t in _testCatalogue
+                         .Where(t => t.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+                         .Take(8))
+            {
+                TestMatches.Add(t);
+            }
+        }
+
+        TestHint = NewTest is not null
+            ? "From our test catalogue."
+            : string.IsNullOrWhiteSpace(value)
+                ? ""
+                : TestMatches.Count > 0
+                    ? "Pick one from the list, or keep typing for a test we do not run in-house."
+                    : "Not in our catalogue — it will still be listed for the diagnostics desk.";
+    }
+
+    [RelayCommand]
+    private void PickTest(DiagnosticTest? test)
+    {
+        if (test is null) return;
+
+        NewTest = test;
+        TestSearch = test.Name;
+        TestMatches.Clear();
+    }
+
+    [RelayCommand]
+    private void AddTestRequest()
+    {
+        var name = NewTest?.Name ?? TestSearch;
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            TestMissing = true;
+            Status = "Choose a test, or type its name.";
+            return;
+        }
+
+        TestMissing = false;
+
+        if (RequestedTests.Any(r => r.TestName.Equals(name.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            Status = $"{name} is already on the list.";
+            return;
+        }
+
+        RequestedTests.Add(new DiagnosticRequestRow { TestId = NewTest?.Id, TestName = name.Trim() });
+
+        NewTest = null;
+        TestSearch = "";
+        TestMatches.Clear();
+        TestHint = "";
+        Status = $"{name} added to the diagnosis list.";
+    }
+
+    [RelayCommand]
+    private void RemoveTestRequest(DiagnosticRequestRow? row)
+    {
+        if (row is not null) RequestedTests.Remove(row);
+    }
 
     // The entry row. Filling a form and pressing Add is far easier than editing
     // cells in a grid, which needs a click to start and swallows the Tab key.
@@ -122,11 +223,13 @@ public partial class ConsultationViewModel : ObservableObject
     /// <summary>The form as it was last read from or written to the database.</summary>
     private string _savedSnapshot = "";
 
-    public ConsultationViewModel(Guid visitId, OpdService opd, PharmacyService pharmacy, SettingsService settings)
+    public ConsultationViewModel(
+        Guid visitId, OpdService opd, PharmacyService pharmacy, DiagnosticsService diagnostics, SettingsService settings)
     {
         _visitId = visitId;
         _opd = opd;
         _pharmacy = pharmacy;
+        _diagnostics = diagnostics;
         _settings = settings;
     }
 
@@ -149,11 +252,22 @@ public partial class ConsultationViewModel : ObservableObject
         Weight = Visit.WeightKg?.ToString("0.#") ?? "";
         BloodPressure = Visit.BloodPressure ?? "";
         Temperature = Visit.TemperatureF?.ToString("0.#") ?? "";
+        Height = Visit.HeightCm?.ToString("0.#") ?? "";
+        HeartRate = Visit.HeartRateBpm?.ToString() ?? "";
+        Spo2 = Visit.Spo2Percent?.ToString() ?? "";
         Fee = Visit.Fee;
         FollowUpOn = Visit.FollowUpOn;
 
         Products.Clear();
         foreach (var p in await _pharmacy.SearchProductsAsync(null, 500)) Products.Add(p);
+
+        DiagnosticsEnabled = (await _settings.GetGeneralAsync()).DiagnosticsEnabled;
+
+        _testCatalogue = DiagnosticsEnabled ? await _diagnostics.SearchTestsAsync(null, activeOnly: true) : [];
+
+        RequestedTests.Clear();
+        foreach (var req in Visit.DiagnosticRequests)
+            RequestedTests.Add(new DiagnosticRequestRow { TestId = req.TestId, TestName = req.TestName });
 
         Lines.Clear();
         foreach (var item in Visit.Prescription)
@@ -324,20 +438,24 @@ public partial class ConsultationViewModel : ObservableObject
             ? $"{name} added — not stocked here, so the parent buys it outside."
             : $"{name} added.";
 
-        // Keep the frequency and days: a course is usually repeated across a
-        // prescription, and retyping them for every line is the slow part.
+        // Emptied in full, dose and days included — a dose left behind from
+        // the last medicine reads as chosen for this one, and a wrong dose
+        // that nobody typed is worse than retyping a right one.
         NewMedicine = null;
         MedicineSearch = "";
+        NewDosage = "";
         NewInstructions = "";
+        MorningDose = AfternoonDose = NightDose = "0";
+        NewDays = 0;
+        NewQuantity = 0;
+
         Matches.Clear();
         UpdateMedicineHint();
         RecalculateCourse();
     }
 
-    /// <summary>
-    /// Empties the entry row, including the dose and days that Add deliberately
-    /// keeps. Lines already added to the prescription are untouched.
-    /// </summary>
+    /// <summary>Empties the entry row. Lines already added to the
+    /// prescription are untouched.</summary>
     [RelayCommand]
     private void ClearLine()
     {
@@ -402,8 +520,10 @@ public partial class ConsultationViewModel : ObservableObject
         var lines = string.Join("|", Lines.Select(
             l => $"{l.Medicine}~{l.Dosage}~{l.Frequency}~{l.Days}~{l.Quantity}~{l.Instructions}"));
 
-        return string.Join("~", Complaint, Diagnosis, Notes, Weight, BloodPressure,
-                           Temperature, Fee, FollowUpOn, lines);
+        var tests = string.Join("|", RequestedTests.Select(r => r.TestName));
+
+        return string.Join("~", Complaint, Diagnosis, Notes, Weight, BloodPressure, Temperature,
+                           Height, HeartRate, Spo2, Fee, FollowUpOn, lines, tests);
     }
 
     [RelayCommand]
@@ -437,6 +557,9 @@ public partial class ConsultationViewModel : ObservableObject
         Visit.WeightKg = ParseDecimal(Weight);
         Visit.BloodPressure = Trim(BloodPressure);
         Visit.TemperatureF = ParseDecimal(Temperature);
+        Visit.HeightCm = ParseDecimal(Height);
+        Visit.HeartRateBpm = ParseInt(HeartRate);
+        Visit.Spo2Percent = ParseInt(Spo2);
         Visit.Fee = Fee;
         Visit.FollowUpOn = FollowUpOn;
 
@@ -454,13 +577,18 @@ public partial class ConsultationViewModel : ObservableObject
             })
             .ToList();
 
+        var tests = RequestedTests
+            .Where(r => !string.IsNullOrWhiteSpace(r.TestName))
+            .Select(r => new VisitDiagnosticRequest { TestId = r.TestId, TestName = r.TestName.Trim() })
+            .ToList();
+
         try
         {
-            await _opd.SaveConsultationAsync(Visit, items, complete);
+            await _opd.SaveConsultationAsync(Visit, items, tests, complete);
             _savedSnapshot = Snapshot();
             if (message is not null) Status = message;
 
-            log.Ok($"{Visit.VisitNo} {items.Count} prescribed line(s)");
+            log.Ok($"{Visit.VisitNo} {items.Count} prescribed line(s), {tests.Count} test(s) requested");
         }
         catch (Exception ex)
         {
@@ -475,4 +603,7 @@ public partial class ConsultationViewModel : ObservableObject
 
     private static decimal? ParseDecimal(string? value)
         => decimal.TryParse(value, out var d) ? d : null;
+
+    private static int? ParseInt(string? value)
+        => int.TryParse(value, out var i) ? i : null;
 }

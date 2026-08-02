@@ -1,0 +1,279 @@
+<UserControl x:Class="Pharma.App.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App">
+
+    <UserControl.Resources>
+        <local:ZeroToVisibilityConverter x:Key="ZeroVis"/>
+    </UserControl.Resources>
+
+    <!-- The landing screen: today's numbers, which way they're moving, where
+         revenue is coming from, what needs restocking, what just happened.
+         Every figure here already has a real screen behind it for the detail
+         — this is the five-second read, not another destination. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="20">
+
+            <!-- ══════════════════════════════ KPI tiles ══════════════════════════════ -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Patients today" Style="{StaticResource Label}"/>
+                        <TextBlock Text="{Binding PatientsToday}" FontSize="{StaticResource FontHeading}" FontWeight="Bold"
+                                   AutomationProperties.AutomationId="DashPatientsToday"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="{Binding PatientsDeltaLabel}" FontWeight="SemiBold" FontSize="{StaticResource FontSmall}"
+                                       AutomationProperties.AutomationId="DashPatientsDelta">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding PatientsDeltaIsUp}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentDark}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text=" vs yesterday" Style="{StaticResource Muted}" Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="In queue now" Style="{StaticResource Label}"/>
+                        <TextBlock Text="{Binding InQueueNow}" FontSize="{StaticResource FontHeading}" FontWeight="Bold"
+                                   AutomationProperties.AutomationId="DashInQueue"/>
+                        <TextBlock Text="waiting or in consultation" Style="{StaticResource Muted}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="4" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Revenue today" Style="{StaticResource Label}"/>
+                        <TextBlock Text="{Binding RevenueToday, StringFormat='₹{0:N0}'}" FontSize="{StaticResource FontHeading}" FontWeight="Bold"
+                                   AutomationProperties.AutomationId="DashRevenueToday"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="{Binding RevenueDeltaLabel}" FontWeight="SemiBold" FontSize="{StaticResource FontSmall}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RevenueDeltaIsUp}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource AccentDark}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text=" vs yesterday" Style="{StaticResource Muted}" Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="6" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Low stock" Style="{StaticResource Label}"/>
+                        <TextBlock Text="{Binding LowStockCount}" FontSize="{StaticResource FontHeading}" FontWeight="Bold"
+                                   AutomationProperties.AutomationId="DashLowStock"/>
+                        <TextBlock Text="medicines need reordering" Style="{StaticResource Muted}" Margin="0,6,0,0"
+                                   Foreground="{DynamicResource Warn}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ══════════════════════════════ Trend + split ══════════════════════════════ -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.6*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Style="{StaticResource Muted}"
+                                       Text="{Binding RevenueTrendTotal, StringFormat='₹{0:N0} · 14 days'}"/>
+                            <TextBlock Text="Revenue trend" Style="{StaticResource H2}" Margin="0"/>
+                        </DockPanel>
+                        <TextBlock Text="Last 14 days" Style="{StaticResource Muted}" Margin="0,0,0,12"/>
+
+                        <!-- Three lines, not a bar per day — the question a
+                             glance asks is "is this going up", which a line
+                             answers directly, and one per category (same
+                             colors as the split donut) so "up" also answers
+                             "which department". All three share one scale. -->
+                        <Viewbox Height="130" Stretch="Fill">
+                            <Grid Width="100" Height="100">
+                                <Path Data="{Binding PharmacyTrendLine}" Stroke="{DynamicResource SeriesBlue}"
+                                      StrokeThickness="2" StrokeLineJoin="Round"/>
+                                <Ellipse Width="6" Height="6" Fill="{DynamicResource SeriesBlue}"
+                                         Stroke="{DynamicResource Surface}" StrokeThickness="1.5"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <Ellipse.RenderTransform>
+                                        <TranslateTransform X="{Binding PharmacyTrendEndX}" Y="{Binding PharmacyTrendEndY}"/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.RenderTransformOrigin>
+                                        <Point X="0.5" Y="0.5"/>
+                                    </Ellipse.RenderTransformOrigin>
+                                </Ellipse>
+
+                                <Path Data="{Binding DiagnosticsTrendLine}" Stroke="{DynamicResource SeriesOrange}"
+                                      StrokeThickness="2" StrokeLineJoin="Round"
+                                      Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolVis}}"/>
+                                <Ellipse Width="6" Height="6" Fill="{DynamicResource SeriesOrange}"
+                                         Stroke="{DynamicResource Surface}" StrokeThickness="1.5"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top"
+                                         Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolVis}}">
+                                    <Ellipse.RenderTransform>
+                                        <TranslateTransform X="{Binding DiagnosticsTrendEndX}" Y="{Binding DiagnosticsTrendEndY}"/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.RenderTransformOrigin>
+                                        <Point X="0.5" Y="0.5"/>
+                                    </Ellipse.RenderTransformOrigin>
+                                </Ellipse>
+
+                                <!-- OPD drawn last so it always sits on top —
+                                     it is the clinic's own core line. -->
+                                <Path Data="{Binding OpdTrendLine}" Stroke="{DynamicResource Accent}"
+                                      StrokeThickness="2" StrokeLineJoin="Round"/>
+                                <Ellipse Width="6" Height="6" Fill="{DynamicResource Accent}"
+                                         Stroke="{DynamicResource Surface}" StrokeThickness="1.5"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <Ellipse.RenderTransform>
+                                        <TranslateTransform X="{Binding OpdTrendEndX}" Y="{Binding OpdTrendEndY}"/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.RenderTransformOrigin>
+                                        <Point X="0.5" Y="0.5"/>
+                                    </Ellipse.RenderTransformOrigin>
+                                </Ellipse>
+                            </Grid>
+                        </Viewbox>
+
+                        <!-- What each line is — the same three categories
+                             the split donut breaks today out into, so the
+                             two cards read as one system. -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,10,0,0">
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Accent}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="OPD" Style="{StaticResource Muted}" Margin="0,0,14,0"/>
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource SeriesBlue}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Pharmacy" Style="{StaticResource Muted}" Margin="0,0,14,0"/>
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource SeriesOrange}" Margin="0,0,5,0" VerticalAlignment="Center"
+                                     Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolVis}}"/>
+                            <TextBlock Text="Diagnostics" Style="{StaticResource Muted}"
+                                       Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolVis}}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Today's revenue split" Style="{StaticResource H2}"/>
+                        <TextBlock Text="Where today's collection came from" Style="{StaticResource Muted}" Margin="0,0,0,10"/>
+
+                        <Grid HorizontalAlignment="Center" Width="124" Height="124" Margin="0,4,0,10">
+                            <Path Data="{Binding OpdSegmentPath}" Fill="{DynamicResource Accent}"/>
+                            <Path Data="{Binding PharmacySegmentPath}" Fill="{DynamicResource SeriesBlue}"/>
+                            <Path Data="{Binding DiagnosticsSegmentPath}" Fill="{DynamicResource SeriesOrange}"/>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding RevenueToday, StringFormat='₹{0:N0}'}" FontWeight="Bold"
+                                           FontSize="{StaticResource FontSubheading}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="today" Style="{StaticResource Muted}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,4">
+                            <Ellipse Width="9" Height="9" Fill="{DynamicResource Accent}" Margin="0,0,6,0"/>
+                            <TextBlock Style="{StaticResource Muted}">
+                                <Run Text="OPD · "/><Run Text="{Binding OpdPercent, Mode=OneWay}"/><Run Text="%"/>
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,4">
+                            <Ellipse Width="9" Height="9" Fill="{DynamicResource SeriesBlue}" Margin="0,0,6,0"/>
+                            <TextBlock Style="{StaticResource Muted}">
+                                <Run Text="Pharmacy · "/><Run Text="{Binding PharmacyPercent, Mode=OneWay}"/><Run Text="%"/>
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"
+                                    Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolVis}}">
+                            <Ellipse Width="9" Height="9" Fill="{DynamicResource SeriesOrange}" Margin="0,0,6,0"/>
+                            <TextBlock Style="{StaticResource Muted}">
+                                <Run Text="Diagnostics · "/><Run Text="{Binding DiagnosticsPercent, Mode=OneWay}"/><Run Text="%"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ══════════════════════════════ Activity + alerts ══════════════════════════════ -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.5*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Recent activity" Style="{StaticResource H2}"/>
+                        <DataGrid ItemsSource="{Binding RecentActivity}" IsReadOnly="True" CanUserSortColumns="False"
+                                  MinHeight="180"
+                                  AutomationProperties.AutomationId="DashActivityGrid">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="TIME" Binding="{Binding When, StringFormat=HH:mm}" Width="Auto"
+                                                    ElementStyle="{StaticResource GridMuted}"/>
+                                <DataGridTextColumn Header="BILL" Binding="{Binding BillNo}" Width="Auto"
+                                                    ElementStyle="{StaticResource GridMuted}"/>
+                                <DataGridTextColumn Header="PATIENT" Binding="{Binding PatientName}" Width="180*" MinWidth="100"
+                                                    ElementStyle="{StaticResource GridName}"/>
+                                <DataGridTextColumn Header="DEPARTMENT" Binding="{Binding Department}" Width="Auto"
+                                                    ElementStyle="{StaticResource GridText}"/>
+                                <DataGridTextColumn Header="AMOUNT" Binding="{Binding Amount, StringFormat=N2}" Width="Auto"
+                                                    ElementStyle="{StaticResource GridAmount}"
+                                                    HeaderStyle="{StaticResource GridNumberHeader}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Low stock" Style="{StaticResource H2}"/>
+                        <TextBlock Text="Top 5 closest to running out" Style="{StaticResource Muted}" Margin="0,0,0,10"/>
+
+                        <ItemsControl ItemsSource="{Binding LowStock}" AutomationProperties.AutomationId="DashLowStockList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource SurfaceMuted}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" CornerRadius="6" Padding="9,7" Margin="0,0,0,6">
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding StockOnHand}" FontWeight="Bold"
+                                                       Foreground="{DynamicResource Danger}" Margin="8,0,0,0"/>
+                                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                                       FontSize="{StaticResource FontLabel}"/>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="Nothing is running low." Style="{StaticResource Muted}" Margin="0,4,0,0"
+                                   Visibility="{Binding LowStockCount, Converter={StaticResource ZeroVis}}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

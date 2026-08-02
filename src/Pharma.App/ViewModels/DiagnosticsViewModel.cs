@@ -41,6 +41,11 @@ public partial class DiagnosticsViewModel(
     public async Task LoadAsync()
     {
         await LoadTestsAsync();
+
+        RequestedTestVisits.Clear();
+        foreach (var v in await diagnostics.GetVisitsWithPendingRequestsAsync(DateTime.Today))
+            RequestedTestVisits.Add(v);
+
         NewBill();
     }
 
@@ -80,6 +85,65 @@ public partial class DiagnosticsViewModel(
 
         _patientSearch = "";
         OnPropertyChanged(nameof(PatientSearch));
+    }
+
+    // ── Tests requested during an OPD consultation ────────────────────────
+
+    /// <summary>Today's OPD visits that requested tests and have not yet been
+    /// billed — the diagnostics equivalent of the pharmacy counter's "today's
+    /// OPD prescription" list.</summary>
+    public ObservableCollection<Visit> RequestedTestVisits { get; } = [];
+
+    [ObservableProperty] private Visit? _selectedRequestVisit;
+
+    /// <summary>
+    /// Pulls every test requested on the chosen visit straight onto this
+    /// bill and picks its patient — the diagnostics equivalent of "Load
+    /// prescription" at the pharmacy counter. Ties the bill to the visit,
+    /// which is also what quietly removes the need to ask who referred the
+    /// patient: they came through our own OPD.
+    /// </summary>
+    [RelayCommand]
+    private async Task LoadDiagnosticTestsAsync()
+    {
+        if (SelectedRequestVisit is null)
+        {
+            Warn("Choose a patient from today's OPD list first.");
+            return;
+        }
+
+        var visit = await opd.GetVisitAsync(SelectedRequestVisit.Id);
+        if (visit is null) return;
+
+        SelectedPatient = visit.Patient;
+        CurrentVisitId = visit.Id;
+
+        var added = 0;
+        foreach (var request in visit.DiagnosticRequests)
+        {
+            var test = request.TestId is { } id ? Tests.FirstOrDefault(t => t.Id == id) : null;
+            test ??= (await diagnostics.SearchTestsAsync(request.TestName, activeOnly: true))
+                .FirstOrDefault(t => string.Equals(t.Name, request.TestName, StringComparison.OrdinalIgnoreCase));
+
+            if (test is not null)
+            {
+                if (AddTestLine(test)) added++;
+            }
+            else if (!Lines.Any(l => string.Equals(l.TestName, request.TestName, StringComparison.OrdinalIgnoreCase)))
+            {
+                // Requested free-text, not from our catalogue — still worth
+                // billing, priced at zero until the desk fills it in.
+                var row = new DiagnosticBillRow { TestName = request.TestName, Price = 0 };
+                Watch(row);
+                Lines.Add(row);
+                added++;
+            }
+        }
+
+        Recalculate();
+        Status = added == 0
+            ? "Nothing new to load from the consultation."
+            : $"{added} test(s) loaded from the consultation.";
     }
 
     /// <summary>Puts the patient panel back into search mode, for a bill
@@ -122,13 +186,31 @@ public partial class DiagnosticsViewModel(
     [ObservableProperty] private decimal _discount;
     [ObservableProperty] private decimal _finalAmount;
     [ObservableProperty] private PaymentMode _paymentMode = PaymentMode.Cash;
+    [ObservableProperty] private string _transactionNo = "";
     [ObservableProperty] private string _remarks = "";
     [ObservableProperty] private string _status = "";
+
+    /// <summary>A reference number only means anything once money moved
+    /// electronically — cash has nothing to reconcile against.</summary>
+    public bool ShowTransactionNo => PaymentMode is PaymentMode.Upi or PaymentMode.Card;
+
+    partial void OnPaymentModeChanged(PaymentMode value) => OnPropertyChanged(nameof(ShowTransactionNo));
 
     /// <summary>Null for a bill not yet saved.</summary>
     [ObservableProperty] private Guid? _currentBillId;
     [ObservableProperty] private string _billNo = "";
     [ObservableProperty] private DiagnosticBillStatus _billStatus = DiagnosticBillStatus.Ordered;
+
+    /// <summary>Set once tests are loaded from a consultation — ties this
+    /// bill to the OPD visit they were requested on.</summary>
+    [ObservableProperty] private Guid? _currentVisitId;
+    [ObservableProperty] private string _referredBy = "";
+
+    /// <summary>A patient who came through our own OPD is referred by the
+    /// clinic itself — "Referred by" only means anything for one who did not.</summary>
+    public bool HasVisitId => CurrentVisitId is not null;
+
+    partial void OnCurrentVisitIdChanged(Guid? value) => OnPropertyChanged(nameof(HasVisitId));
 
     /// <summary>The status picker only makes sense once a bill exists to move
     /// through the workflow — a new, unsaved bill is always Ordered.</summary>
@@ -180,7 +262,10 @@ public partial class DiagnosticsViewModel(
         BillStatus = bill.Status;
         Discount = bill.Discount;
         PaymentMode = bill.PaymentMode;
+        TransactionNo = bill.TransactionNo ?? "";
         Remarks = bill.Remarks ?? "";
+        CurrentVisitId = bill.VisitId;
+        ReferredBy = bill.ReferredBy ?? "";
 
         var patients = await opd.SearchPatientsAsync(null, 1000);
         SelectedPatient = patients.FirstOrDefault(p => p.Id == bill.PatientId);
@@ -296,8 +381,11 @@ public partial class DiagnosticsViewModel(
             PatientName = patient.Name,
             PatientNo = patient.PatientNo,
             PaymentMode = PaymentMode,
+            TransactionNo = string.IsNullOrWhiteSpace(TransactionNo) ? null : TransactionNo.Trim(),
             Discount = Discount,
-            Remarks = string.IsNullOrWhiteSpace(Remarks) ? null : Remarks.Trim()
+            Remarks = string.IsNullOrWhiteSpace(Remarks) ? null : Remarks.Trim(),
+            VisitId = CurrentVisitId,
+            ReferredBy = CurrentVisitId is null && !string.IsNullOrWhiteSpace(ReferredBy) ? ReferredBy.Trim() : null
         };
 
         var lines = Lines.Select(l => new DiagnosticBillLine
@@ -342,9 +430,13 @@ public partial class DiagnosticsViewModel(
         Discount = 0;
         Remarks = "";
         PaymentMode = PaymentMode.Cash;
+        TransactionNo = "";
         CurrentBillId = null;
         BillNo = "";
         BillStatus = DiagnosticBillStatus.Ordered;
+        CurrentVisitId = null;
+        ReferredBy = "";
+        SelectedRequestVisit = null;
 
         Recalculate();
     }

@@ -271,7 +271,15 @@
                     </Border>
 
                     <TextBlock Text="Payment" Style="{StaticResource Label}"/>
-                    <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding PaymentMode, Mode=TwoWay}"/>
+                    <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding PaymentMode, Mode=TwoWay}"
+                              AutomationProperties.AutomationId="SalePaymentMode"/>
+
+                    <StackPanel Visibility="{Binding ShowTransactionNo, Converter={StaticResource BoolVis}}">
+                        <TextBlock Text="Transaction / reference no." Style="{StaticResource Label}"/>
+                        <TextBox Text="{Binding TransactionNo, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Optional — for reconciling against the gateway or bank statement"
+                                 AutomationProperties.AutomationId="SaleTransactionNo"/>
+                    </StackPanel>
 
                     <Button Content="Save &amp; print bill" Style="{StaticResource BtnPrimaryLarge}"
                             Command="{Binding SaveAndPrintCommand}"

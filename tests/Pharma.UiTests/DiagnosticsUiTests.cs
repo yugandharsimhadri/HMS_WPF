@@ -64,6 +64,7 @@ public class DiagnosticsUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         app.Type("PatientName", name);
         app.Type("PatientPhone", phone);
+        app.Type("PatientAge", "30");
         app.Click("PatientSave");
 
         AppFixture.WaitUntil(() => app.TextOf("PatientsStatus").Contains("saved"), $"{name} to save");
@@ -294,6 +295,7 @@ public class DiagnosticsUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         app.Type("PatientName", name);
         app.Type("PatientPhone", $"9{suffix}");
+        app.Type("PatientAge", "30");
         app.Click("PatientSave");
 
         AppFixture.WaitUntil(() => app.Find("PatientName") is null, "the editor to close");
@@ -375,5 +377,47 @@ public class DiagnosticsUiTests(AppFixture app) : IClassFixture<AppFixture>
         var preview = WaitForPreview();
         Assert.Contains("duplicate", preview.Title, StringComparison.OrdinalIgnoreCase);
         preview.FindFirstDescendant(cf => cf.ByAutomationId("PreviewClose"))?.AsButton().Invoke();
+    }
+
+    [Fact]
+    public void Tests_requested_during_a_consultation_can_be_loaded_onto_a_diagnostic_bill()
+    {
+        EnsureDiagnosticsEnabled();
+
+        var name = $"ZDiagLoad {DateTime.Now:HHmmssfff}";
+        OpdUiTests.BookWalkIn(app, name, $"9{DateTime.Now:HHmmssfff}", "8");
+
+        AppFixture.WaitUntil(() => app.HasTile("OpdWaitingList", name), "the tile to appear");
+        app.ClickTile("OpdWaitingList", "TileConsult", name);
+        app.WaitForConsultation(name);
+
+        app.SelectTab("ConsultationTabs", "Diagnosis");
+        app.Type("RxTestSearch", "Complete Blood");
+        AppFixture.WaitUntil(
+            () => (app.Find("RxTestMatches")?.FindAllDescendants(cf => cf.ByAutomationId("RxTestMatch")) ?? []).Length > 0,
+            "the test search results");
+        app.Find("RxTestMatches")!.FindAllDescendants(cf => cf.ByAutomationId("RxTestMatch"))[0].AsButton().Invoke();
+        app.Click("RxTestAdd");
+        AppFixture.WaitUntil(() => app.Grid("RxTestGrid").RowCount == 1, "the requested test to be listed");
+
+        app.MainWindow.FindFirstDescendant(cf => cf.ByName("Save & complete"))?.AsButton().Invoke();
+        AppFixture.WaitUntil(() => !app.IsConsultationOpen, "the consultation to close");
+
+        app.Navigate("NavDiagnostics", "Diagnostics");
+
+        // Picked straight from today's OPD list — same idea as the pharmacy
+        // counter's "Load prescription", not tied to searching the patient
+        // by hand first.
+        var visits = app.ComboBox("DiagnosticsRequestedVisit");
+        AppFixture.WaitUntil(() => visits.Items.Any(i => (i.Text ?? "").Contains(name)),
+                             "the patient in today's requested tests");
+        visits.Items.First(i => (i.Text ?? "").Contains(name)).Select();
+        app.Click("DiagnosticsLoadTests");
+
+        AppFixture.WaitUntil(() => app.Grid("DiagnosticsLinesGrid").RowCount == 1, "the loaded test to appear on the bill");
+        Assert.Contains("Complete Blood", app.Grid("DiagnosticsLinesGrid").Rows[0].Cells[0].Value);
+
+        // The patient is picked automatically along with the tests.
+        AppFixture.WaitUntil(() => app.TextOf("DiagnosticsSelectedPatient").Contains(name), "the patient to be selected");
     }
 }

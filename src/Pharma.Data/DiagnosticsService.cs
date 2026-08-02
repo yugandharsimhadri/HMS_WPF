@@ -25,7 +25,7 @@ public class DiagnosticsService(IDbContextFactory<AppDbContext> factory)
     public async Task<List<DiagnosticTest>> SearchTestsAsync(string? term, bool activeOnly = false)
     {
         await using var db = await factory.CreateDbContextAsync();
-        var query = db.DiagnosticTests.Where(t => !t.IsDeleted);
+        var query = db.DiagnosticTests.AsNoTracking().Where(t => !t.IsDeleted);
 
         if (activeOnly) query = query.Where(t => t.Active);
         if (!string.IsNullOrWhiteSpace(term))
@@ -45,7 +45,7 @@ public class DiagnosticsService(IDbContextFactory<AppDbContext> factory)
     public async Task<List<string>> GetCategoriesAsync()
     {
         await using var db = await factory.CreateDbContextAsync();
-        return await db.DiagnosticTests.Where(t => !t.IsDeleted)
+        return await db.DiagnosticTests.AsNoTracking().Where(t => !t.IsDeleted)
             .Select(t => t.Category).Distinct().OrderBy(c => c).ToListAsync();
     }
 
@@ -149,8 +149,11 @@ public class DiagnosticsService(IDbContextFactory<AppDbContext> factory)
             entity.PatientName = bill.PatientName;
             entity.PatientNo = bill.PatientNo;
             entity.PaymentMode = bill.PaymentMode;
+            entity.TransactionNo = bill.TransactionNo;
             entity.Discount = bill.Discount;
             entity.Remarks = bill.Remarks;
+            entity.VisitId = bill.VisitId;
+            entity.ReferredBy = bill.ReferredBy;
 
             db.DiagnosticBillItems.RemoveRange(entity.Items);
             entity.Items.Clear();
@@ -217,16 +220,41 @@ public class DiagnosticsService(IDbContextFactory<AppDbContext> factory)
     public async Task<DiagnosticBill?> GetBillAsync(Guid billId)
     {
         await using var db = await factory.CreateDbContextAsync();
-        return await db.DiagnosticBills.Include(b => b.Items).FirstOrDefaultAsync(b => b.Id == billId);
+        return await db.DiagnosticBills.AsNoTracking().Include(b => b.Items).FirstOrDefaultAsync(b => b.Id == billId);
     }
 
     /// <summary>Every diagnostic bill for a patient, newest first.</summary>
     public async Task<List<DiagnosticBill>> GetBillsByPatientAsync(Guid patientId)
     {
         await using var db = await factory.CreateDbContextAsync();
-        return await db.DiagnosticBills.Include(b => b.Items)
+        return await db.DiagnosticBills.AsNoTracking().Include(b => b.Items)
             .Where(b => b.PatientId == patientId)
             .OrderByDescending(b => b.BillDate)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// The day's OPD visits that requested tests during consultation and have
+    /// not yet been turned into a bill — what "Load diagnostic tests" on the
+    /// Billing tab picks from. The diagnostics equivalent of
+    /// <c>PharmacyService</c>'s "today's OPD prescription" list at the counter.
+    /// </summary>
+    public async Task<List<Visit>> GetVisitsWithPendingRequestsAsync(DateTime date)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        var from = date.Date;
+        var to = from.AddDays(1);
+
+        var billedVisitIds = db.DiagnosticBills.Where(b => b.VisitId != null).Select(b => b.VisitId!.Value);
+
+        return await db.Visits
+            .AsNoTracking()
+            .Include(v => v.Patient)
+            .Include(v => v.DiagnosticRequests)
+            .Where(v => !v.IsDeleted && v.ScheduledOn >= from && v.ScheduledOn < to
+                     && v.DiagnosticRequests.Any(r => !r.IsDeleted)
+                     && !billedVisitIds.Contains(v.Id))
+            .OrderBy(v => v.TokenNo)
             .ToListAsync();
     }
 
@@ -238,7 +266,7 @@ public class DiagnosticsService(IDbContextFactory<AppDbContext> factory)
         await using var db = await factory.CreateDbContextAsync();
         var toExclusive = to.Date.AddDays(1);
 
-        return await db.DiagnosticBills.Include(b => b.Items)
+        return await db.DiagnosticBills.AsNoTracking().Include(b => b.Items)
             .Where(b => b.BillDate >= from.Date && b.BillDate < toExclusive)
             .OrderByDescending(b => b.BillDate)
             .ToListAsync();

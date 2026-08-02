@@ -16,13 +16,37 @@ public class Patient : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public Gender Gender { get; set; } = Gender.Male;
+
+    /// <summary>In years. Kept as a stored value even when a DOB is on file —
+    /// computed from it at save time — so every existing Age reader (queue
+    /// tiles, receipts, search results) keeps working unchanged.</summary>
     public int Age { get; set; }
+
+    /// <summary>Optional; when given, Age is calculated from it rather than
+    /// typed. One of DateOfBirth or Age is required, not both.</summary>
+    public DateTime? DateOfBirth { get; set; }
+
+    public string? BloodGroup { get; set; }
+
+    /// <summary>Optional, and only meaningful under 18 — nobody is asked for
+    /// their own guardian's name once they are an adult.</summary>
+    public string? GuardianName { get; set; }
+
     public string? Address { get; set; }
     public string? Allergies { get; set; }
 
     public ICollection<Visit> Visits { get; set; } = [];
 
     public string Display => $"{Name} ({Age}{Gender.ToString()[0]}) · {Phone}";
+
+    /// <summary>Whole years between a date of birth and today.</summary>
+    public static int AgeFromDob(DateTime dob)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - dob.Year;
+        if (dob.Date > today.AddYears(-age)) age--;
+        return Math.Max(0, age);
+    }
 }
 
 public class Doctor : BaseEntity
@@ -61,6 +85,9 @@ public class Visit : BaseEntity
     public decimal? WeightKg { get; set; }
     public string? BloodPressure { get; set; }
     public decimal? TemperatureF { get; set; }
+    public decimal? HeightCm { get; set; }
+    public int? HeartRateBpm { get; set; }
+    public int? Spo2Percent { get; set; }
 
     public decimal Fee { get; set; }
     public bool FeePaid { get; set; }
@@ -71,9 +98,20 @@ public class Visit : BaseEntity
     public DateTime? FeePaidOn { get; set; }
     public PaymentMode? FeePaymentMode { get; set; }
 
+    /// <summary>UPI/card reference, for reconciling against the payment
+    /// gateway or bank statement. Never required — a lot of desks still take
+    /// a phone screenshot as proof and move on.</summary>
+    public string? FeeTransactionNo { get; set; }
+
     public DateTime? FollowUpOn { get; set; }
 
     public ICollection<PrescriptionItem> Prescription { get; set; } = [];
+
+    /// <summary>Tests the doctor wants run, written down during the
+    /// consultation the same way a medicine is — picked from the catalogue or
+    /// typed free-text — and picked up later at the Diagnostics desk instead
+    /// of being asked for again.</summary>
+    public ICollection<VisitDiagnosticRequest> DiagnosticRequests { get; set; } = [];
 
     // ── Display helpers for the queue tiles ────────────────────────────────
 
@@ -125,6 +163,24 @@ public class PrescriptionItem : BaseEntity
     public int Days { get; set; }
     public int Quantity { get; set; }
     public string? Instructions { get; set; }
+}
+
+/// <summary>One test requested during a consultation — the diagnostics
+/// equivalent of <see cref="PrescriptionItem"/>. Picked up at the
+/// Diagnostics desk to build the actual bill; requesting one here does not
+/// bill it by itself.</summary>
+public class VisitDiagnosticRequest : BaseEntity
+{
+    public Guid VisitId { get; set; }
+    public Visit Visit { get; set; } = null!;
+
+    /// <summary>Set when chosen from the test catalogue; null for free-text —
+    /// a test we do not run in-house, sent out but still worth recording.</summary>
+    public Guid? TestId { get; set; }
+    public DiagnosticTest? Test { get; set; }
+
+    public string TestName { get; set; } = string.Empty;
+    public string? Notes { get; set; }
 }
 
 // ── Pharmacy ───────────────────────────────────────────────────────────────
@@ -448,7 +504,7 @@ public class Sale : BaseEntity
     public Guid? VisitId { get; set; }
     public Visit? Visit { get; set; }
 
-    public string CustomerName { get; set; } = "Cash";
+    public string CustomerName { get; set; } = "Guest";
     public string? DoctorName { get; set; }
 
     public decimal GrossAmount { get; set; }
@@ -461,6 +517,10 @@ public class Sale : BaseEntity
 
     public PaymentMode PaymentMode { get; set; } = PaymentMode.Cash;
     public SaleStatus Status { get; set; } = SaleStatus.Completed;
+
+    /// <summary>UPI/card reference, for reconciling against the payment
+    /// gateway or bank statement. Never required.</summary>
+    public string? TransactionNo { get; set; }
 
     /// <summary>
     /// Whether this was issued as a tax invoice. Recorded on the bill rather than
@@ -545,8 +605,25 @@ public class DiagnosticBill : BaseEntity
     public decimal FinalAmount { get; set; }
 
     public PaymentMode PaymentMode { get; set; } = PaymentMode.Cash;
+
+    /// <summary>UPI/card reference, for reconciling against the payment
+    /// gateway or bank statement. Never required.</summary>
+    public string? TransactionNo { get; set; }
+
     public DiagnosticBillStatus Status { get; set; } = DiagnosticBillStatus.Ordered;
     public string? Remarks { get; set; }
+
+    /// <summary>Set when this bill was raised for tests requested during an
+    /// OPD consultation — loaded from that visit rather than picked from
+    /// scratch. Null for a walk-in booked directly at the Diagnostics desk.</summary>
+    public Guid? VisitId { get; set; }
+    public Visit? Visit { get; set; }
+
+    /// <summary>Who sent an outside patient in for these tests. Only asked
+    /// for when <see cref="VisitId"/> is null — a patient who came through
+    /// our own OPD is referred by the clinic itself, and asking again is
+    /// noise.</summary>
+    public string? ReferredBy { get; set; }
 
     public ICollection<DiagnosticBillItem> Items { get; set; } = [];
 }

@@ -257,6 +257,7 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
                 visit.Id,
                 opd,
                 App.Services.GetRequiredService<PharmacyService>(),
+                App.Services.GetRequiredService<DiagnosticsService>(),
                 App.Services.GetRequiredService<SettingsService>());
 
             var shell = App.Services.GetRequiredService<MainViewModel>();

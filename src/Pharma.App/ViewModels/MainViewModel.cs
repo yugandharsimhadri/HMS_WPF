@@ -15,6 +15,7 @@ public interface IPage
 
 public partial class MainViewModel : ObservableObject
 {
+    private readonly DashboardViewModel _dashboard;
     private readonly OpdViewModel _opd;
     private readonly PatientsViewModel _patients;
     private readonly SaleViewModel _sale;
@@ -25,7 +26,7 @@ public partial class MainViewModel : ObservableObject
     private readonly DiagnosticsViewModel _diagnostics;
 
     [ObservableProperty] private object? _currentPage;
-    [ObservableProperty] private string _activeNav = "opd";
+    [ObservableProperty] private string _activeNav = "dashboard";
     [ObservableProperty] private string _title = "";
     [ObservableProperty] private string _subtitle = "";
 
@@ -76,6 +77,7 @@ public partial class MainViewModel : ObservableObject
     private readonly SettingsService _settingsService;
 
     public MainViewModel(
+        DashboardViewModel dashboard,
         OpdViewModel opd,
         PatientsViewModel patients,
         SaleViewModel sale,
@@ -86,6 +88,7 @@ public partial class MainViewModel : ObservableObject
         DiagnosticsViewModel diagnostics,
         SettingsService settingsService)
     {
+        _dashboard = dashboard;
         _opd = opd;
         _patients = patients;
         _sale = sale;
@@ -96,7 +99,7 @@ public partial class MainViewModel : ObservableObject
         _diagnostics = diagnostics;
         _settingsService = settingsService;
 
-        GoAsync("opd").Forget("Loading the first page");
+        GoAsync("dashboard").Forget("Loading the first page");
         LoadDiagnosticsToggleAsync().Forget("Loading the Diagnostics module toggle");
         LoadClinicDisplayNameAsync().Forget("Loading the clinic name for the title bar");
     }
@@ -116,6 +119,7 @@ public partial class MainViewModel : ObservableObject
 
         IPage page = key switch
         {
+            "opd" => _opd,
             "patients" => _patients,
             "sale" => _sale,
             "products" => _products,
@@ -123,7 +127,7 @@ public partial class MainViewModel : ObservableObject
             "reports" => _reports,
             "settings" => _settings,
             "diagnostics" => _diagnostics,
-            _ => _opd
+            _ => _dashboard
         };
 
         // Screens revise their own subtitle as the user works — the Inventory

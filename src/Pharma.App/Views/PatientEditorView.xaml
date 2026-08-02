@@ -67,6 +67,14 @@
                              ToolTip="A family shares one number, and that is fine — the desk picks which child is here"
                              AutomationProperties.AutomationId="PatientPhone"/>
 
+                    <TextBlock Text="Date of birth" Style="{StaticResource Label}"/>
+                    <DatePicker SelectedDate="{Binding DateOfBirth, Mode=TwoWay}"
+                                ToolTip="Setting this calculates age automatically"
+                                AutomationProperties.AutomationId="PatientDob"/>
+                    <TextBlock Text="{Binding DateOfBirth, StringFormat='dd-MMM-yyyy'}" Style="{StaticResource Muted}"
+                               Margin="2,-6,0,8"
+                               Visibility="{Binding DateOfBirth, Converter={StaticResource TextToVisible}}"/>
+
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -74,14 +82,34 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Age" Style="{StaticResource Label}"/>
+                            <local:RequiredLabel Text="Age" ToolTip="Required unless a date of birth is set"/>
                             <TextBox Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding AgeIsEditable}"
+                                     local:Field.IsMissing="{Binding DobOrAgeMissing}"
                                      AutomationProperties.AutomationId="PatientAge"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Sex" Style="{StaticResource Label}"/>
                             <ComboBox ItemsSource="{Binding Genders}" SelectedItem="{Binding Gender, Mode=TwoWay}"
                                       AutomationProperties.AutomationId="PatientGender"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Blood group" Style="{StaticResource Label}"/>
+                            <ComboBox ItemsSource="{Binding BloodGroups}" SelectedItem="{Binding BloodGroup, Mode=TwoWay}"
+                                      AutomationProperties.AutomationId="PatientBloodGroup"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Visibility="{Binding ShowGuardian, Converter={StaticResource BoolVis}}">
+                            <TextBlock Text="Parent / guardian" Style="{StaticResource Label}"/>
+                            <TextBox Text="{Binding GuardianName, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.AutomationId="PatientGuardian"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>

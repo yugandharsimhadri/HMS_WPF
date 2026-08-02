@@ -71,6 +71,7 @@ public partial class App : Application
         services.AddSingleton<ILicenseService, LicenseService>();
 
         services.AddSingleton<MainViewModel>();
+        services.AddSingleton<DashboardViewModel>();
         services.AddSingleton<OpdViewModel>();
         services.AddSingleton<PatientsViewModel>();
         services.AddSingleton<SaleViewModel>();
