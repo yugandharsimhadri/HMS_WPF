@@ -298,10 +298,15 @@
                     </Border>
 
                     <!-- Tests requested — the diagnostics equivalent of the
-                         prescription entry, picked up later at the
-                         Diagnostics desk instead of being asked for again. -->
-                    <Border Grid.Column="2" Style="{StaticResource Card}"
-                            Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolVis}}">
+                         prescription entry. Always available, whether or not
+                         the Diagnostics module is on: with it on, this
+                         searches the real test catalogue and is picked up
+                         later at the Diagnostics desk; with it off, there is
+                         no catalogue to search, so typing a name and
+                         pressing Add just writes it down — it still prints
+                         on the prescription, and if the module is switched
+                         on later, nothing here has to be redone. -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}">
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Top" Text="Tests requested" Style="{StaticResource H2}"/>
 
@@ -311,7 +316,7 @@
                                     <TextBlock Text="Test" Style="{StaticResource Label}"/>
                                     <TextBox Text="{Binding TestSearch, UpdateSourceTrigger=PropertyChanged}"
                                              Margin="0"
-                                             ToolTip="Type to search our test catalogue. Anything not stocked can still be requested."
+                                             ToolTip="Type to search our test catalogue. Anything not in it can still be requested as free text."
                                              local:Field.IsMissing="{Binding TestMissing}"
                                              AutomationProperties.AutomationId="RxTestSearch"/>
 

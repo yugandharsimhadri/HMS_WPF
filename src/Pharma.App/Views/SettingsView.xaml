@@ -395,6 +395,7 @@
                                        Text="Turn on the parts of the software this clinic actually uses. Off by default — a module that is off stays out of the sidebar and everywhere else until it is switched on here."/>
 
                             <CheckBox Content="Diagnostics — lab test billing" IsChecked="{Binding DiagnosticsEnabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitch}"
                                       Margin="0,4,0,4"
                                       AutomationProperties.AutomationId="DiagnosticsEnabled"/>
                             <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"

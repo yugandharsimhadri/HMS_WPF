@@ -115,9 +115,11 @@ public partial class ConsultationViewModel : ObservableObject
             ? "From our test catalogue."
             : string.IsNullOrWhiteSpace(value)
                 ? ""
-                : TestMatches.Count > 0
-                    ? "Pick one from the list, or keep typing for a test we do not run in-house."
-                    : "Not in our catalogue — it will still be listed for the diagnostics desk.";
+                : !DiagnosticsEnabled
+                    ? "Written down as free text — it will print on the prescription. Turn on Diagnostics in Settings to bill from a catalogue instead."
+                    : TestMatches.Count > 0
+                        ? "Pick one from the list, or keep typing for a test we do not run in-house."
+                        : "Not in our catalogue — it will still be listed for the diagnostics desk.";
     }
 
     [RelayCommand]
