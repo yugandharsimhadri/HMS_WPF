@@ -56,22 +56,7 @@ public class DiagnosticsUiTests(AppFixture app) : IClassFixture<AppFixture>
 
     private string NewPatient(string name) => NewPatient(name, $"9{DateTime.Now:HHmmssfff}");
 
-    private string NewPatient(string name, string phone)
-    {
-        app.Navigate("NavPatients", "Patients");
-        app.Click("PatientsNew");
-        AppFixture.WaitUntil(() => app.Find("PatientName") is not null, "the patient form");
-
-        app.Type("PatientName", name);
-        app.Type("PatientPhone", phone);
-        app.Type("PatientAge", "30");
-        app.Click("PatientSave");
-
-        AppFixture.WaitUntil(() => app.TextOf("PatientsStatus").Contains("saved"), $"{name} to save");
-        AppFixture.WaitUntil(() => app.Find("PatientName") is null, "the form to close");
-
-        return name;
-    }
+    private string NewPatient(string name, string phone) => PatientRegistrationWorkflow.Register(app, name, phone);
 
     [Fact]
     public void Picking_a_patient_from_several_matches_selects_the_one_clicked_not_the_first()
