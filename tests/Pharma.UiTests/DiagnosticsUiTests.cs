@@ -54,6 +54,17 @@ public class DiagnosticsUiTests(AppFixture app) : IClassFixture<AppFixture>
         AppFixture.WaitUntil(() => app.Find("NavDiagnostics") is not null, "the nav button to appear");
     }
 
+    private void EnsureDiagnosticsDisabled()
+    {
+        if (app.Find("NavDiagnostics") is null) return;
+
+        app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "Features");
+        app.CheckBox("DiagnosticsEnabled").IsChecked = false;
+        app.Click("FeaturesSave");
+        AppFixture.WaitUntil(() => app.Find("NavDiagnostics") is null, "the nav button to disappear");
+    }
+
     private string NewPatient(string name) => NewPatient(name, $"9{DateTime.Now:HHmmssfff}");
 
     private string NewPatient(string name, string phone) => PatientRegistrationWorkflow.Register(app, name, phone);
@@ -404,5 +415,37 @@ public class DiagnosticsUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         // The patient is picked automatically along with the tests.
         AppFixture.WaitUntil(() => app.TextOf("DiagnosticsSelectedPatient").Contains(name), "the patient to be selected");
+    }
+
+    [Fact]
+    public void Tests_can_still_be_requested_as_free_text_when_the_module_is_off()
+    {
+        EnsureDiagnosticsDisabled();
+
+        var name = $"ZDiagFreeText {DateTime.Now:HHmmssfff}";
+        OpdUiTests.BookWalkIn(app, name, $"9{DateTime.Now:HHmmssfff}", "6");
+
+        AppFixture.WaitUntil(() => app.HasTile("OpdWaitingList", name), "the tile to appear");
+        app.ClickTile("OpdWaitingList", "TileConsult", name);
+        app.WaitForConsultation(name);
+
+        app.SelectTab("ConsultationTabs", "Diagnosis");
+
+        // The panel itself is not gone just because the module is off.
+        Assert.NotNull(app.Find("RxTestSearch"));
+
+        var testName = $"Custom Panel {DateTime.Now:HHmmssfff}";
+        app.Type("RxTestSearch", testName);
+
+        // No catalogue to match against, so nothing suggests itself — this is
+        // the free-text path, not a broken search.
+        Thread.Sleep(300);
+        Assert.Empty(app.Find("RxTestMatches")?.FindAllDescendants(cf => cf.ByAutomationId("RxTestMatch")) ?? []);
+
+        app.Click("RxTestAdd");
+        AppFixture.WaitUntil(() => app.Grid("RxTestGrid").RowCount == 1, "the free-text test to be listed");
+        Assert.Contains(testName, app.Grid("RxTestGrid").Rows[0].Cells[0].Value);
+
+        app.CloseConsultation();
     }
 }
