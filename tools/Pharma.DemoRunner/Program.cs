@@ -87,9 +87,29 @@ static void TryStabilize(AppFixture app)
 
 static IReadOnlyList<string> ParseWorkflowNames(string[] args)
 {
+    // The default demo: a complete business story in one continuous session,
+    // opening and closing on the Dashboard so the final screen shows the
+    // totals that resulted from everything run in between — the same
+    // DashboardWorkflow both times, not a separate "final dashboard" workflow.
+    string[] defaultSequence =
+    [
+        "Dashboard",
+        "Settings",
+        "PatientRegistration",
+        "PatientSearch",
+        "Consultation",
+        "Prescription",
+        "Billing",
+        "MedicineSale",
+        "Purchase",
+        "Inventory",
+        "Reports",
+        "Dashboard",
+    ];
+
     var index = Array.IndexOf(args, "--workflow");
-    if (index < 0) return ["PatientRegistration"];
+    if (index < 0) return defaultSequence;
 
     var names = args.Skip(index + 1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)).ToArray();
-    return names.Length > 0 ? names : ["PatientRegistration"];
+    return names.Length > 0 ? names : defaultSequence;
 }

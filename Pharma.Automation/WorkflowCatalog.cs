@@ -9,6 +9,8 @@ public static class WorkflowCatalog
 {
     public static readonly IReadOnlyList<IWorkflow> All =
     [
+        new DashboardWorkflow(),
+        new SettingsWorkflow(),
         new PatientRegistrationWorkflow(),
         new PatientSearchWorkflow(),
         new ConsultationWorkflow(),
