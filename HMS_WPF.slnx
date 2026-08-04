@@ -8,4 +8,10 @@
     <Project Path="tests/Pharma.Tests/Pharma.Tests.csproj" />
     <Project Path="tests/Pharma.UiTests/Pharma.UiTests.csproj" />
   </Folder>
+  <Folder Name="/Pharma.Automation/">
+    <Project Path="Pharma.Automation/Pharma.Automation.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Pharma.DemoRunner/Pharma.DemoRunner.csproj" />
+  </Folder>
 </Solution>

@@ -22,10 +22,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pharma.App\Pharma.App.csproj" />
     <ProjectReference Include="..\..\src\Pharma.Data\Pharma.Data.csproj" />
+    <ProjectReference Include="..\..\Pharma.Automation\Pharma.Automation.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="Pharma.Automation" />
   </ItemGroup>
 
 </Project>
