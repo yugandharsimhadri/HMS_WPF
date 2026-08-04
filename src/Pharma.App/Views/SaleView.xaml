@@ -130,19 +130,39 @@
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Bill items" Style="{StaticResource H2}"/>
 
-                    <DataGrid ItemsSource="{Binding Lines}" IsReadOnly="False" CanUserSortColumns="False"
+                    <!-- Quantity is the only thing that can be changed here. MRP is
+                         what is printed on the pack and belongs to the batch;
+                         editing it moved money with nothing recording it.
+
+                         No cell of its own is directly editable or clickable —
+                         clicking anywhere on a row opens a small popup that shows
+                         the new amount before it takes effect, rather than the
+                         price only changing silently once a cell loses focus. See
+                         SaleLinesGrid_PreviewMouseLeftButtonUp in the code-behind. -->
+                    <DataGrid ItemsSource="{Binding Lines}" IsReadOnly="True" CanUserSortColumns="False"
+                              PreviewMouseLeftButtonUp="SaleLinesGrid_PreviewMouseLeftButtonUp"
                               AutomationProperties.AutomationId="SaleLinesGrid">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}" Width="220*" MinWidth="105" IsReadOnly="True"
-                                                ElementStyle="{StaticResource GridName}"/>
+                            <!-- The only star column, so it takes whatever the fixed
+                                 columns beside it leave over — uncapped, that grew
+                                 wide enough on an ordinary window to push AMOUNT and
+                                 the remove button past the edge of the card, forcing
+                                 a horizontal scroll to see the rest of the bill. A
+                                 long name still reads in full on hover (ToolTip) even
+                                 while the column itself stays capped and ellipsises. -->
+                            <DataGridTextColumn Header="MEDICINE" Binding="{Binding ProductName}"
+                                                Width="*" MinWidth="130" MaxWidth="240" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource GridName}">
+                                        <Setter Property="ToolTip" Value="{Binding ProductName}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="Auto" IsReadOnly="True"
                                                 ElementStyle="{StaticResource GridMuted}"/>
                             <DataGridTextColumn Header="EXPIRY" Binding="{Binding Expiry}" Width="Auto" IsReadOnly="True"
                                                 ElementStyle="{StaticResource GridMuted}"/>
-                            <!-- Quantity is the only thing that can be changed here.
-                                 MRP is what is printed on the pack and belongs to the
-                                 batch; editing it moved money with nothing recording it. -->
-                            <DataGridTextColumn Header="QTY" Binding="{Binding Quantity, UpdateSourceTrigger=LostFocus}" Width="Auto"
+                            <DataGridTextColumn Header="QTY" Binding="{Binding Quantity}" Width="Auto" IsReadOnly="True"
                                                 ElementStyle="{StaticResource GridNumber}"
                                                 HeaderStyle="{StaticResource GridNumberHeader}"/>
                             <DataGridTextColumn Header="PACKS" Binding="{Binding Packs}" Width="Auto" IsReadOnly="True"

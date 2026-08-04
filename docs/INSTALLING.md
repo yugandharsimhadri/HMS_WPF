@@ -16,7 +16,7 @@ powershell -ExecutionPolicy Bypass -File scripts\make-installer.ps1
 Takes two or three minutes, most of it compressing. You get one file:
 
 ```
-C:\HMS\Setup\TwinkleHMSSetup-1.0.0.5.exe        about 67 MB
+C:\HMS\Setup\ShivayaanHMSSetup-1.0.0.5.exe        about 67 MB
 ```
 
 That is the whole thing. There is no folder to copy alongside it.
@@ -55,7 +55,7 @@ otherwise the first thing they meet is a warning that looks like a virus alert.
 ## 3. What the person at the clinic does
 
 1. **Copy the setup file to the desktop.** It is named for the version it
-   installs — `TwinkleHMSSetup-1.0.0.5.exe`. Running it straight off a pen
+   installs — `ShivayaanHMSSetup-1.0.0.5.exe`. Running it straight off a pen
    drive works, but from the desktop it is easier to find again.
 
 2. **If it came from the internet, unblock it first.** Right-click the file →
@@ -69,14 +69,14 @@ otherwise the first thing they meet is a warning that looks like a virus alert.
    **Run anyway**. This is expected: the file is not code-signed. See
    [Signing](#signing) below.
 
-5. **Answer Yes** to "Install Twinkle Children's Hospital on this PC?"
+5. **Answer Yes** to "Install Sivaayaan HMS on this PC?"
 
 6. **Answer Yes to the Windows administrator prompt.** The installer needs it
    once, to write to `C:\` and to register the entry under Add or remove
    programs. If the person using the PC is not an administrator, someone who is
    has to do this step.
 
-7. Wait for **"Twinkle is installed. There is a shortcut on the desktop."**
+7. Wait for **"Sivaayaan HMS is installed. There is a shortcut on the desktop."**
 
 8. **Open it from the desktop shortcut.** The first launch creates the database
    and can take a few seconds longer than usual.
@@ -87,7 +87,7 @@ otherwise the first thing they meet is a warning that looks like a virus alert.
 
 | Path | What it is |
 |---|---|
-| `C:\HMS\App\TwinkleHMS.exe` | The application. The only program file |
+| `C:\HMS\App\ShivayaanHMS.exe` | The application. The only program file |
 | `C:\HMS\DB\` | The database. **Never touched by an install** |
 | `C:\HMS\DBBackup\` | A copy taken each day the application is opened |
 | `C:\HMS\Logs\` | Activity logs, rolled daily, capped at 10 MB |
@@ -118,7 +118,7 @@ Exactly the same steps. Build a new setup file, carry it over, run it.
 - The program is **replaced**.
 - `C:\HMS\DB`, `C:\HMS\DBBackup` and `C:\HMS\Logs` are **left alone**. This is
   the whole reason the database does not live beside the executable.
-- **Twinkle must be closed.** The installer stops with *"Twinkle is open. Close
+- **Sivaayaan HMS must be closed.** The installer stops with *"Sivaayaan HMS is open. Close
   it and run this again"* rather than failing partway through on a locked file.
 
 Take a backup before updating anyway — **Settings → Back up now** — and copy
@@ -128,7 +128,7 @@ Take a backup before updating anyway — **Settings → Back up now** — and co
 
 ## 7. Removing it
 
-**Settings → Apps → Installed apps → Twinkle Children's Hospital → Uninstall.**
+**Settings → Apps → Installed apps → Sivaayaan HMS → Uninstall.**
 
 That removes the program, the shortcuts and the Add or remove programs entry.
 
@@ -144,7 +144,7 @@ data really is meant to go — and take a copy first.
 |---|---|
 | "Windows protected your PC" | Not signed. **More info → Run anyway** |
 | Nothing happens on double-click | The file is blocked. Properties → **Unblock** |
-| "Twinkle is open. Close it and run this again" | Exactly that. Close it, including from the system tray |
+| "Sivaayaan HMS is open. Close it and run this again" | Exactly that. Close it, including from the system tray |
 | Administrator prompt never appears, install fails | The account is not an administrator. Someone who is has to run it |
 | Antivirus quarantines the file | An unsigned self-extracting exe is a common false positive. Allow it, or sign the file |
 | It installs but will not open | `C:\HMS\Logs` has the reason. The last few lines are usually enough |
@@ -158,7 +158,7 @@ unknown and why antivirus is occasionally suspicious of it.
 
 For one or two clinics, telling people to click **Run anyway** is workable. For
 wider distribution it is worth buying a code-signing certificate and signing
-both `TwinkleHMS.exe` and `TwinkleHMSSetup.exe` — the warnings go away and
+both `ShivayaanHMS.exe` and `ShivayaanHMSSetup.exe` — the warnings go away and
 SmartScreen stops interrupting.
 
 ---
@@ -178,7 +178,7 @@ machine and makes a desktop shortcut. For the development PC, not for handover.
 msbuild src\Pharma.App\Pharma.App.csproj -t:Publish -p:PublishProfile=ClickOnceProfile -p:Configuration=Release
 ```
 
-It produces `setup.exe`, `TwinkleHMS.application` and an `Application Files`
+It produces `setup.exe`, `ShivayaanHMS.application` and an `Application Files`
 folder in `src\Pharma.App\bin\publish`. **All three have to travel together** —
 the setup.exe is only a bootstrapper and fails on its own, which is why it is
 not what we hand over. Its real strength is automatic updates from a shared

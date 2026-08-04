@@ -233,6 +233,63 @@
         </Setter>
     </Style>
 
+    <!-- ── Password box ──────────────────────────────────────────────────── -->
+
+    <!-- Same chrome as TextBox — PasswordBox is its own control type in WPF
+         and does not inherit the style above, so it needs its own copy. -->
+    <Style TargetType="PasswordBox">
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
+        <Setter Property="Padding" Value="9,7"/>
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
+        <Setter Property="Background" Value="{DynamicResource InputFill}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource InputStroke}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource Accent}"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Border x:Name="Bd"
+                            CornerRadius="{StaticResource FieldRadius}"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            SnapsToDevicePixels="True">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Margin="{TemplateBinding Padding}"
+                                      Focusable="False"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputStrokeHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputStrokeFocus}"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Surface}"/>
+                            <Setter TargetName="Bd" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect Color="#0F766E" BlurRadius="7" ShadowDepth="0" Opacity="0.30"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource InputFillDisabled}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource InkMuted}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ── Date picker ───────────────────────────────────────────────────── -->
 
     <!-- DatePicker hosts its own text box type, so it needs its own chrome. -->
@@ -413,9 +470,13 @@
     <Style TargetType="ComboBox">
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusVisual}"/>
         <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="MaxHeight" Value="36"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Ink}"/>
-        <Setter Property="Padding" Value="10,0"/>
+        <!-- Same 9px horizontal inset as TextBox/PasswordBox's Padding, so the
+             closed box lines up with a TextBox beside it pixel for pixel
+             rather than sitting 1px further in. -->
+        <Setter Property="Padding" Value="9,0"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
         <Setter Property="Margin" Value="0,0,0,10"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -434,9 +495,16 @@
                             internals and came back untemplated here, which rendered
                             the type name. This is deterministic — an ItemTemplate is
                             honoured, and a plain value falls back to ToString().
+
+                            MaxHeight="36" on the ComboBox above clamps the closed
+                            box itself: an ItemTemplate rich enough to want more
+                            than one line (a couple of screens use one) used to
+                            grow the whole control past every TextBox beside it —
+                            that was the actual mismatch this fixes. Capped here,
+                            an oversized item clips instead of stretching the row.
                         -->
                         <ContentPresenter x:Name="Selected"
-                                          Margin="10,0,28,0"
+                                          Margin="9,0,28,0"
                                           IsHitTestVisible="False"
                                           VerticalAlignment="Center"
                                           HorizontalAlignment="Left"

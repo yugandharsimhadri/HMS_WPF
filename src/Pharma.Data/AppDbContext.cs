@@ -5,7 +5,17 @@ namespace Pharma.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    private readonly ICurrentUserContext _currentUser;
+
+    // The current-user context is optional so every existing caller — every
+    // test, the design-time factory — keeps working unchanged; a context
+    // built without one simply stamps nothing, the same as before login
+    // existed.
+    public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserContext? currentUser = null)
+        : base(options)
+    {
+        _currentUser = currentUser ?? new NullCurrentUserContext();
+    }
 
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Doctor> Doctors => Set<Doctor>();
@@ -26,6 +36,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Setting> Settings => Set<Setting>();
     public DbSet<Counter> Counters => Set<Counter>();
+    public DbSet<User> Users => Set<User>();
     public DbSet<H1RegisterEntry> H1Register => Set<H1RegisterEntry>();
     public DbSet<ImportProfile> ImportProfiles => Set<ImportProfile>();
     public DbSet<VendorProductCode> VendorProductCodes => Set<VendorProductCode>();
@@ -176,6 +187,11 @@ public class AppDbContext : DbContext
 
         b.Entity<Setting>(e => e.HasIndex(x => x.Key).IsUnique());
         b.Entity<Counter>(e => e.HasIndex(x => x.Name).IsUnique());
+        b.Entity<User>(e =>
+        {
+            e.HasIndex(x => x.Username).IsUnique();
+            e.Ignore(x => x.Display);
+        });
 
         b.Entity<ImportProfile>(e =>
         {
@@ -205,10 +221,21 @@ public class AppDbContext : DbContext
 
     private void Stamp()
     {
+        var userId = _currentUser.UserId;
+
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {
-            if (entry.State == EntityState.Added) entry.Entity.CreatedAt = DateTime.Now;
-            if (entry.State == EntityState.Modified) entry.Entity.UpdatedAt = DateTime.Now;
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.CreatedAt = DateTime.Now;
+                entry.Entity.CreatedByUserId = userId;
+            }
+
+            if (entry.State == EntityState.Modified)
+            {
+                entry.Entity.UpdatedAt = DateTime.Now;
+                entry.Entity.UpdatedByUserId = userId;
+            }
         }
     }
 }

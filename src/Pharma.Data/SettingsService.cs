@@ -75,7 +75,7 @@ public class ClinicProfile
 /// </summary>
 public class PharmacyProfile
 {
-    public string Name { get; set; } = "Twinkle Pharmacy";
+    public string Name { get; set; } = "Sivaayaan HMS";
     public string AddressLine { get; set; } = "";
     public string AddressLine2 { get; set; } = "";
     public string Phone { get; set; } = "";
@@ -121,6 +121,43 @@ public class DocumentTheme
     public string? LogoContentType { get; set; }
 
     public bool HasLogo => !string.IsNullOrWhiteSpace(LogoBase64);
+
+    /// <summary>
+    /// The typeface every printed document uses. Null/blank means the
+    /// compiled-in default — "Segoe UI" — rather than a literal font name
+    /// baked in here, so a clinic that never visits this field keeps
+    /// printing exactly what it always did.
+    /// </summary>
+    public string? PrintFontFamily { get; set; }
+
+    /// <summary>
+    /// Added to every font size on every printed document — the prescription
+    /// and the fee receipt included, on top of the couple of points they
+    /// already print larger than the pharmacy and diagnostic bills. Zero by
+    /// default, so nothing changes size until a clinic asks it to. Kept as
+    /// one number applied everywhere rather than a size per document: the
+    /// documents' own internal proportions (a total printing bigger than a
+    /// line item, a heading bigger than a body line) are a design decision,
+    /// not something to expose as separate knobs.
+    /// </summary>
+    public double PrintFontSizeDelta { get; set; }
+
+    /// <summary>
+    /// The typeface the clinic's (or the pharmacy's) own name prints in, at
+    /// the top of every document — separate from <see cref="PrintFontFamily"/>
+    /// so the name can stand out in its own face without changing the body
+    /// text everywhere else. Null/blank inherits <see cref="PrintFontFamily"/>
+    /// (which itself falls back to "Segoe UI"), same fallback chain as every
+    /// other blank-means-default field on this page.
+    /// </summary>
+    public string? TitleFontFamily { get; set; }
+
+    /// <summary>
+    /// Added to the clinic/pharmacy name's own size, on top of whatever
+    /// <see cref="PrintFontSizeDelta"/> already adds to it along with
+    /// everything else on the page — the two stack. Zero by default.
+    /// </summary>
+    public double TitleFontSizeDelta { get; set; }
 }
 
 /// <summary>How the application itself behaves, as opposed to who it is speaking for.</summary>
@@ -147,6 +184,15 @@ public class GeneralSettings
     /// shape later features can reuse.
     /// </summary>
     public bool DiagnosticsEnabled { get; set; }
+
+    /// <summary>
+    /// Off by default. Every clinic that had this application before login
+    /// existed keeps opening straight to the dashboard, exactly as before,
+    /// until someone deliberately switches this on under Settings → Security.
+    /// The seeded Admin account exists either way, so turning it on is
+    /// immediately usable without a separate setup step.
+    /// </summary>
+    public bool RequireLogin { get; set; }
 }
 
 public enum QueueLayout
@@ -204,11 +250,16 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     private const string KeyDocsFooter = "docs.footer";
     private const string KeyDocsLogoBase64 = "docs.logo.base64";
     private const string KeyDocsLogoContentType = "docs.logo.contenttype";
+    private const string KeyDocsPrintFontFamily = "docs.print.fontfamily";
+    private const string KeyDocsPrintFontSizeDelta = "docs.print.fontsizedelta";
+    private const string KeyDocsTitleFontFamily = "docs.title.fontfamily";
+    private const string KeyDocsTitleFontSizeDelta = "docs.title.fontsizedelta";
 
     // ── General ────────────────────────────────────────────────────────────
     private const string KeyQueueLayout = "opd.queuelayout";
     private const string KeyTheme = "ui.theme";
     private const string KeyDiagnosticsEnabled = "features.diagnostics.enabled";
+    private const string KeyRequireLogin = "auth.requirelogin";
 
     // ── The old, merged identity. Read-only from here on — kept so a build
     //    older than the split still finds its data exactly where it left it,
@@ -320,7 +371,11 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         {
             Footer = Get(map, KeyDocsFooter, fallback.Footer),
             LogoBase64 = map.TryGetValue(KeyDocsLogoBase64, out var b64) && !string.IsNullOrWhiteSpace(b64) ? b64 : null,
-            LogoContentType = map.TryGetValue(KeyDocsLogoContentType, out var ct) && !string.IsNullOrWhiteSpace(ct) ? ct : null
+            LogoContentType = map.TryGetValue(KeyDocsLogoContentType, out var ct) && !string.IsNullOrWhiteSpace(ct) ? ct : null,
+            PrintFontFamily = map.TryGetValue(KeyDocsPrintFontFamily, out var font) && !string.IsNullOrWhiteSpace(font) ? font : null,
+            PrintFontSizeDelta = Double(map, KeyDocsPrintFontSizeDelta, fallback.PrintFontSizeDelta),
+            TitleFontFamily = map.TryGetValue(KeyDocsTitleFontFamily, out var titleFont) && !string.IsNullOrWhiteSpace(titleFont) ? titleFont : null,
+            TitleFontSizeDelta = Double(map, KeyDocsTitleFontSizeDelta, fallback.TitleFontSizeDelta)
         };
     }
 
@@ -331,6 +386,10 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         await SetAsync(db, KeyDocsFooter, theme.Footer);
         await SetAsync(db, KeyDocsLogoBase64, theme.LogoBase64 ?? "");
         await SetAsync(db, KeyDocsLogoContentType, theme.LogoContentType ?? "");
+        await SetAsync(db, KeyDocsPrintFontFamily, theme.PrintFontFamily ?? "");
+        await SetAsync(db, KeyDocsPrintFontSizeDelta, theme.PrintFontSizeDelta.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        await SetAsync(db, KeyDocsTitleFontFamily, theme.TitleFontFamily ?? "");
+        await SetAsync(db, KeyDocsTitleFontSizeDelta, theme.TitleFontSizeDelta.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
         await db.SaveChangesAsync();
     }
@@ -347,7 +406,8 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
                 ? layout : fallback.QueueLayout,
             Theme = Enum.TryParse<Pharma.Core.AppThemeKind>(Get(map, KeyTheme, ""), out var theme)
                 ? theme : fallback.Theme,
-            DiagnosticsEnabled = Bool(map, KeyDiagnosticsEnabled)
+            DiagnosticsEnabled = Bool(map, KeyDiagnosticsEnabled),
+            RequireLogin = Bool(map, KeyRequireLogin)
         };
     }
 
@@ -358,6 +418,7 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
         await SetAsync(db, KeyQueueLayout, settings.QueueLayout.ToString());
         await SetAsync(db, KeyTheme, settings.Theme.ToString());
         await SetAsync(db, KeyDiagnosticsEnabled, settings.DiagnosticsEnabled.ToString());
+        await SetAsync(db, KeyRequireLogin, settings.RequireLogin.ToString());
 
         await db.SaveChangesAsync();
     }
@@ -436,6 +497,12 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     /// </summary>
     private static TimeSpan Time(Dictionary<string, string> map, string key, TimeSpan fallback)
         => TimeSpan.TryParse(Get(map, key, ""), out var parsed) ? parsed : fallback;
+
+    /// <summary>A stored number, or the default when the row is missing or
+    /// unreadable — same reasoning as <see cref="Time"/>.</summary>
+    private static double Double(Dictionary<string, string> map, string key, double fallback)
+        => double.TryParse(Get(map, key, ""), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : fallback;
 
     private static async Task SetAsync(AppDbContext db, string key, string? value)
     {

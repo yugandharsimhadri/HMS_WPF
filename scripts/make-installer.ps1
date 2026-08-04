@@ -3,7 +3,7 @@
     Builds one setup file to carry to a clinic PC.
 
 .DESCRIPTION
-    Produces a single TwinkleHMSSetup.exe containing the whole application. The
+    Produces a single ShivayaanHMSSetup.exe containing the whole application. The
     PC it is run on needs nothing installed first - not even the .NET runtime,
     which is inside the executable.
 
@@ -23,7 +23,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
-$staging = Join-Path $env:TEMP "twinkle-setup-staging"
+$staging = Join-Path $env:TEMP "shivayaanhms-setup-staging"
 
 Write-Host "1/3  Building the application as a single file ..." -ForegroundColor Cyan
 
@@ -41,24 +41,24 @@ dotnet publish (Join-Path $root "src\Pharma.App\Pharma.App.csproj") `
 
 if ($LASTEXITCODE -ne 0) { throw "Publish failed." }
 
-$exe = Join-Path $staging "TwinkleHMS.exe"
-if (-not (Test-Path $exe)) { throw "TwinkleHMS.exe was not produced." }
+$exe = Join-Path $staging "ShivayaanHMS.exe"
+if (-not (Test-Path $exe)) { throw "ShivayaanHMS.exe was not produced." }
 
 # The version goes in the file name. Setup files get emailed, copied to pen
-# drives and kept in a folder for years, and TwinkleHMSSetup.exe on its own
+# drives and kept in a folder for years, and ShivayaanHMSSetup.exe on its own
 # gives nobody any way to tell one from the next - which is the same problem
 # the version line in the sidebar exists to solve.
 $version = (Get-Item $exe).VersionInfo.FileVersion
 if (-not $version) { throw "Could not read the version out of $exe." }
 
-$setup = Join-Path $OutputDir "TwinkleHMSSetup-$version.exe"
+$setup = Join-Path $OutputDir "ShivayaanHMSSetup-$version.exe"
 
 Write-Host "     version $version" -ForegroundColor DarkGray
 
 # Everything else the publish drops - symbols, the fonts QuestPDF ships as
 # package content, appsettings.json - is not needed beside a single-file build
 # and would only make the package bigger.
-Get-ChildItem $staging -Exclude "TwinkleHMS.exe" | Remove-Item -Recurse -Force
+Get-ChildItem $staging -Exclude "ShivayaanHMS.exe" | Remove-Item -Recurse -Force
 
 Copy-Item (Join-Path $PSScriptRoot "installer\install.ps1") $staging
 Copy-Item (Join-Path $PSScriptRoot "installer\install.cmd") $staging
@@ -70,7 +70,7 @@ Write-Host "2/3  Writing the package definition ..." -ForegroundColor Cyan
 
 if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null }
 
-$sed = Join-Path $env:TEMP "twinkle.sed"
+$sed = Join-Path $env:TEMP "shivayaanhms.sed"
 
 # IExpress reads an ini-style file rather than taking arguments. The three
 # quiet-install lines are what let it be run unattended from a script.
@@ -98,16 +98,16 @@ AdminQuietInstCmd=%AdminQuietInstCmd%
 UserQuietInstCmd=%UserQuietInstCmd%
 SourceFiles=SourceFiles
 [Strings]
-InstallPrompt=Install Twinkle Children's Hospital on this PC?
+InstallPrompt=Install Sivaayaan HMS on this PC?
 DisplayLicense=
-FinishMessage=Twinkle is installed. There is a shortcut on the desktop.
+FinishMessage=Sivaayaan HMS is installed. There is a shortcut on the desktop.
 TargetName=$setup
-FriendlyName=Twinkle Children's Hospital $version
+FriendlyName=Sivaayaan HMS $version
 AppLaunched=cmd /c install.cmd
 PostInstallCmd=<None>
 AdminQuietInstCmd=
 UserQuietInstCmd=
-FILE0="TwinkleHMS.exe"
+FILE0="ShivayaanHMS.exe"
 FILE1="install.cmd"
 FILE2="install.ps1"
 [SourceFiles]

@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Publishes Twinkle for a clinic PC and puts a shortcut on the desktop.
+    Publishes Sivaayaan HMS for a clinic PC and puts a shortcut on the desktop.
 
 .DESCRIPTION
     Produces a self-contained folder that runs without the .NET runtime being
@@ -12,7 +12,7 @@
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts\publish.ps1
-    powershell -ExecutionPolicy Bypass -File scripts\publish.ps1 -To "D:\Twinkle"
+    powershell -ExecutionPolicy Bypass -File scripts\publish.ps1 -To "D:\SivaayaanHMS"
 #>
 
 param(
@@ -34,8 +34,8 @@ dotnet publish (Join-Path $root "src\Pharma.App\Pharma.App.csproj") `
 
 if ($LASTEXITCODE -ne 0) { throw "Publish failed." }
 
-$exe = Join-Path $To "TwinkleHMS.exe"
-if (-not (Test-Path $exe)) { throw "TwinkleHMS.exe was not produced." }
+$exe = Join-Path $To "ShivayaanHMS.exe"
+if (-not (Test-Path $exe)) { throw "ShivayaanHMS.exe was not produced." }
 
 # The folders the application expects, created now so the first launch on a
 # fresh PC does not have to.
@@ -45,14 +45,14 @@ foreach ($dir in @("C:\HMS\DB", "C:\HMS\DBBackup", "C:\HMS\Logs")) {
 
 if (-not $NoShortcut) {
     $desktop = [Environment]::GetFolderPath("Desktop")
-    $link = Join-Path $desktop "Twinkle Children's Hospital.lnk"
+    $link = Join-Path $desktop "Sivaayaan HMS.lnk"
 
     $shell = New-Object -ComObject WScript.Shell
     $shortcut = $shell.CreateShortcut($link)
     $shortcut.TargetPath = $exe
     $shortcut.WorkingDirectory = $To
     $shortcut.IconLocation = "$exe,0"
-    $shortcut.Description = "Twinkle Children's Hospital — OPD and Pharmacy"
+    $shortcut.Description = "Sivaayaan HMS — OPD and Pharmacy"
     $shortcut.Save()
 
     Write-Host "Desktop shortcut: $link" -ForegroundColor Green
@@ -60,6 +60,6 @@ if (-not $NoShortcut) {
 
 Write-Host ""
 Write-Host "Published.       $exe"          -ForegroundColor Green
-Write-Host "Database stays.  C:\HMS\DB\twinkle.db"
+Write-Host "Database stays.  C:\HMS\DB\ShivayaanHMS.db"
 Write-Host "Backups.         C:\HMS\DBBackup"
 Write-Host "Logs.            C:\HMS\Logs"

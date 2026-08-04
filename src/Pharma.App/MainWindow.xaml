@@ -178,6 +178,19 @@
                                AutomationProperties.AutomationId="AppVersion"/>
                 </StackPanel>
 
+                <!-- Only present once login has actually been switched on and
+                     used — see GeneralSettings.RequireLogin. Every clinic that
+                     never turns it on never sees this block at all. -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="18,0,18,12"
+                            Visibility="{Binding CurrentUser.IsSignedIn, Converter={StaticResource BoolToVisible}}">
+                    <Border BorderBrush="{DynamicResource NavInkFaded}" BorderThickness="0,0,0,1"
+                            Opacity="0.35" Margin="0,0,0,10"/>
+                    <TextBlock FontSize="{StaticResource FontSmall}" Foreground="{DynamicResource NavInkFaint}"
+                               TextWrapping="Wrap" AutomationProperties.AutomationId="LoggedInAs"><Run Text="Signed in as "/><Run Text="{Binding CurrentUser.DisplayLabel, Mode=OneWay}" FontWeight="SemiBold" Foreground="White"/></TextBlock>
+                    <TextBlock Margin="0,4,0,0" FontSize="{StaticResource FontSmall}"
+                               AutomationProperties.AutomationId="LogOutLink"><Hyperlink Style="{StaticResource NavLink}" Command="{Binding LogOutCommand}"><Run Text="Log out"/></Hyperlink></TextBlock>
+                </StackPanel>
+
                 <StackPanel>
                     <Button Style="{StaticResource NavButton}" Content="Dashboard"
                             Command="{Binding GoCommand}" CommandParameter="dashboard"

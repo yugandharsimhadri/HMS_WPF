@@ -23,11 +23,19 @@ public static class BillPrinter
         AddPharmacyHeader(doc, pharmacy, theme, isReprint ? $"{kind} (DUPLICATE)" : kind, showGstin: sale.IsTaxInvoice);
         doc.Blocks.Add(Rule());
 
-        var head = NewTable(1, 1);
+        // Date and time sit side by side rather than one under the other —
+        // and the drug licence number gets its own labelled cell here,
+        // exactly like Patient, rather than being buried in the header text.
+        var head = NewTable(1, 1, 1);
         var headGroup = new TableRowGroup();
-        headGroup.Rows.Add(StackedListRow(
-            [("Bill No", sale.BillNo), ("Patient", sale.CustomerName)],
-            [("Date", $"{sale.BillDate:dd/MM/yyyy  HH:mm}"), ("Doctor", sale.DoctorName ?? "")]));
+        headGroup.Rows.Add(IdentityRow(
+            ("Bill No", sale.BillNo),
+            ("Date", $"{sale.BillDate:dd/MM/yyyy}"),
+            ("Time", $"{sale.BillDate:HH:mm}")));
+        headGroup.Rows.Add(IdentityRow(
+            ("Patient", sale.CustomerName),
+            ("Doctor", sale.DoctorName ?? ""),
+            ("D.L. No", pharmacy.DrugLicenceNo ?? "")));
         head.RowGroups.Add(headGroup);
         doc.Blocks.Add(head);
         doc.Blocks.Add(Rule());
@@ -152,6 +160,7 @@ public static class BillPrinter
         if (!string.IsNullOrWhiteSpace(footer))
             doc.Blocks.Add(Text(footer, 7.4, brush: Muted, align: TextAlignment.Center, topMargin: 6));
 
+        ApplyPrintSettings(doc, theme);
         return doc;
     }
 }

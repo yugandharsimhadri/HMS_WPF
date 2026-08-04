@@ -157,6 +157,96 @@ public class FeverVisitUiTests(AppFixture app) : IClassFixture<AppFixture>
         Assert.Equal("4", StockOnHand(cetirizine));
     }
 
+    /// <summary>
+    /// A line the counter pulled in from a prescription is not a fixed copy
+    /// of what the doctor wrote — the same edit, remove and add-another
+    /// operations that work on a line typed in fresh at the counter have to
+    /// work on one that arrived this way too.
+    /// </summary>
+    [Fact]
+    public void A_line_loaded_from_a_prescription_can_be_edited_removed_and_added_to()
+    {
+        var run = DateTime.Now.ToString("HHmmssfff");
+        var patient = $"Meera {run}";
+        var prescribed = $"Ibuprofen 200mg {run}";
+        var addedAtCounter = $"Vitamin C {run}";
+
+        CreateMedicine(prescribed, packSize: "10 TAB", unitsPerPack: 10, unit: "Tablet");
+        ReceiveStock(prescribed, batch: $"IB{run}", packs: 5, mrp: 40.00m);
+
+        CreateMedicine(addedAtCounter, packSize: "10 TAB", unitsPerPack: 10, unit: "Tablet");
+        ReceiveStock(addedAtCounter, batch: $"VC{run}", packs: 5, mrp: 20.00m);
+
+        OpdUiTests.BookWalkIn(app, patient, "9440022334", "6");
+        AppFixture.WaitUntil(() => app.HasTile("OpdWaitingList", patient), "the tile");
+
+        app.TakeFee("OpdWaitingList", patient);
+        ClosePreview();
+        AppFixture.WaitUntil(() => app.TileAction("OpdWaitingList", "TileConsult", patient) is not null,
+                             "the tile after the fee");
+
+        app.ClickTile("OpdWaitingList", "TileConsult", patient);
+        app.WaitForConsultation(patient);
+
+        app.SelectTab("ConsultationTabs", "Prescription");
+        PickPrescribed(prescribed);
+        app.ComboBox("RxMorning").Select("1");
+        app.Type("RxDays", "10");
+        app.Type("RxQuantity", "10");
+        app.Click("RxAdd");
+        AppFixture.WaitUntil(() => app.Grid("RxGrid").RowCount == 1, "the prescribed line");
+
+        app.MainWindow.FindFirstDescendant(cf => cf.ByName("Save & complete"))?.AsButton().Invoke();
+        AppFixture.WaitUntil(() => !app.IsConsultationOpen, "the consultation to close");
+        AppFixture.WaitUntil(() => app.HasTile("OpdCompletedList", patient), "the completed tile");
+
+        app.Navigate("NavSale", "Pharmacy counter");
+        LoadPrescriptionFor(patient);
+        AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "the loaded line");
+
+        // Edit: the quantity the doctor wrote is not the final word — the
+        // parent may only want half a course today. Quantity is changed
+        // through the edit-quantity popup, opened by clicking the row (the
+        // MEDICINE cell here, not the remove button at its end) rather than
+        // by typing into the cell.
+        app.Grid("SaleLinesGrid").Rows[0].Cells[0].Click();
+
+        AppFixture.WaitUntil(() => app.MainWindow.ModalWindows.Length == 1, "the edit-quantity popup");
+        var editPopup = app.MainWindow.ModalWindows[0];
+
+        var editQuantityBox = editPopup.FindFirstDescendant(cf => cf.ByAutomationId("EditQuantityValue"))!.AsTextBox();
+        editQuantityBox.Focus();
+        editQuantityBox.Text = "4";
+
+        editPopup.FindFirstDescendant(cf => cf.ByAutomationId("EditQuantityConfirm"))!.AsButton().Invoke();
+        AppFixture.WaitUntil(() => app.MainWindow.ModalWindows.Length == 0, "the popup to close");
+
+        AppFixture.WaitUntil(() => app.CellOf("SaleLinesGrid", "QTY") == "4", "the edited quantity");
+        // 4 tablets from a ₹40.00 strip of 10 is ₹16.00, not the ₹40.00 all ten would be.
+        AppFixture.WaitUntil(() => app.TextOf("SaleNetTotal").Contains("16"), "the bill total after the edit");
+
+        // Remove: the whole line the prescription brought in. The last cell
+        // in the row, specifically — the QTY cell has its own button now too.
+        app.Grid("SaleLinesGrid").Rows[0].Cells[^1]
+            .FindFirstDescendant(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Button))!
+            .AsButton().Invoke();
+        AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 0, "the bill to empty out");
+
+        // Add: a fresh line, found and added the ordinary way, on a bill that
+        // started from a prescription and now has none of it left.
+        app.Type("SaleSearch", addedAtCounter);
+        AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine");
+        app.ListBox("SaleMatches").Items[0].Select();
+        app.Type("SaleQuantity", "3");
+        app.Click("SaleAddLine");
+
+        AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "the freshly added line");
+        Assert.Contains(addedAtCounter, app.CellOf("SaleLinesGrid", "MEDICINE"));
+
+        app.Click("SaleSave");
+        AppFixture.WaitUntil(() => app.TextOf("SaleStatus").Contains("INV"), "the bill number");
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────
 
     private void CreateMedicine(string name, string packSize, int unitsPerPack, string unit)

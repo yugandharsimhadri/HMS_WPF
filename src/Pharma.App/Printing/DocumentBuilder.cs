@@ -70,20 +70,20 @@ internal static class DocumentBuilder
 
     /// <summary>
     /// The pharmacy identity block a bill opens with — unboxed, matching its
-    /// own reference print. Carries the GSTIN and the drug licence number,
-    /// which a retail chemist's bill is required to show.
+    /// own reference print. Carries the GSTIN, which a retail chemist's tax
+    /// invoice is required to show here; the drug licence number prints as
+    /// its own labelled field in the identity grid below instead, the same
+    /// way the bill number, the date and the patient do — see
+    /// <see cref="BillPrinter"/>.
     /// </summary>
     public static void AddPharmacyHeader(
         FlowDocument doc, PharmacyProfile pharmacy, DocumentTheme theme, string? documentTitle, bool showGstin)
     {
-        var licences = new List<string>();
-        if (showGstin && !string.IsNullOrWhiteSpace(pharmacy.Gstin)) licences.Add($"GSTIN: {pharmacy.Gstin}");
-        if (!string.IsNullOrWhiteSpace(pharmacy.DrugLicenceNo)) licences.Add($"D.L. No: {pharmacy.DrugLicenceNo}");
+        var licence = showGstin && !string.IsNullOrWhiteSpace(pharmacy.Gstin) ? $"GSTIN: {pharmacy.Gstin}" : null;
 
         var (line1, line2) = ContactLines(pharmacy.AddressLine, pharmacy.AddressLine2, pharmacy.Phone);
         doc.Blocks.Add(IdentityBlock(
-            pharmacy.Name, line1, line2,
-            licences.Count > 0 ? string.Join("   ", licences) : null,
+            pharmacy.Name, line1, line2, licence,
             documentTitle, theme, boxed: false, nameFontSize: IdentityNameFontSize));
     }
 
@@ -166,7 +166,7 @@ internal static class DocumentBuilder
             section.BorderThickness = new Thickness(1);
         }
 
-        var text = IdentityText(name, contactLine1, contactLine2, licenceLine, documentTitle, boxed, nameFontSize);
+        var text = IdentityText(name, contactLine1, contactLine2, licenceLine, documentTitle, theme, boxed, nameFontSize);
 
         if (LogoElement(theme) is not { } logo)
         {
@@ -203,16 +203,24 @@ internal static class DocumentBuilder
     /// a word processor, regardless of what else shares the header.</summary>
     private static List<Block> IdentityText(
         string name, string? contactLine1, string? contactLine2, string? licenceLine, string? documentTitle,
-        bool boxed, double nameFontSize)
+        DocumentTheme theme, bool boxed, double nameFontSize)
     {
-        var blocks = new List<Block>
+        var titleParagraph = new Paragraph(new Run(name))
         {
-            new Paragraph(new Run(name))
-            {
-                FontSize = nameFontSize, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center,
-                Foreground = PrintForeground
-            }
+            FontSize = nameFontSize + theme.TitleFontSizeDelta,
+            FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center,
+            Foreground = PrintForeground
         };
+
+        // Left unset — not defaulted to "Segoe UI" here — so it inherits
+        // whatever the rest of the document is printing in (the general
+        // print font, itself set on the FlowDocument by ApplyPrintSettings)
+        // whenever the clinic has not asked for the name to stand out in a
+        // face of its own.
+        if (!string.IsNullOrWhiteSpace(theme.TitleFontFamily))
+            titleParagraph.FontFamily = new FontFamily(theme.TitleFontFamily);
+
+        var blocks = new List<Block> { titleParagraph };
 
         if (contactLine1 is not null)
             blocks.Add(new Paragraph(new Run(contactLine1))
@@ -353,6 +361,54 @@ internal static class DocumentBuilder
         Foreground = PrintForeground
     };
 
+    /// <summary>
+    /// Applies the clinic's chosen print font (Settings → Reports → Document
+    /// branding) to a finished document. Walked on afterwards rather than
+    /// threaded through every <see cref="Text"/>/<see cref="Row(bool, string[])"/>/
+    /// <see cref="IdentityRow(ValueTuple{string, string}[])"/> call across
+    /// four printer files — those already carry their own deliberate size
+    /// differences (the prescription and the fee receipt print a couple of
+    /// points larger than the pharmacy and diagnostic bills), and this adds
+    /// the clinic's own adjustment on top of whichever size each element
+    /// already has, rather than replacing it.
+    /// </summary>
+    public static void ApplyPrintSettings(FlowDocument doc, DocumentTheme theme)
+    {
+        if (!string.IsNullOrWhiteSpace(theme.PrintFontFamily))
+            doc.FontFamily = new FontFamily(theme.PrintFontFamily);
+
+        if (theme.PrintFontSizeDelta == 0) return;
+
+        foreach (var block in doc.Blocks) AdjustFontSize(block, theme.PrintFontSizeDelta);
+    }
+
+    /// <summary>Every size on the page is set explicitly somewhere below
+    /// this point (never inherited from the document default), so reaching
+    /// every <see cref="Paragraph"/> — through <see cref="Section"/>,
+    /// <see cref="Table"/>/<see cref="TableCell"/> and <see cref="List"/> —
+    /// and adjusting each one directly is what actually changes the page,
+    /// rather than setting the delta once at the top and relying on inheritance.</summary>
+    private static void AdjustFontSize(Block block, double delta)
+    {
+        block.FontSize = Math.Max(4, block.FontSize + delta);
+
+        switch (block)
+        {
+            case Section section:
+                foreach (var b in section.Blocks) AdjustFontSize(b, delta);
+                break;
+            case Table table:
+                foreach (var row in table.RowGroups.SelectMany(g => g.Rows))
+                    foreach (var cell in row.Cells)
+                        foreach (var b in cell.Blocks) AdjustFontSize(b, delta);
+                break;
+            case List list:
+                foreach (var b in list.ListItems.SelectMany(i => i.Blocks))
+                    AdjustFontSize(b, delta);
+                break;
+        }
+    }
+
     public static Paragraph Text(string text, double size = 9, FontWeight? weight = null,
                                  Brush? brush = null, TextAlignment align = TextAlignment.Left,
                                  double topMargin = 0, double bottomMargin = 0)
@@ -379,7 +435,13 @@ internal static class DocumentBuilder
         return table;
     }
 
-    public static TableRow Row(bool header, params string[] cells)
+    public static TableRow Row(bool header, params string[] cells) => Row(header, 0, cells);
+
+    /// <summary>Same row, sized <paramref name="sizeDelta"/> points off the
+    /// usual 7.6/8.4 — used by OPD's fee receipt and the prescription slip,
+    /// which print a couple of points larger than the pharmacy bill and the
+    /// diagnostic bill without those two changing to match.</summary>
+    public static TableRow Row(bool header, double sizeDelta, params string[] cells)
     {
         var row = new TableRow();
 
@@ -388,7 +450,7 @@ internal static class DocumentBuilder
             var paragraph = new Paragraph(new Run(value))
             {
                 Margin = new Thickness(3, 2, 3, 2),
-                FontSize = header ? 7.6 : 8.4,
+                FontSize = (header ? 7.6 : 8.4) + sizeDelta,
                 FontWeight = header ? FontWeights.SemiBold : FontWeights.Normal,
                 Foreground = header ? PrintSecondaryForeground : PrintForeground,
                 // Everything after the first two columns is numeric.
@@ -411,7 +473,11 @@ internal static class DocumentBuilder
     /// nine facts in three lines of height instead of the six a flat
     /// label-then-value layout would take.
     /// </summary>
-    public static TableRow IdentityRow(params (string Label, string Value)[] cells)
+    public static TableRow IdentityRow(params (string Label, string Value)[] cells) => IdentityRow(0, cells);
+
+    /// <summary>Same identity row, sized <paramref name="sizeDelta"/> points
+    /// off the usual 6.6/7.8 — see <see cref="Row(bool, double, string[])"/>.</summary>
+    public static TableRow IdentityRow(double sizeDelta, params (string Label, string Value)[] cells)
     {
         var row = new TableRow();
 
@@ -424,58 +490,18 @@ internal static class DocumentBuilder
             };
             cell.Blocks.Add(new Paragraph(new Run(label))
             {
-                FontSize = 6.6, FontWeight = FontWeights.Bold,
+                FontSize = 6.6 + sizeDelta, FontWeight = FontWeights.Bold,
                 Foreground = PrintSecondaryForeground, Margin = new Thickness(2, 1, 2, 0)
             });
             cell.Blocks.Add(new Paragraph(new Run(value))
             {
-                FontSize = 7.8, FontWeight = FontWeights.Normal, Margin = new Thickness(2, 0, 2, 2),
+                FontSize = 7.8 + sizeDelta, FontWeight = FontWeights.Normal, Margin = new Thickness(2, 0, 2, 2),
                 Foreground = PrintForeground
             });
             row.Cells.Add(cell);
         }
 
         return row;
-    }
-
-    /// <summary>
-    /// A row of the pharmacy bill's own header shape — one stacked
-    /// "label: value" list on the left, another on the right, unequal in
-    /// length, matching that reference exactly rather than forcing it into
-    /// the receipt's 3x3 grid. The label is bold, the value ordinary weight,
-    /// the same convention every other label/value pair on the page follows.
-    /// A blank value keeps the line — and the row's height, matched against
-    /// the other column — rather than omitting it.
-    /// </summary>
-    public static TableRow StackedListRow((string Label, string Value)[] left, (string Label, string Value)[] right)
-    {
-        var row = new TableRow();
-        row.Cells.Add(StackedCell(left));
-        row.Cells.Add(StackedCell(right));
-        return row;
-    }
-
-    private static TableCell StackedCell((string Label, string Value)[] lines)
-    {
-        var cell = new TableCell { BorderBrush = Line, BorderThickness = new Thickness(0) };
-
-        foreach (var (label, value) in lines)
-        {
-            var paragraph = new Paragraph
-            {
-                FontSize = 7.6, Margin = new Thickness(2, 0, 2, 1), Foreground = PrintForeground
-            };
-
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                paragraph.Inlines.Add(new Run($"{label}: ") { FontWeight = FontWeights.Bold });
-                paragraph.Inlines.Add(new Run(value) { FontWeight = FontWeights.Normal });
-            }
-
-            cell.Blocks.Add(paragraph);
-        }
-
-        return cell;
     }
 
     /// <summary>

@@ -43,7 +43,7 @@ public class ShellCreditUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         // And it is the version the compiler stamped, character for character,
         // rather than something that merely looks like it.
-        var assembly = Path.Combine(AppFixture.ApplicationDirectory, "TwinkleHMS.dll");
+        var assembly = Path.Combine(AppFixture.ApplicationDirectory, "ShivayaanHMS.dll");
         var stamped = FileVersionInfo.GetVersionInfo(assembly).ProductVersion ?? "";
 
         var version = stamped.Split('+')[0];

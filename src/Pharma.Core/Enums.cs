@@ -136,3 +136,18 @@ public enum AppThemeKind
     Light = 0,
     Dark = 1
 }
+
+/// <summary>
+/// A user's role — a label for who they are, not yet a fence around what
+/// they can do. Every logged-in role has the same full access today, the
+/// same as before login existed; the role exists so that changes to what
+/// somebody did are attributed sensibly ("billed by a Pharmacy user") and
+/// so restrictions can be added later without another migration.
+/// </summary>
+public enum UserRole
+{
+    Admin = 1,
+    Doctor = 2,
+    Pharmacy = 3,
+    Diagnosis = 4
+}

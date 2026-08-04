@@ -79,10 +79,8 @@ public class CounterQuantityUiTests(AppFixture app) : IClassFixture<AppFixture>
         AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "the bill line");
 
         // Two strips is twenty tablets, at ₹30.00 a strip.
-        var cells = app.Grid("SaleLinesGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
-
-        Assert.Equal("20", cells[3]);                 // QTY, in tablets
-        Assert.Contains("2 × 10 TAB", cells[4]);      // PACKS reads it back
+        Assert.Equal("20", app.CellOf("SaleLinesGrid", "QTY"));      // QTY, in tablets
+        Assert.Contains("2 × 10 TAB", app.CellOf("SaleLinesGrid", "PACKS"));  // PACKS reads it back
         Assert.Contains("60", app.TextOf("SaleNetTotal"));
     }
 
@@ -96,9 +94,7 @@ public class CounterQuantityUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("SaleAddLine");
         AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "the bill line");
 
-        var cells = app.Grid("SaleLinesGrid").Rows[0].Cells.Select(c => c.Value ?? "").ToArray();
-
-        Assert.Equal("9", cells[3]);
+        Assert.Equal("9", app.CellOf("SaleLinesGrid", "QTY"));
         Assert.Contains("27", app.TextOf("SaleNetTotal"));   // 9 × ₹3.00
     }
 
@@ -166,19 +162,91 @@ public class CounterQuantityUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Click("SaleAddLine");
         AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "one line");
 
-        // Typing more than the first batch holds used to leave the line pinned to
-        // it and only fail on save. It now spans batches, as adding would.
-        var qty = app.Grid("SaleLinesGrid").Rows[0].Cells[3];
-        qty.Patterns.Value.Pattern.SetValue("25");
-
-        // The cell commits on losing focus, so move away from it.
-        app.TextBox("SaleCustomerName").Focus();
+        // Asking for more than the first batch holds used to leave the line
+        // pinned to it and only fail on save. It now spans batches, as adding
+        // would — through the edit-quantity popup rather than the cell
+        // itself, which is no longer directly editable.
+        EditQuantity(rowIndex: 0, newQuantity: "25");
 
         AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 2, "the line to span two batches");
 
         var total = app.Grid("SaleLinesGrid").Rows
-                       .Sum(r => int.Parse(r.Cells[3].Value?.ToString() ?? "0"));
+                       .Select((_, i) => int.Parse(app.CellOf("SaleLinesGrid", "QTY", i)))
+                       .Sum();
 
         Assert.Equal(25, total);
+    }
+
+    [Fact]
+    public void The_edit_quantity_popup_shows_the_new_amount_before_confirming()
+    {
+        var name = GivenAStockedMedicine(DateTime.Now.ToString("HHmmssfff"));
+        SelectAtCounter(name);
+
+        app.Type("SaleQuantity", "5");
+        app.Click("SaleAddLine");
+        AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "the bill line");
+
+        // Clicking anywhere on the row opens the popup — the MEDICINE cell
+        // here, specifically not the remove button at the end of the row.
+        app.Grid("SaleLinesGrid").Rows[0].Cells[0].Click();
+
+        AppFixture.WaitUntil(() => app.MainWindow.ModalWindows.Length == 1, "the edit-quantity popup");
+        var popup = app.MainWindow.ModalWindows[0];
+
+        var quantityBox = popup.FindFirstDescendant(cf => cf.ByAutomationId("EditQuantityValue"))!.AsTextBox();
+        quantityBox.Focus();
+        quantityBox.Text = "8";
+
+        // 8 tablets at ₹3.00 each, shown live before Update is even pressed.
+        AppFixture.WaitUntil(
+            () => (popup.FindFirstDescendant(cf => cf.ByAutomationId("EditQuantityAmount"))?.Name ?? "")
+                .Contains("24.00"),
+            "the live amount preview");
+
+        popup.FindFirstDescendant(cf => cf.ByAutomationId("EditQuantityCancel"))!.AsButton().Invoke();
+        AppFixture.WaitUntil(() => app.MainWindow.ModalWindows.Length == 0, "the popup to close");
+
+        // Cancel leaves the line exactly as it was.
+        Assert.Equal("5", app.CellOf("SaleLinesGrid", "QTY"));
+    }
+
+    [Fact]
+    public void Confirming_the_edit_quantity_popup_updates_the_line_and_the_bill_total()
+    {
+        var name = GivenAStockedMedicine(DateTime.Now.ToString("HHmmssfff"));
+        SelectAtCounter(name);
+
+        app.Type("SaleQuantity", "5");
+        app.Click("SaleAddLine");
+        AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "the bill line");
+
+        EditQuantity(rowIndex: 0, newQuantity: "8");
+
+        AppFixture.WaitUntil(() => app.CellOf("SaleLinesGrid", "QTY") == "8", "the updated quantity");
+        Assert.Contains("24", app.TextOf("SaleNetTotal"));   // 8 × ₹3.00
+    }
+
+    /// <summary>Clicks a row to open the edit-quantity popup, types the new
+    /// number in, and confirms. The popup is a separate modal window, not
+    /// part of the main window's own element tree, so it is found through
+    /// MainWindow.ModalWindows rather than through AppFixture's usual
+    /// Find/Type helpers.</summary>
+    private void EditQuantity(int rowIndex, string newQuantity)
+    {
+        // The MEDICINE cell, specifically — not the remove button at the
+        // end of the row, which has its own action.
+        app.Grid("SaleLinesGrid").Rows[rowIndex].Cells[0].Click();
+
+        AppFixture.WaitUntil(() => app.MainWindow.ModalWindows.Length == 1, "the edit-quantity popup");
+        var popup = app.MainWindow.ModalWindows[0];
+
+        var quantityBox = popup.FindFirstDescendant(cf => cf.ByAutomationId("EditQuantityValue"))!.AsTextBox();
+        quantityBox.Focus();
+        quantityBox.Text = newQuantity;
+
+        popup.FindFirstDescendant(cf => cf.ByAutomationId("EditQuantityConfirm"))!.AsButton().Invoke();
+
+        AppFixture.WaitUntil(() => app.MainWindow.ModalWindows.Length == 0, "the popup to close");
     }
 }

@@ -504,6 +504,24 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
     }
 
     /// <summary>
+    /// Opens the quantity popup for one bill line. Confirming it just sets
+    /// <see cref="SaleRow.Quantity"/> — the same property the old inline grid
+    /// edit changed — so the existing <see cref="OnLineChanged"/> listener
+    /// re-takes stock (and can split the line across a second batch) exactly
+    /// as it always has. Cancelling leaves the line untouched.
+    /// </summary>
+    [RelayCommand]
+    private void EditQuantity(SaleRow? row)
+    {
+        if (row is null) return;
+
+        var window = new Views.EditQuantityWindow(row) { Owner = Application.Current.MainWindow };
+        window.ShowDialog();
+
+        if (window.Confirmed) row.Quantity = window.NewQuantity;
+    }
+
+    /// <summary>
     /// Puts stock on the shelf for the selected medicine without leaving the
     /// bill. The shop knows the medicine is there; the system does not, and
     /// sending the operator away to do a full goods-inward with a patient

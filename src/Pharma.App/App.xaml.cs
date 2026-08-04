@@ -11,13 +11,24 @@ namespace Pharma.App;
 
 public partial class App : Application
 {
-    public const string ProductName = "Twinkle Children's Hospital";
+    public const string ProductName = "Sivaayaan HMS";
 
     public static IServiceProvider Services { get; private set; } = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Login, when it is switched on, shows a window before MainWindow
+        // exists. WPF's default shutdown mode ends the application the
+        // moment the last open window closes — so signing in would close
+        // the login window with nothing else open yet and the application
+        // would exit from under MainWindow before it ever got shown. Every
+        // exit path already calls Shutdown() explicitly (licence failure, a
+        // database that will not open, a failed sign-in), so nothing here
+        // relies on the automatic behaviour; it is restored once MainWindow
+        // is actually up, in StartAsync, so closing it still exits normally.
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         HookGlobalExceptionHandlers();
 
@@ -61,6 +72,13 @@ public partial class App : Application
         services.AddSingleton<DataHealthService>();
         services.AddSingleton<Pharma.Data.Import.PurchaseImportService>();
         services.AddSingleton<DiagnosticsService>();
+        services.AddSingleton<AuthService>();
+
+        // Registered as both its own type (the shell reads CurrentUser off it)
+        // and the interface AppDbContext asks for (so every save is stamped
+        // with whoever is signed in) — same instance either way.
+        services.AddSingleton<CurrentUserService>();
+        services.AddSingleton<ICurrentUserContext>(sp => sp.GetRequiredService<CurrentUserService>());
 
         // Licensing. Each piece is registered against its interface, so the day
         // a signed licence file or an activation server arrives, only the
@@ -123,18 +141,38 @@ public partial class App : Application
 
         // Before the window is shown, so it never appears in the wrong theme and
         // then repaints in front of the user.
+        GeneralSettings general;
         try
         {
-            AppTheme.Apply((await Services.GetRequiredService<SettingsService>().GetGeneralAsync()).Theme);
+            general = await Services.GetRequiredService<SettingsService>().GetGeneralAsync();
+            AppTheme.Apply(general.Theme);
         }
         catch (Exception ex)
         {
             AppLog.Error("The theme could not be read; carrying on with the light one.", ex);
+            general = new GeneralSettings();
+        }
+
+        // Off by default — see GeneralSettings.RequireLogin. When it is on,
+        // nothing else opens until somebody signs in; closing this window
+        // without doing so ends the application rather than leaving an
+        // unauthenticated shell reachable some other way.
+        if (general.RequireLogin && !SignIn())
+        {
+            Shutdown();
+            return;
         }
 
         try
         {
             var window = new MainWindow { DataContext = Services.GetRequiredService<MainViewModel>() };
+
+            // Restored now that there is a real main window to close instead
+            // of relying on the explicit Shutdown() calls this method uses
+            // everywhere else — see the ShutdownMode comment in OnStartup.
+            MainWindow = window;
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
+
             window.Show();
             AppLog.Info("Main window shown.");
 
@@ -150,6 +188,22 @@ public partial class App : Application
                 ProductName, MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
+    }
+
+    /// <summary>
+    /// Shows the login window before anything else opens. True once
+    /// somebody has actually signed in — an EnterpriseAdmin password reset
+    /// on its own returns to the login screen rather than counting as one.
+    /// </summary>
+    private static bool SignIn()
+    {
+        var window = new Views.LoginWindow(
+            Services.GetRequiredService<AuthService>(), Services.GetRequiredService<SettingsService>());
+
+        if (window.ShowDialog() != true || window.LoggedInUser is not { } user) return false;
+
+        Services.GetRequiredService<CurrentUserService>().SignIn(user);
+        return true;
     }
 
     /// <summary>

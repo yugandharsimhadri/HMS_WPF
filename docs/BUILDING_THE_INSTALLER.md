@@ -1,4 +1,4 @@
-# Twinkle — building the installer
+# Sivaayaan HMS — building the installer
 
 How to turn the source code into something you can hand to a clinic - either one
 self-contained setup file, or a ClickOnce deployment that updates itself.
@@ -43,7 +43,7 @@ That single field becomes:
 
 - the version in the navigation sidebar, which support asks people to read out,
 - the version listed under **Add or remove programs**,
-- **the name of the setup file** — `TwinkleHMSSetup-1.0.0.5.exe`,
+- **the name of the setup file** — `ShivayaanHMSSetup-1.0.0.5.exe`,
 - the assembly and file version stamped on the executable.
 
 > **Do this before every release.** Two different builds both calling themselves
@@ -98,7 +98,7 @@ Two or three minutes, most of it compressing. It prints its progress:
 2/3  Writing the package definition ...
 3/3  Packing (a 73 MB payload takes a minute or two) ...
 
-Setup file:  C:\HMS\Setup\TwinkleHMSSetup-1.0.0.5.exe  (66.6 MB)
+Setup file:  C:\HMS\Setup\ShivayaanHMSSetup-1.0.0.5.exe  (66.6 MB)
 Version:     1.0.0.5  - this is what the clinic will read off the sidebar
 ```
 
@@ -122,10 +122,10 @@ installs nothing.
 **It contains what it should.** Unpack it without running it:
 
 ```bash
-"C:\HMS\Setup\TwinkleHMSSetup.exe" /C /Q /T:%TEMP%\check
+"C:\HMS\Setup\ShivayaanHMSSetup.exe" /C /Q /T:%TEMP%\check
 ```
 
-`%TEMP%\check` should hold exactly three files — `TwinkleHMS.exe` at about
+`%TEMP%\check` should hold exactly three files — `ShivayaanHMS.exe` at about
 73 MB, `install.cmd` and `install.ps1`.
 
 > **Then test it on a machine that is not this one.** A clean PC or a virtual
@@ -152,7 +152,7 @@ Worth knowing for the day it breaks.
    into one self-extracting file and sets it to run `install.cmd` afterwards.
 
 `scripts/installer/install.ps1` is the part that runs on the clinic PC: it asks
-for administrator rights once, refuses if Twinkle is open, copies the executable
+for administrator rights once, refuses if Sivaayaan HMS is open, copies the executable
 to `C:\HMS\App`, makes the data folders, creates the shortcuts and registers the
 uninstaller.
 
@@ -164,10 +164,10 @@ uninstaller.
 |---|---|
 | `The string is missing the terminator` | A non-ASCII character got into a `.ps1`. Windows PowerShell reads these as ANSI without a byte order mark, and one em dash in a string stops the file parsing. Keep the scripts plain ASCII |
 | `Publish failed` | Build the solution on its own to see the real compiler error — the publish output hides it |
-| `TwinkleHMS.exe was not produced` | The publish succeeded but wrote somewhere else. Check `-o` against the staging folder in the script |
+| `ShivayaanHMS.exe was not produced` | The publish succeeded but wrote somewhere else. Check `-o` against the staging folder in the script |
 | `IExpress did not produce ...` | Usually `TargetName` in the `.sed` pointing at a folder that does not exist. The script creates it, so this means the path is wrong |
 | The file is a few hundred KB | The payload was not picked up. Check that the staging folder still held the executable when IExpress ran |
-| `being used by another process` | Twinkle is open, or a previous run is still holding the file. Close it |
+| `being used by another process` | Sivaayaan HMS is open, or a previous run is still holding the file. Close it |
 
 ---
 
@@ -182,7 +182,7 @@ The setup file is not code-signed. On the clinic PC that means:
 
 For one or two clinics, warning people that the message is coming is enough. For
 wider distribution, buy a code-signing certificate and sign both
-`TwinkleHMS.exe` and `TwinkleHMSSetup.exe` with `signtool`. The warnings stop.
+`ShivayaanHMS.exe` and `ShivayaanHMSSetup.exe` with `signtool`. The warnings stop.
 
 ---
 
@@ -231,13 +231,13 @@ result so there is one file to send:
 Published to src\Pharma.App\bin\publish
      Application Files
      setup.exe
-     TwinkleHMS.application
+     ShivayaanHMS.application
 
 2/2  Zipping ...
      version 1.0.0.1
      1 older version(s) in the publish folder left out of the zip
 
-One file to send:  C:\HMS\Setup\TwinkleHMS-ClickOnce.zip  (69.5 MB)
+One file to send:  C:\HMS\Setup\ShivayaanHMS-ClickOnce.zip  (69.5 MB)
 ```
 
 From Visual Studio instead: right-click **Pharma.App → Publish → ClickOnceProfile
@@ -264,8 +264,8 @@ to a shared folder rather than carrying it.
    the runtime by hand first, or use the setup file instead.
 4. No administrator prompt. It installs per user, under
    `%LocalAppData%\Apps\2.0\`.
-5. The shortcut is in the **Start menu** only, under Twinkle Children's
-   Hospital. There is no desktop icon — ClickOnce does not make one.
+5. The shortcut is in the **Start menu** only, under Sivaayaan HMS. There is
+   no desktop icon — ClickOnce does not make one.
 
 `C:\HMS\DB` is untouched, exactly as with the setup file. The database never
 lives beside the program, which is what makes either route safe to re-run.
@@ -280,7 +280,7 @@ In `src/Pharma.App/Properties/PublishProfiles/ClickOnceProfile.pubxml`:
 <UpdateEnabled>True</UpdateEnabled>
 <UpdateMode>Foreground</UpdateMode>
 <InstallFrom>Unc</InstallFrom>
-<PublishUrl>\\clinic-server\twinkle\</PublishUrl>
+<PublishUrl>\\clinic-server\shivayaanhms\</PublishUrl>
 ```
 
 Publish to that share once. Every PC installed from it then checks the share at

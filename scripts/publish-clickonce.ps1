@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     ClickOnce produces three things that have to stay together: setup.exe, the
-    TwinkleHMS.application manifest, and an Application Files folder. The
+    ShivayaanHMS.application manifest, and an Application Files folder. The
     setup.exe is only a bootstrapper - carried on its own it fails on the far
     machine, because there is nothing beside it to install.
 
@@ -66,10 +66,10 @@ if ($LASTEXITCODE -ne 0) { throw "ClickOnce publish failed." }
 $publish = Join-Path $root "src\Pharma.App\bin\publish"
 
 $setup = Join-Path $publish "setup.exe"
-$manifest = Join-Path $publish "TwinkleHMS.application"
+$manifest = Join-Path $publish "ShivayaanHMS.application"
 
 if (-not (Test-Path $setup))    { throw "setup.exe was not produced in $publish." }
-if (-not (Test-Path $manifest)) { throw "TwinkleHMS.application was not produced in $publish." }
+if (-not (Test-Path $manifest)) { throw "ShivayaanHMS.application was not produced in $publish." }
 
 Write-Host ""
 Write-Host "Published to $publish" -ForegroundColor Green
@@ -86,7 +86,7 @@ Write-Host "2/2  Zipping ..." -ForegroundColor Cyan
 
 if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null }
 
-$zip = Join-Path $OutputDir "TwinkleHMS-ClickOnce.zip"
+$zip = Join-Path $OutputDir "ShivayaanHMS-ClickOnce.zip"
 if (Test-Path $zip) { Remove-Item $zip -Force }
 
 # Application Files keeps every revision ever published - each one a full copy
@@ -97,12 +97,12 @@ if (Test-Path $zip) { Remove-Item $zip -Force }
 $version = ([xml](Get-Content $manifest)).assembly.assemblyIdentity.version
 if (-not $version) { throw "Could not read the version out of $manifest." }
 
-$current = "TwinkleHMS_" + ($version -replace '\.', '_')
+$current = "ShivayaanHMS_" + ($version -replace '\.', '_')
 $currentPath = Join-Path $publish "Application Files\$current"
 
 if (-not (Test-Path $currentPath)) { throw "The manifest names version $version, but $currentPath is not there." }
 
-$staging = Join-Path $env:TEMP "twinkle-clickonce-zip"
+$staging = Join-Path $env:TEMP "shivayaanhms-clickonce-zip"
 if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
 New-Item -ItemType Directory -Path (Join-Path $staging "Application Files") -Force | Out-Null
 

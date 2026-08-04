@@ -19,15 +19,18 @@ public static class DiagnosticBillPrinter
 
         AddClinicHeader(doc, clinic, theme, isReprint ? "DIAGNOSTIC BILL (DUPLICATE)" : "DIAGNOSTIC BILL");
 
+        // Date and time sit side by side rather than one under the other.
         var head = NewTable(1, 1, 1);
         var headGroup = new TableRowGroup();
         headGroup.Rows.Add(IdentityRow(
             ("Bill No", bill.BillNo),
-            ("Date", $"{bill.BillDate:dd/MM/yyyy  HH:mm}"),
-            ("Patient", bill.PatientName)));
+            ("Date", $"{bill.BillDate:dd/MM/yyyy}"),
+            ("Time", $"{bill.BillDate:HH:mm}")));
         headGroup.Rows.Add(IdentityRow(
+            ("Patient", bill.PatientName),
             ("Patient No", bill.PatientNo),
-            ("Status", bill.Status.ToString()),
+            ("Status", bill.Status.ToString())));
+        headGroup.Rows.Add(IdentityRow(
             ("Payment", bill.PaymentMode.ToString())));
         head.RowGroups.Add(headGroup);
         doc.Blocks.Add(head);
@@ -72,6 +75,7 @@ public static class DiagnosticBillPrinter
         if (isReprint)
             doc.Blocks.Add(Text("DUPLICATE", 9, FontWeights.Bold, Muted, TextAlignment.Center, topMargin: 5));
 
+        ApplyPrintSettings(doc, theme);
         return doc;
     }
 }

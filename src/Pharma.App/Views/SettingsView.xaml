@@ -378,6 +378,63 @@
                                      AcceptsReturn="True" Height="60" TextWrapping="Wrap" Margin="0,0,0,14"
                                      AutomationProperties.AutomationId="DocumentFooter"/>
 
+                            <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,0,0,14"/>
+
+                            <TextBlock Text="Print font" Style="{StaticResource Label}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                       Text="Applies to every prescription, fee receipt, pharmacy bill and diagnostic bill. Pick any font installed on this PC."/>
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="140"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Typeface" Style="{StaticResource Label}"/>
+                                    <ComboBox ItemsSource="{Binding AvailableFonts}" IsEditable="True"
+                                              Text="{Binding PrintFontFamily, UpdateSourceTrigger=PropertyChanged}"
+                                              FontFamily="{Binding PrintFontFamily}"
+                                              AutomationProperties.AutomationId="PrintFontFamily"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Size (+/-)" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding PrintFontSizeDelta, UpdateSourceTrigger=LostFocus}"
+                                             ToolTip="Points added to every size on the page — e.g. 2 to print larger, -1 to print smaller"
+                                             AutomationProperties.AutomationId="PrintFontSizeDelta"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Title font" Style="{StaticResource Label}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                       Text="The clinic or pharmacy name at the top of the page — on top of the print size above, so it can stand out on its own. Leave the typeface blank to match the print font."/>
+
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="140"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Typeface" Style="{StaticResource Label}"/>
+                                    <ComboBox ItemsSource="{Binding AvailableFonts}" IsEditable="True"
+                                              Text="{Binding TitleFontFamily, UpdateSourceTrigger=PropertyChanged}"
+                                              FontFamily="{Binding TitleFontFamily}"
+                                              ToolTip="Blank matches the print font above"
+                                              AutomationProperties.AutomationId="TitleFontFamily"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Size (+/-)" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding TitleFontSizeDelta, UpdateSourceTrigger=LostFocus}"
+                                             ToolTip="Points added to the name's own size, on top of the print size above"
+                                             AutomationProperties.AutomationId="TitleFontSizeDelta"/>
+                                </StackPanel>
+                            </Grid>
+
                             <Button Content="Save document branding" Style="{StaticResource BtnPrimary}"
                                     HorizontalAlignment="Left"
                                     Command="{Binding SaveDocumentThemeCommand}"
@@ -405,6 +462,86 @@
                                     HorizontalAlignment="Left"
                                     Command="{Binding SaveFeaturesCommand}"
                                     AutomationProperties.AutomationId="FeaturesSave"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="Security">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <StackPanel Margin="16" HorizontalAlignment="Left">
+                            <TextBlock Text="Sign-in" Style="{StaticResource H2}"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14" MaxWidth="560"
+                                       Text="Off by default. Switching this on asks everyone to sign in the next time the application is started, and records who did what. The default Admin account can always sign in, whatever else here says."/>
+
+                            <CheckBox Content="Require sign-in" IsChecked="{Binding RequireLogin, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitch}" Margin="0,4,0,4"
+                                      AutomationProperties.AutomationId="RequireLogin"/>
+
+                            <Button Content="Save" Style="{StaticResource BtnPrimary}" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                    Command="{Binding SaveSecurityCommand}"
+                                    AutomationProperties.AutomationId="SecuritySave"/>
+
+                            <StackPanel Visibility="{Binding CanManageUsers, Converter={StaticResource BoolToVisible}}">
+                                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0" Margin="0,18,0,14" MaxWidth="560"/>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="240"/>
+                                        <ColumnDefinition Width="18"/>
+                                        <ColumnDefinition Width="*" MaxWidth="340"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Users" Style="{StaticResource H2}"/>
+                                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,12"
+                                                   Text="Admin can create the rest — Doctor, Pharmacy and Diagnosis accounts."/>
+                                        <ListBox ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
+                                                 DisplayMemberPath="Display" Height="260"
+                                                 BorderBrush="{DynamicResource Border}"
+                                                 AutomationProperties.AutomationId="UsersList"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+                                        <local:RequiredLabel Text="Username"/>
+                                        <TextBox Text="{Binding UserUsername, UpdateSourceTrigger=PropertyChanged}"
+                                                 IsEnabled="{Binding IsNewUser}"
+                                                 local:Field.IsMissing="{Binding UserUsernameMissing}"
+                                                 AutomationProperties.AutomationId="UserUsername"/>
+
+                                        <TextBlock Text="Display name" Style="{StaticResource Label}"/>
+                                        <TextBox Text="{Binding UserDisplayName, UpdateSourceTrigger=PropertyChanged}"
+                                                 AutomationProperties.AutomationId="UserDisplayName"/>
+
+                                        <TextBlock Text="Role" Style="{StaticResource Label}"/>
+                                        <ComboBox ItemsSource="{Binding UserRoles}" SelectedItem="{Binding UserRole, Mode=TwoWay}"
+                                                  AutomationProperties.AutomationId="UserRoleField"/>
+
+                                        <CheckBox Content="Active" IsChecked="{Binding UserIsActive, Mode=TwoWay}"
+                                                  Margin="0,10,0,10"
+                                                  AutomationProperties.AutomationId="UserIsActive"/>
+
+                                        <TextBlock Text="Password" Style="{StaticResource Label}"/>
+                                        <PasswordBox x:Name="UserPasswordBox"
+                                                     AutomationProperties.AutomationId="UserPassword"/>
+                                        <TextBlock Text="{Binding PasswordFieldHint}" Style="{StaticResource Muted}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <Button Content="Save user" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
+                                                    Click="SaveUser_Click"
+                                                    AutomationProperties.AutomationId="UserSave"/>
+                                            <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,0,8,0" MinWidth="80"
+                                                    Command="{Binding NewUserCommand}"
+                                                    ToolTip="Empties the form. Saved users are unchanged."
+                                                    AutomationProperties.AutomationId="UserClear"/>
+                                            <Button Content="+ New user" Style="{StaticResource BtnGhost}"
+                                                    Command="{Binding NewUserCommand}"
+                                                    AutomationProperties.AutomationId="NewUser"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>

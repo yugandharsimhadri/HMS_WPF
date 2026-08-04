@@ -1,4 +1,4 @@
-# Twinkle — upgrading a database that is already in use
+# Sivaayaan HMS — upgrading a database that is already in use
 
 A version is installed at a clinic. Everything after it has to **add to** that
 database, never replace it. A fresh installation still has to get the whole
@@ -26,7 +26,7 @@ is how "create the whole schema" and "add the two new columns" end up being the
 same line of code.
 
 ```
-Opening the existing database at C:\HMS\DB\twinkle.db.
+Opening the existing database at C:\HMS\DB\ShivayaanHMS.db.
 Applying migrations: 20260729103000_AddCustomerPhone
 Backed up before upgrading to 20260729103000_AddCustomerPhone: C:\HMS\DBBackup\pre-upgrade-20260729-103014.db
 Database ready.
@@ -51,7 +51,7 @@ dotnet ef migrations add AddCustomerPhone --project src\Pharma.Data --startup-pr
 
 `--startup-project src\Pharma.Data`, not `Pharma.App` — the WPF project does not
 reference `Microsoft.EntityFrameworkCore.Design`, and the tools stop with
-*"Your startup project 'TwinkleHMS' doesn't reference..."* if you point them at it.
+*"Your startup project 'ShivayaanHMS' doesn't reference..."* if you point them at it.
 
 Name it after what it does. That name appears in the clinic's log and in their
 `__EFMigrationsHistory` for the life of the database.
@@ -116,14 +116,14 @@ the ordinary daily backup was not enough:
   could be deleted a week later, which is precisely when somebody asks for it.
 
 If a migration fails, the log says so and the file is still there. Recovery is
-copying it back over `C:\HMS\DB\twinkle.db` with the application closed, and
+copying it back over `C:\HMS\DB\ShivayaanHMS.db` with the application closed, and
 reinstalling the previous version.
 
 ---
 
 ## Finding out which version a clinic's database is on
 
-Get a **copy** of their `C:\HMS\DB\twinkle.db` — the whole file, they can email
+Get a **copy** of their `C:\HMS\DB\ShivayaanHMS.db` — the whole file, they can email
 it or put it on a pen drive — and point the tools at the copy:
 
 ```bash

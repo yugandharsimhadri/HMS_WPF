@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -26,10 +27,11 @@ namespace Pharma.App.ViewModels;
 /// are. See docs/SETTINGS_REORG.md for the reasoning.
 /// </summary>
 public partial class SettingsViewModel(
-    SettingsService settings, OpdService opd, ILicenseService licence) : ObservableObject, IPage
+    SettingsService settings, OpdService opd, ILicenseService licence,
+    AuthService auth, CurrentUserService currentUser) : ObservableObject, IPage
 {
     public string Title => "Settings";
-    public string Subtitle => "General, clinic, pharmacy, doctors, document branding and features";
+    public string Subtitle => "General, clinic, pharmacy, doctors, document branding, features and security";
 
     [ObservableProperty] private string _status = "";
 
@@ -39,6 +41,7 @@ public partial class SettingsViewModel(
         QueueLayout = general.QueueLayout;
         Theme = general.Theme;
         DiagnosticsEnabled = general.DiagnosticsEnabled;
+        RequireLogin = general.RequireLogin;
 
         var clinic = await settings.GetClinicAsync();
         ClinicName = clinic.Name;
@@ -66,6 +69,10 @@ public partial class SettingsViewModel(
 
         var theme = await settings.GetDocumentThemeAsync();
         DocumentFooter = theme.Footer;
+        PrintFontFamily = string.IsNullOrWhiteSpace(theme.PrintFontFamily) ? DefaultPrintFontFamily : theme.PrintFontFamily;
+        PrintFontSizeDelta = theme.PrintFontSizeDelta;
+        TitleFontFamily = theme.TitleFontFamily ?? "";
+        TitleFontSizeDelta = theme.TitleFontSizeDelta;
         _logoBase64 = theme.LogoBase64;
         _logoContentType = theme.LogoContentType;
         RefreshLogoPreview();
@@ -73,6 +80,7 @@ public partial class SettingsViewModel(
         RefreshLastBackup();
 
         await LoadDoctorsAsync();
+        await LoadUsersAsync();
     }
 
     // ── General ────────────────────────────────────────────────────────────
@@ -90,9 +98,15 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task SaveGeneralAsync()
     {
+        // Every field here is one row in the same key/value settings table, so
+        // whichever tab saves last has to carry every other tab's current
+        // in-memory value along with it — leaving one out here would reset it
+        // to its default the next time General (rather than that field's own
+        // tab) is the one saved.
         await settings.SaveGeneralAsync(new GeneralSettings
         {
-            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled
+            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled,
+            RequireLogin = RequireLogin
         });
         Status = $"Saved. The OPD queue will use {QueueLayout.ToString().ToLowerInvariant()}, " +
                  $"in the {Theme.ToString().ToLowerInvariant()} theme.";
@@ -112,7 +126,8 @@ public partial class SettingsViewModel(
     {
         await settings.SaveGeneralAsync(new GeneralSettings
         {
-            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled
+            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled,
+            RequireLogin = RequireLogin
         });
 
         // The shell reads this once at startup; poke it directly so the nav
@@ -188,7 +203,7 @@ public partial class SettingsViewModel(
     {
         await Safely.RunAsync(async () =>
         {
-            var file = await Task.Run(DbBootstrapper.BackupNow);
+            var file = await Task.Run(() => DbBootstrapper.BackupNow(ClinicName));
 
             RefreshLastBackup();
             Status = $"Backed up to {file.FullName}";
@@ -457,10 +472,164 @@ public partial class SettingsViewModel(
         Status = $"{saved} saved. The form is clear for the next doctor.";
     }
 
+    // ── Security ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Off by default — see GeneralSettings.RequireLogin. Read once here like
+    /// every other setting; taking effect asks for the application to be
+    /// started again, since the login gate itself only runs at startup.
+    /// </summary>
+    [ObservableProperty] private bool _requireLogin;
+
+    /// <summary>
+    /// Whoever is looking at this screen may manage users when nobody in
+    /// particular is signed in yet — RequireLogin is still off, the normal
+    /// state before a clinic sets login up at all — or when the person
+    /// signed in is an Admin. Anyone else signed in sees the rest of
+    /// Settings but not this section.
+    /// </summary>
+    public bool CanManageUsers => !currentUser.IsSignedIn || currentUser.IsAdmin;
+
+    public Array UserRoles => Enum.GetValues<UserRole>();
+
+    public ObservableCollection<User> Users { get; } = [];
+
+    [ObservableProperty] private User? _selectedUser;
+    [ObservableProperty] private string _userUsername = "";
+    [ObservableProperty] private bool _userUsernameMissing;
+    [ObservableProperty] private string _userDisplayName = "";
+    [ObservableProperty] private UserRole _userRole = UserRole.Pharmacy;
+    [ObservableProperty] private bool _userIsActive = true;
+
+    /// <summary>Set on the form for a brand-new user — cleared once one is
+    /// selected, since an existing user's password is never shown or reused.</summary>
+    public bool IsNewUser => SelectedUser is null;
+
+    public string PasswordFieldHint => IsNewUser
+        ? "Required for a new user. They will be asked to change it on first sign-in."
+        : "Leave blank to keep the current password. Filling it in resets it and asks them to change it on next sign-in.";
+
+    partial void OnUserUsernameChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) UserUsernameMissing = false;
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        if (!CanManageUsers) return;
+
+        Users.Clear();
+        foreach (var u in await auth.GetUsersAsync()) Users.Add(u);
+    }
+
+    partial void OnSelectedUserChanged(User? value)
+    {
+        OnPropertyChanged(nameof(IsNewUser));
+        OnPropertyChanged(nameof(PasswordFieldHint));
+        if (value is null) return;
+
+        UserUsername = value.Username;
+        UserDisplayName = value.DisplayName;
+        UserRole = value.Role;
+        UserIsActive = value.IsActive;
+    }
+
+    [RelayCommand]
+    private void NewUser()
+    {
+        SelectedUser = null;
+        UserUsername = UserDisplayName = "";
+        UserRole = UserRole.Pharmacy;
+        UserIsActive = true;
+    }
+
+    /// <summary>
+    /// Not a [RelayCommand]: <see cref="System.Windows.Controls.PasswordBox"/>
+    /// has no bindable Password property, so the view's code-behind reads it
+    /// and calls straight through with it rather than via a Command binding.
+    /// </summary>
+    public async Task SaveUserAsync(string? newPassword)
+    {
+        if (string.IsNullOrWhiteSpace(UserUsername))
+        {
+            UserUsernameMissing = true;
+            Dialog.Show("Username is required.", "Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        UserUsernameMissing = false;
+
+        var user = new User
+        {
+            Id = SelectedUser?.Id ?? Guid.Empty,
+            Username = UserUsername.Trim(),
+            DisplayName = UserDisplayName.Trim(),
+            Role = UserRole,
+            IsActive = UserIsActive
+        };
+
+        try
+        {
+            await auth.SaveUserAsync(user, newPassword);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Dialog.Show(ex.Message, "Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var saved = user.Username;
+        await LoadUsersAsync();
+        NewUser();
+
+        Status = $"{saved} saved. The form is clear for the next user.";
+    }
+
+    [RelayCommand]
+    private async Task SaveSecurityAsync()
+    {
+        await settings.SaveGeneralAsync(new GeneralSettings
+        {
+            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled,
+            RequireLogin = RequireLogin
+        });
+
+        Status = RequireLogin
+            ? "Saved. Sign-in will be asked for the next time the application is started."
+            : "Saved. The application will open straight to the dashboard, as before.";
+    }
+
     // ── Reports: document branding ────────────────────────────────────────
 
     [ObservableProperty] private string _documentFooter = "";
     [ObservableProperty] private BitmapImage? _logoPreview;
+
+    /// <summary>What every printed document falls back to when the clinic
+    /// has never visited this field — see <see cref="DocumentTheme.PrintFontFamily"/>.</summary>
+    public const string DefaultPrintFontFamily = "Segoe UI";
+
+    [ObservableProperty] private string _printFontFamily = DefaultPrintFontFamily;
+
+    /// <summary>
+    /// Points added to every size on the page — negative to print smaller,
+    /// positive to print larger. Clamped on save rather than as the user
+    /// types, so a stray keystroke mid-edit does not fight back.
+    /// </summary>
+    [ObservableProperty] private double _printFontSizeDelta;
+
+    /// <summary>Blank means "match the print font" — see
+    /// <see cref="DocumentTheme.TitleFontFamily"/>.</summary>
+    [ObservableProperty] private string _titleFontFamily = "";
+
+    /// <summary>On top of <see cref="PrintFontSizeDelta"/>, on the
+    /// clinic/pharmacy name only — see <see cref="DocumentTheme.TitleFontSizeDelta"/>.</summary>
+    [ObservableProperty] private double _titleFontSizeDelta;
+
+    /// <summary>Every font installed on this PC, for the print font picker.
+    /// A clinic prints from the one PC the software runs on, so "every font
+    /// this PC has" is the same as "every font the printed page can use."</summary>
+    public string[] AvailableFonts { get; } =
+        Fonts.SystemFontFamilies.Select(f => f.Source).Distinct().OrderBy(s => s).ToArray();
 
     private string? _logoBase64;
     private string? _logoContentType;
@@ -655,11 +824,20 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task SaveDocumentThemeAsync()
     {
+        // A page nobody could read either way — clamped rather than
+        // rejected, so a stray "50" does not need a round trip to fix.
+        PrintFontSizeDelta = Math.Clamp(PrintFontSizeDelta, -4, 12);
+        TitleFontSizeDelta = Math.Clamp(TitleFontSizeDelta, -4, 20);
+
         await settings.SaveDocumentThemeAsync(new DocumentTheme
         {
             Footer = DocumentFooter.Trim(),
             LogoBase64 = _logoBase64,
-            LogoContentType = _logoContentType
+            LogoContentType = _logoContentType,
+            PrintFontFamily = string.IsNullOrWhiteSpace(PrintFontFamily) ? DefaultPrintFontFamily : PrintFontFamily.Trim(),
+            PrintFontSizeDelta = PrintFontSizeDelta,
+            TitleFontFamily = string.IsNullOrWhiteSpace(TitleFontFamily) ? null : TitleFontFamily.Trim(),
+            TitleFontSizeDelta = TitleFontSizeDelta
         });
 
         Status = "Document branding saved. It applies to every prescription, receipt and bill from now on.";

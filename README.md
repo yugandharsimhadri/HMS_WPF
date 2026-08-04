@@ -1,4 +1,4 @@
-# Twinkle Children's Hospital — HMS_WPF
+# Sivaayaan HMS — HMS_WPF
 
 A small Windows desktop application for a clinic with an attached pharmacy.
 Two modules only: **OPD** and **Pharmacy**.
@@ -17,9 +17,10 @@ dotnet run --project src/Pharma.App
 ```
 
 First launch creates and seeds the database at
-`C:\ProgramData\TwinkleHMS\twinkle.db` — one doctor and six common medicines,
+`C:\HMS\DB\ShivayaanHMS.db` — one doctor and six common medicines,
 so the counter works immediately. A database left by the pre-branding
-`ClinicDesk` build is carried over automatically on first launch.
+`ClinicDesk` build, or by this application under its old name and database
+file (`twinkle.db`), is carried over automatically on first launch.
 
 ```bash
 dotnet test
@@ -37,7 +38,7 @@ dotnet publish src/Pharma.App -c Release -r win-x64 --self-contained
 ```
 
 Produces a folder that runs on any Windows 10/11 PC with no .NET runtime
-installed. Copy it, make a shortcut to `TwinkleHMS.exe`, done.
+installed. Copy it, make a shortcut to `ShivayaanHMS.exe`, done.
 
 ---
 

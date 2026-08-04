@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
 using Pharma.App.Printing;
@@ -288,7 +289,11 @@ public class PrintDocumentTests
         Assert.DoesNotContain("CGST", text);
 
         // The drug licence is still required, and the medicine details still show.
-        Assert.Contains("D.L. No: AP/21B/2024/1234", text);
+        // It prints as its own labelled field in the identity grid now, the
+        // same way Patient/Date/Time do — label and value in separate lines,
+        // not one combined "D.L. No: …" line the way it used to.
+        Assert.Contains("D.L. No", text);
+        Assert.Contains("AP/21B/2024/1234", text);
         Assert.Contains("D260374", text);
         Assert.Contains("INV00021", text);
     }
@@ -481,4 +486,173 @@ public class PrintDocumentTests
     [StaFact]
     public void Every_paragraph_on_the_diagnostic_bill_has_its_own_brush()
         => AssertEveryParagraphHasAnExplicitBrush(DiagnosticBillPrinter.Build(DiagnosticBill(), Clinic(), Theme()));
+
+    // ── Date and time sit next to each other ────────────────────────────────
+    //
+    // Structural, not text-search: the fee receipt and the prescription
+    // already contained both words before this changed, just in different
+    // rows of the identity grid — searching the flattened text for "Date"
+    // and "Time" would have passed before the fix as easily as after it.
+    // This reads the actual Table the identity grid is built as and checks
+    // that the cell right after "Date" is "Time", in the same row.
+
+    private static (string Label, string Value) IdentityCellText(TableCell cell)
+    {
+        var paragraphs = cell.Blocks.OfType<Paragraph>().ToList();
+        string Text(int i) => paragraphs.Count > i
+            ? new TextRange(paragraphs[i].ContentStart, paragraphs[i].ContentEnd).Text.Trim()
+            : "";
+
+        return (Text(0), Text(1));
+    }
+
+    /// <summary>The identity grid is always the first Table directly under
+    /// the document's own Blocks — the header's Section (and any Table
+    /// nested inside it for a logo) comes before it, but is never itself a
+    /// direct child of doc.Blocks.</summary>
+    private static TableRow FirstIdentityRow(FlowDocument doc)
+        => doc.Blocks.OfType<Table>().First().RowGroups.First().Rows.First();
+
+    private static void AssertDateImmediatelyFollowedByTime(FlowDocument doc)
+    {
+        var cells = FirstIdentityRow(doc).Cells.Select(IdentityCellText).ToList();
+        var dateIndex = cells.FindIndex(c => c.Label == "Date");
+
+        Assert.True(dateIndex >= 0, "No 'Date' cell found in the identity grid's first row.");
+        Assert.True(dateIndex + 1 < cells.Count, "'Date' was the last cell in the row — no room for 'Time' beside it.");
+        Assert.Equal("Time", cells[dateIndex + 1].Label);
+    }
+
+    [StaFact]
+    public void Date_and_time_are_adjacent_on_the_fee_receipt()
+        => AssertDateImmediatelyFollowedByTime(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
+
+    [StaFact]
+    public void Date_and_time_are_adjacent_on_the_prescription()
+        => AssertDateImmediatelyFollowedByTime(PrescriptionPrinter.Build(Visit(), Clinic(), Theme()));
+
+    [StaFact]
+    public void Date_and_time_are_adjacent_on_the_pharmacy_bill()
+        => AssertDateImmediatelyFollowedByTime(BillPrinter.Build(Sale(), Pharmacy(), Theme()));
+
+    [StaFact]
+    public void Date_and_time_are_adjacent_on_the_diagnostic_bill()
+        => AssertDateImmediatelyFollowedByTime(DiagnosticBillPrinter.Build(DiagnosticBill(), Clinic(), Theme()));
+
+    // ── Configurable print font (Settings → Reports) ────────────────────────
+
+    [StaFact]
+    public void With_no_print_font_configured_the_document_keeps_the_compiled_in_default()
+    {
+        var doc = FeeReceiptDocument.Build(Visit(), Clinic(), Theme());
+        Assert.Equal("Segoe UI", doc.FontFamily.Source);
+    }
+
+    [StaFact]
+    public void A_configured_print_font_family_is_applied_to_the_document()
+    {
+        var theme = new DocumentTheme { Footer = "x", PrintFontFamily = "Georgia" };
+        var doc = FeeReceiptDocument.Build(Visit(), Clinic(), theme);
+
+        Assert.Equal("Georgia", doc.FontFamily.Source);
+    }
+
+    [StaFact]
+    public void A_print_font_size_delta_shifts_every_paragraphs_size_by_the_same_amount()
+    {
+        var plain = AllParagraphs(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()))
+            .Select(p => p.FontSize).OrderBy(s => s).ToList();
+        var bigger = AllParagraphs(FeeReceiptDocument.Build(Visit(), Clinic(), new DocumentTheme { Footer = "x", PrintFontSizeDelta = 3 }))
+            .Select(p => p.FontSize).OrderBy(s => s).ToList();
+
+        Assert.Equal(plain.Count, bigger.Count);
+        for (var i = 0; i < plain.Count; i++)
+            Assert.Equal(plain[i] + 3, bigger[i], precision: 3);
+    }
+
+    [StaFact]
+    public void This_applies_to_the_pharmacy_bill_and_diagnostic_bill_too()
+    {
+        var theme = new DocumentTheme { Footer = "x", PrintFontFamily = "Verdana", PrintFontSizeDelta = 2 };
+
+        var bill = BillPrinter.Build(Sale(), Pharmacy(), theme);
+        Assert.Equal("Verdana", bill.FontFamily.Source);
+
+        var diagnostic = DiagnosticBillPrinter.Build(DiagnosticBill(), Clinic(), theme);
+        Assert.Equal("Verdana", diagnostic.FontFamily.Source);
+    }
+
+    // ── Title font — the clinic/pharmacy name, separate from the print font ──
+
+    /// <summary>The clinic/pharmacy name is always the first Paragraph a
+    /// built document contains — the first block of the header, which is
+    /// itself the first thing every printer adds.</summary>
+    private static Paragraph TitleParagraph(FlowDocument doc) => AllParagraphs(doc).First();
+
+    [StaFact]
+    public void With_no_title_font_configured_the_name_inherits_the_print_font()
+    {
+        var theme = new DocumentTheme { Footer = "x", PrintFontFamily = "Georgia" };
+        var doc = FeeReceiptDocument.Build(Visit(), Clinic(), theme);
+
+        // Not set locally on the paragraph — it falls through to the
+        // document's own FontFamily, which ApplyPrintSettings already set.
+        Assert.Equal("Georgia", doc.FontFamily.Source);
+        Assert.True(TitleParagraph(doc).ReadLocalValue(TextElement.FontFamilyProperty) == DependencyProperty.UnsetValue);
+    }
+
+    [StaFact]
+    public void A_configured_title_font_is_applied_to_the_name_only()
+    {
+        var theme = new DocumentTheme { Footer = "x", PrintFontFamily = "Georgia", TitleFontFamily = "Playfair Display" };
+        var doc = FeeReceiptDocument.Build(Visit(), Clinic(), theme);
+
+        var title = TitleParagraph(doc);
+        Assert.Equal("Playfair Display", title.FontFamily.Source);
+
+        // Everything else keeps printing in the general print font — the
+        // title font is not a document-wide override.
+        var others = AllParagraphs(doc).Skip(1).ToList();
+        Assert.NotEmpty(others);
+        Assert.All(others, p => Assert.True(
+            p.ReadLocalValue(TextElement.FontFamilyProperty) == DependencyProperty.UnsetValue,
+            "A paragraph other than the title carries its own FontFamily; the title font would have leaked."));
+    }
+
+    [StaFact]
+    public void A_title_size_delta_stacks_on_top_of_the_general_print_size_delta_on_the_name_only()
+    {
+        var plainTitleSize = TitleParagraph(FeeReceiptDocument.Build(Visit(), Clinic(), Theme())).FontSize;
+
+        var theme = new DocumentTheme { Footer = "x", PrintFontSizeDelta = 2, TitleFontSizeDelta = 5 };
+        var doc = FeeReceiptDocument.Build(Visit(), Clinic(), theme);
+
+        // Both deltas landed on the name (+2 general, +5 title-only = +7).
+        Assert.Equal(plainTitleSize + 7, TitleParagraph(doc).FontSize, precision: 3);
+
+        // A body paragraph only got the general +2, not the title's own +5.
+        var bodyBefore = AllParagraphs(FeeReceiptDocument.Build(Visit(), Clinic(), Theme())).Skip(1).First().FontSize;
+        var bodyAfter = AllParagraphs(doc).Skip(1).First().FontSize;
+        Assert.Equal(bodyBefore + 2, bodyAfter, precision: 3);
+    }
+
+    // ── Drug licence number as its own labelled field ───────────────────────
+
+    [StaFact]
+    public void The_drug_licence_number_prints_as_its_own_labelled_field_not_folded_into_the_header()
+    {
+        var doc = BillPrinter.Build(Sale(), Pharmacy(), Theme());
+        var text = TextOf(doc);
+
+        // Not the old combined "D.L. No: …" line in the header text.
+        Assert.DoesNotContain("D.L. No:", text);
+
+        // Instead, its own label/value cell in the identity grid, same as Patient.
+        var cells = FirstIdentityRow(doc).Cells
+            .Concat(doc.Blocks.OfType<Table>().First().RowGroups.First().Rows.Skip(1).SelectMany(r => r.Cells))
+            .Select(IdentityCellText)
+            .ToList();
+
+        Assert.Contains(cells, c => c.Label == "D.L. No" && c.Value == "AP/21B/2024/1234");
+    }
 }

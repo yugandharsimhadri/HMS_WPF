@@ -6,14 +6,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <AssemblyName>TwinkleHMS</AssemblyName>
+    <AssemblyName>ShivayaanHMS</AssemblyName>
     <RootNamespace>Pharma.App</RootNamespace>
 
     <!-- Regenerate it with the IconGen tool under tools/IconGen. -->
     <ApplicationIcon>twinkle.ico</ApplicationIcon>
 
-    <Product>Twinkle Children's Hospital</Product>
-    <Company>Twinkle Children's Hospital</Company>
+    <Product>Sivaayaan HMS</Product>
+    <Company>Sivayaan Technologies</Company>
     <!--
         One field to bump, and it must be bumped before every publish.
 

@@ -6,6 +6,20 @@ public abstract class BaseEntity
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime? UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
+
+    /// <summary>Who created this row, when login is on. Null for everything
+    /// written before login existed, and null forever after too if login is
+    /// never switched on — that is a normal, permanent state, not a gap to
+    /// fill in. Not a foreign key on purpose: a plain column here avoids a
+    /// navigation property and a delete-behaviour decision on every one of
+    /// the twenty-odd entity types that inherit this, for a value that is
+    /// read back by a simple lookup wherever it is actually shown.</summary>
+    public Guid? CreatedByUserId { get; set; }
+
+    /// <summary>Who last saved this row — which, since this app deletes by
+    /// setting <see cref="IsDeleted"/> rather than removing the row, doubles
+    /// as "who deleted it" for anything not otherwise edited in between.</summary>
+    public Guid? UpdatedByUserId { get; set; }
 }
 
 // ── OPD ────────────────────────────────────────────────────────────────────
@@ -661,6 +675,33 @@ public class Counter : BaseEntity
     public string Name { get; set; } = string.Empty;
     public string Prefix { get; set; } = string.Empty;
     public int LastNumber { get; set; }
+}
+
+/// <summary>
+/// Who is sitting at this PC. Not a multi-user access system — this app is
+/// still one PC, one till — just an identity for the person currently using
+/// it, so what they do can be attributed to them.
+/// </summary>
+public class User : BaseEntity
+{
+    public string Username { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+
+    public string PasswordHash { get; set; } = string.Empty;
+    public string PasswordSalt { get; set; } = string.Empty;
+
+    public UserRole Role { get; set; } = UserRole.Pharmacy;
+    public bool IsActive { get; set; } = true;
+
+    /// <summary>Forces the change-password screen on next login — set on the
+    /// seeded Admin account, on every new user Admin creates, and again by
+    /// EnterpriseAdmin whenever it resets somebody's password.</summary>
+    public bool MustChangePassword { get; set; }
+
+    public DateTime? LastLoginOn { get; set; }
+
+    /// <summary>"Admin — Front Desk (Pharmacy)", for the recovery screen's user picker.</summary>
+    public string Display => $"{Username} — {DisplayName} ({Role})";
 }
 
 /// <summary>

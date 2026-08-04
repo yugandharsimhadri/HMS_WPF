@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pharma.Data;
@@ -74,7 +75,13 @@ public partial class MainViewModel : ObservableObject
     public string DeveloperUrl => AppInfo.DeveloperUrl;
     public string VersionLabel => AppInfo.VersionLabel;
 
+    /// <summary>Who is signed in, for the sidebar's "Logged in as" line. Null
+    /// — <see cref="CurrentUserService.IsSignedIn"/> false — whenever login
+    /// is switched off, which is unchanged from before login existed.</summary>
+    public CurrentUserService CurrentUser { get; }
+
     private readonly SettingsService _settingsService;
+    private readonly AuthService _auth;
 
     public MainViewModel(
         DashboardViewModel dashboard,
@@ -86,7 +93,9 @@ public partial class MainViewModel : ObservableObject
         ReportsViewModel reports,
         SettingsViewModel settings,
         DiagnosticsViewModel diagnostics,
-        SettingsService settingsService)
+        SettingsService settingsService,
+        CurrentUserService currentUser,
+        AuthService auth)
     {
         _dashboard = dashboard;
         _opd = opd;
@@ -98,6 +107,8 @@ public partial class MainViewModel : ObservableObject
         _settings = settings;
         _diagnostics = diagnostics;
         _settingsService = settingsService;
+        CurrentUser = currentUser;
+        _auth = auth;
 
         GoAsync("dashboard").Forget("Loading the first page");
         LoadDiagnosticsToggleAsync().Forget("Loading the Diagnostics module toggle");
@@ -173,6 +184,21 @@ public partial class MainViewModel : ObservableObject
     {
         if (Overlay is ConsultationViewModel consultation) consultation.CloseCommand.Execute(null);
         else Overlay = null;
+    }
+
+    /// <summary>
+    /// Reopens the login window to switch users. Cancelling it leaves the
+    /// current session exactly as it was — this is a front-desk convenience,
+    /// not a lockout, so backing out of it must not sign anyone out.
+    /// </summary>
+    [RelayCommand]
+    private void LogOut()
+    {
+        var window = new Views.LoginWindow(_auth, _settingsService, allowCancel: true)
+            { Owner = Application.Current.MainWindow };
+
+        if (window.ShowDialog() == true && window.LoggedInUser is { } user)
+            CurrentUser.SignIn(user);
     }
 
     private void OnPageChanged(object? sender, PropertyChangedEventArgs e)

@@ -53,7 +53,7 @@ public class AppFixture : IDisposable
 
     private static void KillStrays()
     {
-        foreach (var stray in Process.GetProcessesByName("TwinkleHMS"))
+        foreach (var stray in Process.GetProcessesByName("ShivayaanHMS"))
         {
             try
             {
@@ -71,7 +71,10 @@ public class AppFixture : IDisposable
     /// </summary>
     public static string ApplicationDirectory => Path.GetDirectoryName(FindExecutable())!;
 
-    private static string FindExecutable()
+    /// <summary>Public so a test that needs to launch (and relaunch) the
+    /// application itself, rather than through this fixture, does not have
+    /// to duplicate the lookup — see LoginFlowUiTests.</summary>
+    public static string FindExecutable()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "HMS_WPF.slnx")))
@@ -84,10 +87,10 @@ public class AppFixture : IDisposable
             ? "Release"
             : "Debug";
 
-        var exe = Path.Combine(dir.FullName, "src", "Pharma.App", "bin", configuration, "net10.0-windows", "TwinkleHMS.exe");
+        var exe = Path.Combine(dir.FullName, "src", "Pharma.App", "bin", configuration, "net10.0-windows", "ShivayaanHMS.exe");
 
         if (!File.Exists(exe))
-            throw new FileNotFoundException($"TwinkleHMS.exe not found. Build the solution first.\nLooked in: {exe}");
+            throw new FileNotFoundException($"ShivayaanHMS.exe not found. Build the solution first.\nLooked in: {exe}");
 
         return exe;
     }
@@ -99,6 +102,14 @@ public class AppFixture : IDisposable
 
     public AutomationElement Require(string automationId)
         => Retry.WhileNull(() => Find(automationId), TimeSpan.FromSeconds(10)).Result
+           ?? throw new InvalidOperationException($"No element with AutomationId '{automationId}'.");
+
+    /// <summary>Same lookup as <see cref="Require"/>, for a test managing its
+    /// own window rather than going through this fixture — see LoginFlowUiTests,
+    /// which needs a second, gated launch this fixture cannot represent.</summary>
+    public static AutomationElement WaitUntilFound(Window window, string automationId)
+        => Retry.WhileNull(() => window.FindFirstDescendant(cf => cf.ByAutomationId(automationId)),
+                            TimeSpan.FromSeconds(10)).Result
            ?? throw new InvalidOperationException($"No element with AutomationId '{automationId}'.");
 
     public Button Button(string automationId) => Require(automationId).AsButton();
@@ -214,8 +225,19 @@ public class AppFixture : IDisposable
         var value = cell.Value ?? "";
         if (value.Length > 0 && !value.StartsWith("Item:", StringComparison.Ordinal)) return value;
 
-        return cell.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
-                   .Select(t => t.Name ?? "")
+        var text = cell.FindAllDescendants(cf => cf.ByControlType(ControlType.Text))
+                        .Select(t => t.Name ?? "")
+                        .FirstOrDefault(t => t.Length > 0);
+
+        if (text is not null) return text;
+
+        // A cell whose template is a Button rather than plain text — the
+        // pharmacy counter's QTY column is one: clicking the number opens
+        // the edit-quantity popup instead of the cell being directly
+        // editable. A Button's accessible name is its own content, so this
+        // reads the same as if the number had been plain text.
+        return cell.FindAllDescendants(cf => cf.ByControlType(ControlType.Button))
+                   .Select(b => b.Name ?? "")
                    .FirstOrDefault(t => t.Length > 0) ?? "";
     }
 

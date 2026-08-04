@@ -12,7 +12,7 @@ namespace Pharma.Data;
 /// thing worth knowing when a clinic reports something odd. So the same
 /// environment variable the application honours points the tools at a file:
 ///
-///     $env:CLINICDESK_DB = "C:\HMS\DB\twinkle.db"
+///     $env:CLINICDESK_DB = "C:\HMS\DB\ShivayaanHMS.db"
 ///     dotnet ef migrations list --project src\Pharma.Data --startup-project src\Pharma.Data
 ///
 /// Point it at a copy of their database, never the original. `migrations list`
