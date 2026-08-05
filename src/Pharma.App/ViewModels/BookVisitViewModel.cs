@@ -138,6 +138,7 @@ public partial class BookVisitViewModel : ObservableObject
                 Warn(Matches.Count == 1
                     ? $"Select {Matches[0].Name} from the list, or choose + New patient."
                     : $"{Matches.Count} people match that. Select which one, or choose + New patient.");
+                log.Skip("ambiguous patient match; none selected");
                 return;
             }
 
@@ -147,6 +148,7 @@ public partial class BookVisitViewModel : ObservableObject
                 {
                     NewNameMissing = true;
                     Warn("Enter the patient's name, or pick an existing patient from the list.");
+                    log.Skip("new patient name missing");
                     return;
                 }
 
@@ -165,6 +167,7 @@ public partial class BookVisitViewModel : ObservableObject
             if (SelectedDoctor is null)
             {
                 Warn("Add a doctor under Settings before booking a visit.");
+                log.Skip("no doctor selected");
                 return;
             }
 
@@ -177,11 +180,13 @@ public partial class BookVisitViewModel : ObservableObject
                 Fee);
 
             Outcome = $"Token {visit.TokenNo} booked for {patient.Name}.";
+            log.Ok($"token={visit.TokenNo} patient={patient.Name}");
             RequestClose?.Invoke();
         }
         catch (Exception ex)
         {
             Warn(ex.Message);
+            log.Skip($"refused: {ex.GetType().Name}: {ex.Message}");
         }
     }
 

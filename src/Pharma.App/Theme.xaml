@@ -512,9 +512,24 @@
                                           ContentTemplate="{Binding ItemTemplate, RelativeSource={RelativeSource TemplatedParent}}"
                                           ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"/>
 
-                        <!-- Only shown when IsEditable is set; the prescription grid uses it. -->
+                        <!--
+                            Only shown when IsEditable is set — the print/title font
+                            pickers use it, to type a font not in the list as well as
+                            pick one from it.
+
+                            Right margin stops short of the arrow (26px, versus 1px on
+                            the other three sides) so the arrow's own hit-test area
+                            stays with the ToggleButton underneath. At a uniform
+                            Margin="1" this TextBox — transparent, but still
+                            hit-testable, and drawn after Toggle so it sits on top —
+                            covered the arrow too, and a mouse click anywhere on the
+                            box just focused the text instead of ever opening the
+                            dropdown. Automation still opened it directly through the
+                            ExpandCollapse pattern, which is why this passed every UI
+                            test while never actually opening for a real click.
+                        -->
                         <TextBox x:Name="PART_EditableTextBox"
-                                 Margin="1" Padding="9,0,28,0"
+                                 Margin="1,1,26,1" Padding="9,0,2,0"
                                  Background="Transparent" BorderThickness="0"
                                  VerticalContentAlignment="Center"
                                  Visibility="Collapsed"

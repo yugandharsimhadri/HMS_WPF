@@ -1,3 +1,5 @@
+using FlaUI.Core.AutomationElements;
+
 namespace Pharma.UiTests;
 
 /// <summary>
@@ -86,5 +88,80 @@ public class SettingsUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.SelectTab("SettingsTabs", "Reports");
 
         AppFixture.WaitUntil(() => app.TextBox("DocumentFooter").Text == footer, "the footer to reload");
+    }
+
+    /// <summary>
+    /// Regression guard for a real bug: the print/title font pickers are
+    /// editable ComboBoxes, and their shared control template had the
+    /// editable textbox's clickable area covering the dropdown arrow too —
+    /// a genuine mouse click anywhere on the box, arrow included, just
+    /// focused the text and never opened the list. It only went unnoticed
+    /// because reading a FlaUI ComboBox's Items expands the dropdown
+    /// through automation regardless of whether a click would, which is
+    /// exactly the gap this closes: a real click, at the arrow's own
+    /// screen point, checked without ever touching Items first.
+    /// </summary>
+    [StaFact]
+    public void The_print_font_pickers_dropdown_actually_opens_on_a_real_click()
+    {
+        app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "Reports");
+
+        var element = app.Find("PrintFontFamily")!;
+        var bounds = element.BoundingRectangle;
+
+        var stateBefore = element.AsComboBox().Patterns.ExpandCollapse.Pattern.ExpandCollapseState.Value;
+        Assert.Equal(FlaUI.Core.Definitions.ExpandCollapseState.Collapsed, stateBefore);
+
+        app.MainWindow.Focus();
+        var arrowPoint = new System.Drawing.Point((int)bounds.Right - 14, (int)bounds.Y + (int)(bounds.Height / 2));
+        FlaUI.Core.Input.Mouse.Click(arrowPoint);
+
+        AppFixture.WaitUntil(
+            () => element.AsComboBox().Patterns.ExpandCollapse.Pattern.ExpandCollapseState.Value
+                  == FlaUI.Core.Definitions.ExpandCollapseState.Expanded,
+            "the dropdown to open from a real click on the arrow");
+    }
+
+    [StaFact]
+    public void The_print_font_picker_offers_more_than_a_couple_of_system_fonts()
+    {
+        app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "Reports");
+
+        // Reading Items is what a picker is actually for — Arial and Segoe UI
+        // ship on every Windows PC this runs on, so their presence is what
+        // proves this is really system fonts and not an empty or tiny list.
+        var fonts = app.ComboBox("PrintFontFamily").Items.Select(i => i.Text).ToList();
+
+        Assert.True(fonts.Count > 20, $"Only {fonts.Count} font(s) offered — expected the PC's real font list.");
+        Assert.Contains(fonts, f => f == "Arial");
+        Assert.Contains(fonts, f => f == "Segoe UI");
+    }
+
+    [Fact]
+    public void Print_and_title_font_choices_persist_across_screens()
+    {
+        app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "Reports");
+
+        app.Type("PrintFontFamily", "Georgia");
+        app.Type("PrintFontSizeDelta", "2");
+        app.Type("TitleFontFamily", "Calibri");
+        app.Type("TitleFontSizeDelta", "4");
+        app.Click("DocumentThemeSave");
+
+        AppFixture.WaitUntil(
+            () => app.TextOf("SettingsStatus").Contains("saved", StringComparison.OrdinalIgnoreCase),
+            "the font choices to save");
+
+        app.Navigate("NavOpd", "OPD");
+        app.Navigate("NavSettings", "Settings");
+        app.SelectTab("SettingsTabs", "Reports");
+
+        AppFixture.WaitUntil(() => app.TextBox("PrintFontFamily").Text == "Georgia", "the print font to reload");
+        Assert.Equal("2", app.TextBox("PrintFontSizeDelta").Text);
+        Assert.Equal("Calibri", app.TextBox("TitleFontFamily").Text);
+        Assert.Equal("4", app.TextBox("TitleFontSizeDelta").Text);
     }
 }
