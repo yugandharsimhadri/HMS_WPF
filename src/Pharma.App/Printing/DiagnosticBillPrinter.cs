@@ -59,7 +59,8 @@ public static class DiagnosticBillPrinter
         doc.Blocks.Add(Text($"AMOUNT PAYABLE   ₹{bill.FinalAmount:0.00}", 13, FontWeights.Bold,
                             align: TextAlignment.Right, topMargin: 1));
         doc.Blocks.Add(Text($"Paid by {bill.PaymentMode}", 8, brush: Muted, align: TextAlignment.Right));
-        doc.Blocks.Add(Text(FeeReceiptDocument.InWords(bill.FinalAmount), 8, brush: Muted, topMargin: 3));
+        doc.Blocks.Add(Text(FeeReceiptDocument.InWords(bill.FinalAmount), 8, brush: Muted,
+                            align: TextAlignment.Right, topMargin: 3));
 
         if (!string.IsNullOrWhiteSpace(bill.Remarks))
             doc.Blocks.Add(Text($"Remarks: {bill.Remarks}", 8, brush: Muted, topMargin: 3));

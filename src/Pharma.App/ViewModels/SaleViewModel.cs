@@ -768,8 +768,12 @@ public partial class SaleViewModel(PharmacyService pharmacy, OpdService opd, Set
         TransactionNo = "";
         SelectedProduct = null;
         SelectedVisit = null;
-        Matches.Clear();
         LoadWarning = "";
+
+        // Search was already "" from adding the last line, so setting it again
+        // above does not raise a change and re-run the search on its own — call
+        // it directly, or the medicine list stays empty until the page reloads.
+        FindAsync().Forget("Refreshing the medicine list for the next bill");
 
         Recalculate();
     }

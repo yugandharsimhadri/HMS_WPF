@@ -142,7 +142,8 @@ public static class BillPrinter
         doc.Blocks.Add(Text($"NET PAYABLE   ₹{sale.NetAmount:0.00}", 13, FontWeights.Bold,
                             align: TextAlignment.Right, topMargin: 1));
         doc.Blocks.Add(Text($"Paid by {sale.PaymentMode}", 8, brush: Muted, align: TextAlignment.Right));
-        doc.Blocks.Add(Text(FeeReceiptDocument.InWords(sale.NetAmount), 8, brush: Muted, topMargin: 3));
+        doc.Blocks.Add(Text(FeeReceiptDocument.InWords(sale.NetAmount), 8, brush: Muted,
+                            align: TextAlignment.Right, topMargin: 3));
 
         doc.Blocks.Add(Rule());
 

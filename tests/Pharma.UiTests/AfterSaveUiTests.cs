@@ -1,3 +1,6 @@
+using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Tools;
+
 namespace Pharma.UiTests;
 
 /// <summary>
@@ -183,6 +186,45 @@ public class AfterSaveUiTests(AppFixture app) : IClassFixture<AppFixture>
 
         app.Click("SaleClear");
         AppFixture.WaitUntil(() => app.TextBox("SaleSearch").Text == "", "the counter search to empty");
+    }
+
+    /// <summary>
+    /// The bug itself: NewBill reset Search to "" to trigger a fresh catalogue
+    /// search, but Search was already "" from adding the last line — no change,
+    /// so no search ran, and the medicine list stayed empty until the operator
+    /// left the counter and came back.
+    /// </summary>
+    [Fact]
+    public void Saving_and_printing_leaves_the_medicine_list_populated()
+    {
+        var suffix = DateTime.Now.ToString("HHmmssfff");
+        var name = GivenAStockedMedicine(suffix);
+
+        app.Navigate("NavSale", "Pharmacy counter");
+        app.Click("SaleClear");
+        AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 0, "an empty bill");
+
+        app.Type("SaleSearch", name);
+        AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length == 1, "the medicine");
+        app.ListBox("SaleMatches").Items[0].Select();
+
+        app.Type("SaleQuantity", "1");
+        app.Click("SaleAddLine");
+        AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 1, "the bill line");
+
+        app.Click("SaveAndPrint");
+
+        var preview = Retry.WhileNull(
+            () => app.MainWindow.ModalWindows.FirstOrDefault(
+                w => w.Title.StartsWith("Print preview", StringComparison.OrdinalIgnoreCase)),
+            TimeSpan.FromSeconds(15)).Result;
+        Assert.NotNull(preview);
+        preview!.FindFirstDescendant(cf => cf.ByAutomationId("PreviewClose"))?.AsButton().Invoke();
+        AppFixture.WaitUntil(() => app.MainWindow.ModalWindows.Length == 0, "the preview to close");
+
+        AppFixture.WaitUntil(() => app.Grid("SaleLinesGrid").RowCount == 0, "the bill to reset for the next customer");
+
+        AppFixture.WaitUntil(() => app.ListBox("SaleMatches").Items.Length > 0, "the medicine list to repopulate");
     }
 
     // ── Medicines ──────────────────────────────────────────────────────────

@@ -66,7 +66,8 @@ public static class FeeReceiptDocument
         doc.Blocks.Add(Text($"Paid by {visit.FeePaymentMode?.ToString() ?? "Cash"}",
                             8 + SizeDelta, brush: Muted, align: TextAlignment.Right));
 
-        doc.Blocks.Add(Text(InWords(visit.Fee), 8 + SizeDelta, brush: Muted, topMargin: 4));
+        doc.Blocks.Add(Text(InWords(visit.Fee), 8 + SizeDelta, brush: Muted,
+                            align: TextAlignment.Right, topMargin: 4));
 
         if (visit.FollowUpOn is { } follow)
             doc.Blocks.Add(Text($"Review on {follow:dd MMM yyyy}", 9 + SizeDelta, FontWeights.SemiBold, topMargin: 5));
