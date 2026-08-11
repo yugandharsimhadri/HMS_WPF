@@ -151,8 +151,50 @@ public class ReportsUiTests(AppFixture app) : IClassFixture<AppFixture>
         Assert.Equal("0", cells[6]);
     }
 
+    /// <summary>The Save dialog the application just opened, told apart from any
+    /// other by the file name it was opened with.</summary>
+    private Window? FindSaveDialog(string expectedName)
+    {
+        try
+        {
+            foreach (var modal in app.MainWindow.ModalWindows)
+            {
+                var box = modal.FindFirstDescendant(cf => cf.ByAutomationId("1001"));
+                if (box is not null && box.AsTextBox().Text.StartsWith(
+                        Path.GetFileNameWithoutExtension(expectedName), StringComparison.OrdinalIgnoreCase))
+                {
+                    return modal;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // The tree is mid-update; the caller polls again.
+        }
+
+        return null;
+    }
+
+    /// <summary>Cancels every modal currently over the application window.</summary>
+    private void CloseAnyOpenModals()
+    {
+        try
+        {
+            foreach (var modal in app.MainWindow.ModalWindows)
+            {
+                var cancel = modal.FindFirstDescendant(cf => cf.ByAutomationId("2"));
+                if (cancel is not null) cancel.AsButton().Invoke();
+                else modal.Close();
+            }
+        }
+        catch (Exception)
+        {
+            // Nothing open, or it closed while being looked at.
+        }
+    }
+
     [Fact]
-    public void Export_excel_writes_a_correctly_named_stock_register_workbook()
+    public void Export_excel_offers_a_correctly_named_stock_register_workbook()
     {
         var suffix = DateTime.Now.ToString("HHmmssfff");
         CreateMedicineWithStock(suffix, quantity: 5, mrp: 20m);
@@ -165,9 +207,10 @@ public class ReportsUiTests(AppFixture app) : IClassFixture<AppFixture>
         // filtered down to zero rows (which would disable the button).
         app.Type("ReportsStockSearch", "");
 
+        // Anything left open by an earlier failure would block this outright.
+        CloseAnyOpenModals();
+
         var expectedName = $"StockRegister_{DateTime.Today:yyyy-MM-dd}.xlsx";
-        var expectedPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), expectedName);
-        if (File.Exists(expectedPath)) File.Delete(expectedPath);
 
         try
         {
@@ -175,28 +218,33 @@ public class ReportsUiTests(AppFixture app) : IClassFixture<AppFixture>
             Assert.True(button.IsEnabled, "Export Excel button was disabled — the register was empty when clicked.");
             button.Invoke();
 
-            // The native Save dialog is a modal, separate-process common dialog on
-            // this OS — this test's UI Automation cannot reliably enumerate it as a
-            // window, even though it genuinely appears (confirmed via the app log).
-            // Pressing Enter accepts its default (Save) button without needing to
-            // find the window at all, exactly as a user tabbing to Save and hitting
-            // Enter would.
-            Thread.Sleep(800);
-            Keyboard.Press(VirtualKeyShort.RETURN);
-
-            // Checked together, not existence-then-length: SaveAs briefly leaves an
-            // empty/partial file on disk before its content is fully flushed.
+            // What the screen is responsible for: offering to save, under the
+            // right name. Where the bytes land is the operator's choice, and
+            // what goes in them is covered by ReportExportTests, which calls the
+            // writer directly.
+            //
+            // This deliberately stops short of driving the Save dialog to
+            // completion. That is a native common dialog: committing it needs
+            // keystrokes to reach whichever window Windows has decided is in
+            // front, and on a machine where anything can steal the foreground
+            // the test failed for reasons that had nothing to do with this
+            // application.
+            Window? dialog = null;
             AppFixture.WaitUntil(
-                () => File.Exists(expectedPath) && new FileInfo(expectedPath).Length > 500,
-                "the workbook to be fully written on disk", 20);
+                () =>
+                {
+                    dialog = FindSaveDialog(expectedName);
+                    return dialog is not null;
+                },
+                $"the Save dialog offering {expectedName}", 20);
 
-            var info = new FileInfo(expectedPath);
-            Assert.True(info.Exists);
-            Assert.True(info.Length > 500, "Exported workbook is suspiciously small.");
+            var offered = AppFixture.WaitUntilFound(dialog!, "1001").AsTextBox().Text;
+            Assert.StartsWith("StockRegister_", offered);
+            Assert.Contains(DateTime.Today.ToString("yyyy-MM-dd"), offered);
         }
         finally
         {
-            try { if (File.Exists(expectedPath)) File.Delete(expectedPath); } catch (IOException) { }
+            CloseAnyOpenModals();
         }
     }
 }

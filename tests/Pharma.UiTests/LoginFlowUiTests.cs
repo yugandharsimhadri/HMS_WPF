@@ -76,14 +76,24 @@ public class LoginFlowUiTests : IDisposable
     /// id captured before the login window closed (which one Windows
     /// considers "the" main window of the process changes under FlaUI in
     /// ways that were not reliable across that transition here).</summary>
-    private Window? FindShellWindow()
+    /// <param name="alsoShowing">An automation id the window must also carry.
+    /// Searching the whole desktop can otherwise match a shell belonging to
+    /// another test's application — one where login was never switched on, so
+    /// it has no signed-in user in the sidebar and never will. Requiring the
+    /// element actually being asserted on picks the right window and waits out
+    /// the moment where the shell has been created but has not yet drawn its
+    /// sidebar.</param>
+    private Window? FindShellWindow(string? alsoShowing = null)
     {
         try
         {
             return _automation!.GetDesktop()
                 .FindAllChildren(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Window))
                 .Select(w => w.AsWindow())
-                .FirstOrDefault(w => w.FindFirstDescendant(cf => cf.ByAutomationId("PageTitle")) is not null);
+                .FirstOrDefault(w =>
+                    w.FindFirstDescendant(cf => cf.ByAutomationId("PageTitle")) is not null
+                    && (alsoShowing is null
+                        || w.FindFirstDescendant(cf => cf.ByAutomationId(alsoShowing)) is not null));
         }
         catch (Exception)
         {
@@ -150,12 +160,16 @@ public class LoginFlowUiTests : IDisposable
         // The login window closes and MainWindow opens in its place — a new
         // top-level window, not something found by re-querying the (now
         // closed) login window's own element tree.
+        // Waited for by the thing being asserted on, not merely by the window
+        // existing: the shell is reachable through UI Automation a moment
+        // before its sidebar is, and reading the label in that gap returned
+        // nothing at all rather than the wrong name.
         Window? shell = null;
         AppFixture.WaitUntil(() =>
         {
-            shell = FindShellWindow();
+            shell = FindShellWindow(alsoShowing: "LoggedInAs");
             return shell is not null;
-        }, "the dashboard after signing in");
+        }, "the dashboard, showing who signed in");
 
         var loggedInAs = shell!.FindFirstDescendant(cf => cf.ByAutomationId("LoggedInAs"))?.Name ?? "";
         Assert.Contains("Admin", loggedInAs);
