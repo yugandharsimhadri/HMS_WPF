@@ -25,7 +25,7 @@ public static class FeeReceiptDocument
 
         // Date and time sit side by side rather than one under the other,
         // in row 1 with the receipt no; patient identity in row 2; doctor,
-        // speciality and the token/visit reference in row 3.
+        // speciality and the visit reference in row 3.
         var when = visit.FeePaidOn ?? visit.ScheduledOn;
 
         var grid = NewTable(1, 1, 1);
@@ -38,10 +38,21 @@ public static class FeeReceiptDocument
             ("Patient", visit.Patient.Name),
             ("Patient No", visit.Patient.PatientNo),
             ("Age / Sex", $"{visit.Patient.Age} / {visit.Patient.Gender}")));
+        // The registration number belongs beside the name of the doctor who saw
+        // the child; "Reg. No:" is worded as the prescription words it, so the
+        // two documents a parent leaves with read the same way.
+        //
+        // The token is not printed. It is how the desk calls the next patient in
+        // on the day, and it means nothing on a receipt kept for months — the
+        // visit number is the reference to quote.
+        var doctor = string.IsNullOrWhiteSpace(visit.Doctor.RegistrationNo)
+            ? visit.Doctor.Name
+            : $"{visit.Doctor.Name}  ·  Reg. No: {visit.Doctor.RegistrationNo}";
+
         group.Rows.Add(IdentityRow(SizeDelta,
-            ("Doctor", visit.Doctor.Name),
+            ("Doctor", doctor),
             ("Speciality", visit.Doctor.Speciality ?? ""),
-            ("Token / Visit", $"{visit.TokenNo} · {visit.VisitNo}")));
+            ("Visit", visit.VisitNo)));
         grid.RowGroups.Add(group);
         doc.Blocks.Add(grid);
         doc.Blocks.Add(Rule());

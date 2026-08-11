@@ -70,6 +70,38 @@ public class PrintDocumentTests
     }
 
     [StaFact]
+    public void A_fee_receipt_names_the_doctor_with_their_registration_number()
+    {
+        var text = TextOf(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
+
+        Assert.Contains("Dr. A. Kumar", text);
+        Assert.Contains("Reg. No: REG-4471", text);
+    }
+
+    [StaFact]
+    public void A_fee_receipt_quotes_the_visit_number_and_not_the_token()
+    {
+        // The token calls the next patient in on the day and means nothing on a
+        // receipt kept for months. The visit number is the reference to quote.
+        var text = TextOf(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
+
+        Assert.Contains("V00007", text);
+        Assert.DoesNotContain("Token", text);
+    }
+
+    [StaFact]
+    public void A_fee_receipt_still_prints_when_the_doctor_has_no_registration_number()
+    {
+        var visit = Visit();
+        visit.Doctor.RegistrationNo = null;
+
+        var text = TextOf(FeeReceiptDocument.Build(visit, Clinic(), Theme()));
+
+        Assert.Contains("Dr. A. Kumar", text);
+        Assert.DoesNotContain("Reg. No:", text);
+    }
+
+    [StaFact]
     public void A_reprinted_receipt_is_marked_duplicate()
     {
         Assert.Contains("DUPLICATE", TextOf(FeeReceiptDocument.Build(Visit(), Clinic(), Theme(), isReprint: true)));
