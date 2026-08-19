@@ -42,6 +42,13 @@ dotnet test tests/Pharma.UiTests --filter ScreenshotCapture
 16. [What the system will and will not do](#16-what-the-system-will-and-will-not-do)
 17. [When something goes wrong](#17-when-something-goes-wrong)
 
+**Optional specialties** — all switched on from Settings → Features
+18. [The Dentist screen](#18-the-dentist-screen)
+19. [Appointments](#19-appointments)
+20. [Pediatrics](#20-pediatrics)
+21. [Pathology Lab](#21-pathology-lab)
+22. [General Master](#22-general-master) — the shared configuration behind Pediatrics and Dentist
+
 **[Common tasks, step by step](#common-tasks-step-by-step)** — the short version of
 everything above. Start here if you just want to get through a day.
 
@@ -589,13 +596,48 @@ bill.
 
 ## Features
 
-Optional modules — off by default, and off means gone from the sidebar and
-everywhere else, not just hidden.
+Which parts of the software this clinic actually uses. A module that is off
+stays out of the sidebar, Reports and everywhere else until it is switched
+on here — not just hidden. **At least one module has to stay on.**
 
-| Control | What it does |
-|---|---|
-| **Diagnostics — lab test billing** | Adds **Diagnostics** to the sidebar: a test master and diagnostic billing, for clinics that run their own lab tests — [section 11](#11-diagnostics) |
-| **Save features** | Applies immediately. The nav button appears or disappears without a restart |
+![Settings — Features, explained](images/settings-features-annotated.png)
+
+| | Control | What it does |
+|---|---|---|
+| 1 | **OPD** | The walk-in queue, consultation, prescription and fee receipt. On by default — a dentist- or pediatrician-only clinic is the one that turns this off |
+| 2 | **Appointments** | Adds **Appointments**: book ahead, check in against today's list, cancel or reschedule, and reminders — [section 19](#19-appointments) |
+| 3 | **Pediatrics** | Adds **Pediatrics**: vaccine master, vaccination and growth history, procedure billing — [section 20](#20-pediatrics) |
+| 4 | **Dentist** | Adds **Dentist**: cases billed and paid across however many sittings they take — [section 18](#18-the-dentist-screen) |
+| 5 | **Pathology Lab** | Adds **Pathology Lab**: analyte and report masters with reference ranges, orders, result entry — [section 21](#21-pathology-lab) |
+| 6 | **Save features** | Applies immediately. Every nav button appears or disappears without a restart |
+
+Not pictured above: **Pharmacy** (counter sale, medicines, inventory — on by
+default, same reason as OPD) and **Diagnostics — lab test billing** (adds
+**Diagnostics**: a test master and diagnostic billing — [section 11](#11-diagnostics)),
+both further up the same list.
+
+Pediatrics and Dentist share a **Vaccine Master** and a **Procedure Master**
+— see [General Master](#22-general-master) — rather than each keeping its
+own separate copy.
+
+## Security
+
+Off by default. Switching **Require sign-in** on asks everyone to sign in
+the next time the application is started, and records who did what against
+every bill, prescription and record from then on. The default **Admin**
+account can always sign in, whatever else here says.
+
+![Settings — Security, explained](images/settings-security-annotated.png)
+
+| | Control | What it does |
+|---|---|---|
+| 1 | **Require sign-in** | Off by default — every user is treated as one shared front desk until this is on |
+| 2 | **+ New user** | Admin creates the rest — Doctor, Pharmacy and Diagnosis accounts, each role seeing only its own part of the sidebar |
+
+A new user is asked to change their password on first sign-in. Signing in
+adds a **logged in as** name and a **Log out** button to the bottom of the
+sidebar; signing out returns to the sign-in screen without closing the
+application.
 
 ---
 
@@ -1330,9 +1372,10 @@ Patient no, name, phone, age, sex and allergies, across the whole window. Click 
 row to select it — the history underneath fills in with that patient's visits and
 bills.
 
-Along the top: **Search**, **Clear**, **Edit**, **New diagnostic bill** (only
-once that module is on — jumps straight to Diagnostics with this patient
-already chosen) and **+ New patient**.
+Along the top: **Search**, **Clear**, **Edit**, **New vaccination** and
+**New diagnostic bill** (each shown only once its own module is on —
+jumping straight to Pediatrics or Diagnostics with this patient already
+chosen), and **+ New patient**.
 
 ## The patient form
 
@@ -1382,6 +1425,12 @@ number. Select one, then:
 **Diagnostics history** — every diagnostic bill for this patient, with its
 status and **Print bill**. Only shown once that module is on.
 
+**Vaccination history** and **Growth chart** — every dose given and every
+measurement recorded for this child on [Pediatrics](#20-pediatrics), most
+recent included. Both shown only once that module is on.
+
+![Vaccination history, on a patient's own record](images/patients-vaccination-history.png)
+
 > This is where you go when someone returns weeks later having lost a receipt.
 
 ---
@@ -1399,9 +1448,12 @@ collected, and OPD visits.
 | **GST summary** | Taxable value, CGST and SGST grouped by rate — what a return needs |
 | **OPD register** | Every visit, diagnosis, fee, and whether it was paid |
 | **Expiring soon** | Batches within 90 days of expiry. Return these to the distributor |
-| **Low stock** | Anything at or below its reorder level |
+| **Part packs** | Opened strips with less than a full pack left — sell these first, or write them off deliberately under Inventory → Correct the stock count |
 | **Stock to reconcile** | Everything put on the shelf at the counter with no supplier bill behind it. See below |
-| **Schedule H1 register** | Statutory record of H1 sales. **Keep for three years** |
+| **Low stock** | Anything at or below its reorder level |
+| **Stock Register** | Every batch on hand, searchable, with running totals for products, batches, units, cost value and MRP value |
+| **Schedule H1 register** | Statutory record of H1 sales, by date range, with a running total. **Keep for three years** |
+| **Diagnostics** | Today's diagnostic bills, with **Reprint selected bill**. Only shown once that module is on |
 
 ## Stock to reconcile
 
@@ -1710,3 +1762,285 @@ The GST arithmetic and the invoice layout are correct for a retail counter, but
 this is not a certified e-invoicing integration. Have a CA review the GST summary
 before it feeds a return, and confirm register formats with your local drug
 inspector.
+
+---
+
+# 18. The Dentist screen
+
+Optional — off by default, same as Diagnostics. Switched on from **Settings
+→ Features**, and once on it stays on; the nav button appears immediately,
+no restart needed. The patient panel sits above three tabs — **Cases**,
+**Treatment**, **Payments** — one task per tab, so nothing about sittings,
+replacements or payments is on screen while you are simply opening a case.
+
+## Cases
+
+Pick a patient above, then open a case against a procedure or a package.
+
+![Dentist — Cases, explained](images/dentist-cases-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **This patient's cases** | Every case on record for them. Select one to see it below |
+| 2 | **Procedure** | What the case is opened against — or **or Package** below it instead, never both |
+| 3 | **Mark completed** | Marks the selected case done. A later payment is still accepted — see **Cancel case** beside it for one that should not have been opened at all |
+| 4 | **Tooth** | FDI or Universal notation. Optional |
+| 5 | **Open case** | Opens the case at the procedure's own price — snapshotted, so a later master price change never moves it |
+
+Selecting a case shows its total, paid and balance, and a note pointing at
+the two tabs where the actual work happens — nothing about a sitting,
+replacement or payment can be entered from here.
+
+## Treatment
+
+Sittings — what was done, and any anesthesia that day — and replacements —
+crowns, bridges, dentures, implants — against whichever case is selected on
+Cases.
+
+![Dentist — Treatment, explained](images/dentist-treatment-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Balance** | What is still owed, next to the total and what has already been paid |
+| 2 | **Case title** | Which case this is, and its status — the same strip repeats on Payments, so it is never lost switching tabs |
+| 3 | **Add replacement** | Adds the picked item at its own unit cost × quantity |
+| 4 | **Add sitting** | Logs the visit; the form clears itself once added, ready for the next one. Picking an anesthesia type fills in its default cost, which can still be changed |
+
+**Switch case ↗**, on the right of the strip, jumps straight back to Cases —
+for picking a different one without losing this one's progress, or simply
+for a look at the full case list again.
+
+## Payments
+
+Record a payment against the same case, and see every payment already on
+it. Unlike the pharmacy counter, a dental case is not necessarily settled in
+one visit — a partial payment is normal, and the balance carries to the next
+one.
+
+![Dentist — Payments, explained](images/dentist-payments-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Amount** | How much is being paid right now — need not be the full balance |
+| 2 | **Payment mode** | Cash, UPI or card |
+| 3 | **Record & print receipt** | Records the payment and opens a receipt for it. **Record without printing** does the same without opening the preview |
+| 4 | **Payment history** | Every payment against this case, most recent included |
+
+> ### Why a strip, not the whole detail panel
+>
+> Total, paid, balance, title and status used to sit in the middle of one
+> crowded screen alongside sittings, replacements and payments, all visible
+> at once whether or not they were being used. Splitting those onto their
+> own tabs meant the case itself needed a way to stay in view without
+> repeating the Cases tab's full card — the strip is exactly that: enough to
+> know which case and how much is owed, nothing more, wherever it is
+> needed.
+
+The four masters this screen bills against — **Procedures**, **Dental
+Replacements**, **Anesthesia Types** and **Dental Packages** — live on the
+shared **General Master** screen, its own nav entry, alongside Pediatrics'
+Vaccine Master and the Procedure Master both specialties draw from.
+
+---
+
+# 19. Appointments
+
+Optional — off by default, same as Diagnostics. Switched on from **Settings
+→ Features**; the nav button appears immediately, no restart needed. Three
+tabs — **Today's appointments**, **Book appointment**, **Reminders**.
+
+## Book appointment
+
+Pick a patient above the form the same way as everywhere else — search by
+name or phone, or **+ New patient** for someone not yet registered.
+
+![Appointments — Book appointment, explained](images/appointments-book-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Date** | yyyy-MM-dd. Defaults to tomorrow |
+| 2 | **Doctor** | Every appointment is booked against one doctor |
+| 3 | **Module** | Which module the visit is for — General (OPD), Pediatrics, Dentist or Pathology Lab. Only modules actually switched on are offered |
+| 4 | **Book & print** | Books it and opens a printable slip. **Book without printing** skips the preview |
+
+## Today's appointments
+
+![Appointments — Today's appointments, explained](images/appointments-today-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Day** | Any day, not just today — pick one to see its own list |
+| 2 | **The list** | Everyone booked for the chosen day, across every module |
+| 3 | **Check in** | Converts the appointment into a real OPD visit and hands it a token — wired up for the General module only today. A Dentist or Pathology Lab appointment is still tracked here, but is checked in from its own screen |
+| 4 | **Cancel** | A reason is required — kept against the appointment, not just a silent removal |
+| 5 | **Reschedule** | Moves it to a new date and time without cancelling and rebooking |
+
+## Reminders
+
+![Appointments — Reminders, explained](images/appointments-reminders-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Due within (days)** | How many days out counts as due — editable, not limited to the presets |
+| 2 | **The list** | Follow-ups and next-dose dates due within that window, across every module |
+
+**Mark reminded** records that the desk actually followed up — it does not
+send anything itself. WhatsApp and email delivery are not built yet; this
+list is for the desk to work through by phone.
+
+---
+
+# 20. Pediatrics
+
+Optional — off by default, same as Diagnostics. Switched on from **Settings
+→ Features**; the nav button appears immediately, no restart needed. The
+patient panel sits above three tabs — **Growth**, **Care**, **Immunization**
+— one task per tab.
+
+## Growth
+
+![Pediatrics — Growth, explained](images/pediatrics-growth-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **+ Record growth** | Logs one measurement — weight, height, head circumference |
+| 2 | **Chart** | Switches which of the three the chart below plots, against an approximate reference line — not a percentile chart |
+| 3 | **History** | Every measurement on record for this child, most recent included |
+
+## Care
+
+Procedure billing and vaccination, landing on the same running bill.
+
+![Pediatrics — Care, explained](images/pediatrics-care-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **+ Add procedure** | Bills a procedure from the shared Procedure Master |
+| 2 | **+ Record vaccination** | Gives a dose — vaccine type from Vaccine Master, brand and price from Pharmacy stock, never typed |
+| 3 | **Bill items** | The running bill — procedures and vaccine doses together |
+
+**Previous vaccination history**, further down the same tab, lists doses
+already on record — separate from what is still sitting on the bill above
+— with its own **Print** button for a vaccination certificate and a
+**Clear patient** for moving straight to the next child.
+
+> ### A dose is not "given" until the bill is saved
+>
+> Recording a dose here only adds it to the running bill, the same as
+> adding a procedure. Nothing is written to this child's vaccination record
+> until that bill is actually saved — clicking **Clear**, or simply moving
+> on without saving, drops it with nothing left behind. A free dose still
+> needs a saved bill, at ₹0, to actually count as given.
+
+## Immunization
+
+This child's own doses, checked off against Vaccine Master's recommended
+ages.
+
+![Pediatrics — Immunization, explained](images/pediatrics-immunization-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Given / Overdue / Due soon / Upcoming** | Counts across every vaccine on Vaccine Master for this child, worked out from their date of birth |
+| 2 | **The card** | One row per vaccine and dose. **Record** — shown only on rows that still need it — opens the same popup as Care's Record vaccination, pre-selected to that row |
+
+> A patient with no date of birth on file has nothing to compare a
+> recommended age against, so every not-yet-given row reads **Upcoming**
+> regardless of the child's actual age — set a date of birth on the patient
+> record to see real Overdue and Due soon rows.
+
+---
+
+# 21. Pathology Lab
+
+Optional — off by default. Switched on from **Settings → Features**; the
+nav button appears immediately, no restart needed. The patient screen and
+its own master screen are separate nav entries, grouped under one
+collapsible **Pathology Lab** header in the sidebar — the same shape as
+Pharmacy.
+
+## Orders
+
+![Pathology Lab — Orders, explained](images/pathology-lab-orders-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Add report** | Add one report at a time — or **apply a package** below it instead, for a bundle billed at its own price |
+| 2 | **Mark collected** | Records that the specimen has actually been taken |
+| 3 | **Results** | One row per analyte on the report — RESULT is the only editable column, filled in once the sample is processed |
+| 4 | **This patient's orders** | Every order for this patient. Select one to see its results panel |
+
+A saved order moves through **Ordered → Sample Collected → Result
+Entered → Verified → Completed**. **Save results** needs at least one row
+filled in; **Verify** needs at least one result saved first; **Print
+report** stays greyed out until the order is verified.
+
+> A result outside its own reference range flags itself automatically — H
+> or L beside the value — the moment it is saved, no separate step needed.
+
+## Master
+
+Analyte, Report and Package masters, on their own nav entry so a large
+catalogue does not crowd the patient screen above.
+
+![Pathology Lab — Master, explained](images/pathology-lab-master-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Search** | By name or category |
+| 2 | **+ New analyte** | Name, category, units, result type (numeric or text) and reference range |
+| 3 | **The grid** | A set of common analytes is preloaded — hematology, biochemistry, thyroid, infection screens and more, editable from here |
+
+**Report Master** bundles analytes into one billable report — the CBC seen
+above, for instance, bundles Hemoglobin, Total Leukocyte Count and more.
+**Package Master** bundles reports into one flat-priced package, the same
+"price wins over the sum of its parts" rule Dentist packages already
+follow.
+
+---
+
+# 22. General Master
+
+Not a module of its own — the shared configuration behind
+[Pediatrics](#20-pediatrics) and [the Dentist screen](#18-the-dentist-screen),
+on one nav entry so a vaccine list and a procedure list are never
+maintained twice. Pathology Lab keeps its own separate Master screen
+(above) since its analyte/report/package shape shares nothing with
+Procedure.
+
+## Vaccine Master
+
+Only shown once Pediatrics is on.
+
+![General Master — Vaccine Master, explained](images/general-master-vaccines-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **+ New vaccine** | Name, dose number, recommended age in days, category |
+| 2 | **The grid** | The WHO/UIP schedule is preloaded — edit or deactivate rather than delete once a dose has actually been given to somebody |
+
+## Procedures
+
+Shared by Pediatrics and Dentist rather than each keeping a separate list.
+
+![General Master — Procedures, explained](images/general-master-procedures-annotated.png)
+
+| | Control | What it is for |
+|---|---|---|
+| 1 | **Department** | One procedure list, filtered by which specialty bills it — Pediatrics, Dentist, or General for anything shared between them |
+| 2 | **+ New procedure** | Name, category, price |
+| 3 | **The grid** | Filtered to whichever department pill above is selected |
+
+## Dental Replacements, Anesthesia Types, Dental Packages
+
+Only shown once Dentist is on — three more masters behind the same screen,
+each the same shape as Procedures above: a search, a **+ New** button, an
+editable grid.
+
+![General Master — Dental Replacements](images/general-master-dental.png)
+
+**Dental Replacements** (crowns, bridges, dentures, implants) and
+**Anesthesia Types** are picked from directly on the Dentist screen's own
+Treatment tab. **Dental Packages** bundle procedures into one flat-priced
+package — see [the Dentist screen](#18-the-dentist-screen) for how a case
+is opened against either a procedure or a package.

@@ -186,6 +186,40 @@ public class GeneralSettings
     public bool DiagnosticsEnabled { get; set; }
 
     /// <summary>
+    /// On by default — unlike every other module toggle on this page. Every
+    /// clinic already running this application is already using the OPD
+    /// queue; an upgrade that silently switched it off would break their
+    /// clinic the moment they opened it. A dentist- or pediatrician-only
+    /// clinic switches this off once, deliberately, during setup.
+    /// </summary>
+    public bool OpdEnabled { get; set; } = true;
+
+    /// <summary>On by default, for the same reason as <see cref="OpdEnabled"/> —
+    /// every existing install is already using the pharmacy counter.</summary>
+    public bool PharmacyEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Off by default. Advance booking, cancellation/reschedule, the daily
+    /// check-in screen, and on-screen reminders — a clinic that only ever
+    /// takes walk-ins has no use for any of it until this is switched on.
+    /// </summary>
+    public bool AppointmentsEnabled { get; set; }
+
+    /// <summary>Off by default. Vaccine master, vaccination and growth
+    /// history, and pediatric procedure billing.</summary>
+    public bool PediatricsEnabled { get; set; }
+
+    /// <summary>Off by default. Dental cases, sittings, replacements,
+    /// packages and per-case payment collection.</summary>
+    public bool DentistEnabled { get; set; }
+
+    /// <summary>Off by default. The in-house lab module — analyte-level test
+    /// master, report/panel configuration, packages, and result entry with a
+    /// printed report. Distinct from <see cref="DiagnosticsEnabled"/>, which
+    /// stays a flat named-test billing module for ad-hoc or sent-out work.</summary>
+    public bool PathologyLabEnabled { get; set; }
+
+    /// <summary>
     /// Off by default. Every clinic that had this application before login
     /// existed keeps opening straight to the dashboard, exactly as before,
     /// until someone deliberately switches this on under Settings → Security.
@@ -193,6 +227,17 @@ public class GeneralSettings
     /// immediately usable without a separate setup step.
     /// </summary>
     public bool RequireLogin { get; set; }
+
+    /// <summary>
+    /// Whether at least one clinical module — OPD, Pharmacy, or any of the
+    /// newer ones — is switched on. All six off at once would leave an empty
+    /// nav bar and an unusable application, so
+    /// <see cref="SettingsService.SaveGeneralAsync"/> refuses to save that
+    /// state; this is what it checks.
+    /// </summary>
+    public bool AnyModuleEnabled =>
+        OpdEnabled || PharmacyEnabled || DiagnosticsEnabled || AppointmentsEnabled
+        || PediatricsEnabled || DentistEnabled || PathologyLabEnabled;
 }
 
 public enum QueueLayout
@@ -259,6 +304,12 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
     private const string KeyQueueLayout = "opd.queuelayout";
     private const string KeyTheme = "ui.theme";
     private const string KeyDiagnosticsEnabled = "features.diagnostics.enabled";
+    private const string KeyOpdEnabled = "features.opd.enabled";
+    private const string KeyPharmacyEnabled = "features.pharmacy.enabled";
+    private const string KeyAppointmentsEnabled = "features.appointments.enabled";
+    private const string KeyPediatricsEnabled = "features.pediatrics.enabled";
+    private const string KeyDentistEnabled = "features.dentist.enabled";
+    private const string KeyPathologyLabEnabled = "features.pathologylab.enabled";
     private const string KeyRequireLogin = "auth.requirelogin";
 
     // ── The old, merged identity. Read-only from here on — kept so a build
@@ -407,17 +458,39 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
             Theme = Enum.TryParse<Pharma.Core.AppThemeKind>(Get(map, KeyTheme, ""), out var theme)
                 ? theme : fallback.Theme,
             DiagnosticsEnabled = Bool(map, KeyDiagnosticsEnabled),
+            OpdEnabled = BoolDefault(map, KeyOpdEnabled, true),
+            PharmacyEnabled = BoolDefault(map, KeyPharmacyEnabled, true),
+            AppointmentsEnabled = Bool(map, KeyAppointmentsEnabled),
+            PediatricsEnabled = Bool(map, KeyPediatricsEnabled),
+            DentistEnabled = Bool(map, KeyDentistEnabled),
+            PathologyLabEnabled = Bool(map, KeyPathologyLabEnabled),
             RequireLogin = Bool(map, KeyRequireLogin)
         };
     }
 
+    /// <summary>
+    /// Refuses to write a state where every module — OPD, Pharmacy and every
+    /// newer one — is off at once: that would empty the nav bar and leave
+    /// nothing to turn a module back on from. See
+    /// <see cref="GeneralSettings.AnyModuleEnabled"/>.
+    /// </summary>
     public async Task SaveGeneralAsync(GeneralSettings settings)
     {
+        if (!settings.AnyModuleEnabled)
+            throw new InvalidOperationException(
+                "At least one module — OPD, Pharmacy, or one of the others — has to stay switched on.");
+
         await using var db = await factory.CreateDbContextAsync();
 
         await SetAsync(db, KeyQueueLayout, settings.QueueLayout.ToString());
         await SetAsync(db, KeyTheme, settings.Theme.ToString());
         await SetAsync(db, KeyDiagnosticsEnabled, settings.DiagnosticsEnabled.ToString());
+        await SetAsync(db, KeyOpdEnabled, settings.OpdEnabled.ToString());
+        await SetAsync(db, KeyPharmacyEnabled, settings.PharmacyEnabled.ToString());
+        await SetAsync(db, KeyAppointmentsEnabled, settings.AppointmentsEnabled.ToString());
+        await SetAsync(db, KeyPediatricsEnabled, settings.PediatricsEnabled.ToString());
+        await SetAsync(db, KeyDentistEnabled, settings.DentistEnabled.ToString());
+        await SetAsync(db, KeyPathologyLabEnabled, settings.PathologyLabEnabled.ToString());
         await SetAsync(db, KeyRequireLogin, settings.RequireLogin.ToString());
 
         await db.SaveChangesAsync();
@@ -490,6 +563,13 @@ public class SettingsService(IDbContextFactory<AppDbContext> factory)
 
     private static bool Bool(Dictionary<string, string> map, string key)
         => bool.TryParse(Get(map, key, ""), out var value) && value;
+
+    /// <summary>Like <see cref="Bool"/>, but for a toggle that defaults to
+    /// <c>true</c> rather than <c>false</c> when the row does not exist yet —
+    /// see <see cref="GeneralSettings.OpdEnabled"/> and
+    /// <see cref="GeneralSettings.PharmacyEnabled"/>.</summary>
+    private static bool BoolDefault(Dictionary<string, string> map, string key, bool fallback)
+        => bool.TryParse(Get(map, key, ""), out var value) ? value : fallback;
 
     /// <summary>
     /// A stored time, or the default when the row is missing or unreadable. An

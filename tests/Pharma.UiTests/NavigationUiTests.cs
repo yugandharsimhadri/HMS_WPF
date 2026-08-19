@@ -28,6 +28,29 @@ public class NavigationUiTests(AppFixture app) : IClassFixture<AppFixture>
             Assert.NotNull(app.Find(expectedElement));
     }
 
+    /// <summary>Pharmacy counter/Medicines/Inventory sit under a collapsible
+    /// "PHARMACY" group header — clicking it hides and shows the children,
+    /// the same as every clinical module's Patient/Master group does. Ends
+    /// by re-expanding, so later tests in this shared-app class still find
+    /// NavSale/NavProducts regardless of run order.</summary>
+    [Fact]
+    public void A_nav_group_can_be_collapsed_and_expanded()
+    {
+        app.Navigate("NavDashboard", "Dashboard");
+
+        // Pharmacy defaults on and its group defaults expanded, so the
+        // children are visible from app start.
+        AppFixture.WaitUntil(() => app.Find("NavSale") is not null, "the Pharmacy group to start expanded");
+
+        app.Click("NavPharmacyGroup");
+        AppFixture.WaitUntil(() => app.Find("NavSale") is null, "the group's children to collapse");
+        Assert.Null(app.Find("NavProducts"));
+        Assert.Null(app.Find("NavInventory"));
+
+        app.Click("NavPharmacyGroup");
+        AppFixture.WaitUntil(() => app.Find("NavSale") is not null, "the group's children to expand again");
+    }
+
     [Fact]
     public void The_catalogue_lists_the_seeded_medicines()
     {

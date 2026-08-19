@@ -17,6 +17,18 @@
          a key declared on one page is not in scope where they are rendered. -->
     <local:BoolToVisibilityConverter x:Key="BoolVis"/>
     <local:EnumLabelConverter x:Key="EnumLabel"/>
+    <local:SelectionBoxDisplayConverter x:Key="SelectionBoxDisplay"/>
+
+    <!-- Pediatrics' Immunization tab — a status pill's wording/colours and
+         a row's detail line, all read from one ImmunizationCardRow. -->
+    <local:ImmunizationStatusLabelConverter x:Key="ImmunizationStatusLabel"/>
+    <local:ImmunizationStatusFillConverter x:Key="ImmunizationStatusFill"/>
+    <local:ImmunizationStatusInkConverter x:Key="ImmunizationStatusInk"/>
+    <local:ImmunizationNeedsActionConverter x:Key="ImmunizationNeedsAction"/>
+    <local:ImmunizationRowDetailConverter x:Key="ImmunizationRowDetail"/>
+    <local:ImmunizationAgeLabelConverter x:Key="ImmunizationAgeLabel"/>
+    <local:DentalCaseStatusFillConverter x:Key="DentalCaseStatusFill"/>
+    <local:DentalCaseStatusInkConverter x:Key="DentalCaseStatusInk"/>
 
     <!-- The palette lives in Theme.Light.xaml and Theme.Dark.xaml, merged at
          startup and swapped when the theme changes. -->
@@ -496,6 +508,19 @@
                             the type name. This is deterministic — an ItemTemplate is
                             honoured, and a plain value falls back to ToString().
 
+                            That plain-value fallback was itself a real bug for every
+                            combo bound with DisplayMemberPath instead of an
+                            ItemTemplate (e.g. DisplayMemberPath="Name" over a list of
+                            Doctor) — the dropdown itself showed every name correctly
+                            (the framework templates each ComboBoxItem from
+                            DisplayMemberPath for free), but the closed box showed the
+                            selected item's own ToString(), e.g. "Pharma.Core.Doctor".
+                            SelectionBoxDisplayConverter resolves DisplayMemberPath by
+                            hand for that case; an ItemTemplate-based combo has no
+                            DisplayMemberPath set, so the converter is a no-op and
+                            passes SelectedItem straight through to ContentTemplate
+                            exactly as before.
+
                             MaxHeight="36" on the ComboBox above clamps the closed
                             box itself: an ItemTemplate rich enough to want more
                             than one line (a couple of screens use one) used to
@@ -508,9 +533,15 @@
                                           IsHitTestVisible="False"
                                           VerticalAlignment="Center"
                                           HorizontalAlignment="Left"
-                                          Content="{Binding SelectedItem, RelativeSource={RelativeSource TemplatedParent}}"
                                           ContentTemplate="{Binding ItemTemplate, RelativeSource={RelativeSource TemplatedParent}}"
-                                          ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"/>
+                                          ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}">
+                            <ContentPresenter.Content>
+                                <MultiBinding Converter="{StaticResource SelectionBoxDisplay}">
+                                    <Binding Path="SelectedItem" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                    <Binding Path="DisplayMemberPath" RelativeSource="{RelativeSource TemplatedParent}"/>
+                                </MultiBinding>
+                            </ContentPresenter.Content>
+                        </ContentPresenter>
 
                         <!--
                             Only shown when IsEditable is set — the print/title font

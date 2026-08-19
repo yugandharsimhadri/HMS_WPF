@@ -195,6 +195,9 @@ public static class DbBootstrapper
         await SeedAsync(db);
         await Import.ImportProfileSeeder.SeedAsync(db);
         await DiagnosticTestSeeder.SeedAsync(db);
+        await VaccineMasterSeeder.SeedAsync(db);
+        await DentistProcedureSeeder.SeedAsync(db);
+        await PathologyLabSeeder.SeedAsync(db);
         await UserSeeder.SeedAsync(db);
     }
 

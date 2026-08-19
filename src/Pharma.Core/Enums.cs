@@ -138,6 +138,121 @@ public enum AppThemeKind
 }
 
 /// <summary>
+/// Lifecycle of a booked-ahead appointment, before it becomes whichever
+/// module's own working record check-in creates — see
+/// <see cref="AppointmentModuleContext"/>.
+/// </summary>
+public enum AppointmentStatus
+{
+    Scheduled = 1,
+    CheckedIn,
+    Cancelled,
+    Rescheduled,
+    NoShow
+}
+
+/// <summary>
+/// Which module's own record an appointment's check-in creates —
+/// <see cref="Appointment.LinkedRecordId"/> points into that module's table,
+/// not a fixed one. <see cref="General"/> is only ever offered as a booking
+/// choice when OPD itself is switched on.
+/// </summary>
+public enum AppointmentModuleContext
+{
+    General = 1,
+    Pediatrics,
+    Dentist,
+    PathologyLab
+}
+
+/// <summary>Where a row on the shared Reminders screen came from.</summary>
+public enum ReminderSourceKind
+{
+    FollowUp = 1,
+    Appointment,
+    VaccineDue,
+    DentalSitting
+}
+
+/// <summary>
+/// How a reminder was, or will be, delivered. <see cref="OnScreen"/> is the
+/// only value ever written today — the others exist so that turning on
+/// WhatsApp or email later is "send instead of just log", not a migration.
+/// </summary>
+public enum ReminderChannel
+{
+    OnScreen = 1,
+    Whatsapp,
+    Email
+}
+
+/// <summary>
+/// Which clinical module a shared <c>Procedure</c> catalogue row, and the
+/// billing built from it, belongs to. <see cref="General"/> exists so any
+/// future module needing plain "pick items, bill them" behaviour can reuse
+/// the same catalogue rather than a fourth near-duplicate.
+/// </summary>
+public enum ProcedureDepartment
+{
+    Pediatrics = 1,
+    Dentist,
+    General
+}
+
+/// <summary>Lifecycle of a <c>ProcedureBill</c> — deliberately simpler than
+/// <see cref="DiagnosticBillStatus"/>, since a procedure bill has no lab
+/// sample workflow behind it. Editing is refused once Completed, the same
+/// rule every status-gated bill in this codebase enforces.</summary>
+public enum ProcedureBillStatus
+{
+    Ordered = 1,
+    Completed
+}
+
+/// <summary>Lifecycle of a dental case — the unit one procedure (or
+/// package) on one patient is tracked as, across however many sittings
+/// and payments it takes.</summary>
+public enum DentalCaseStatus
+{
+    Planned = 1,
+    InProgress,
+    Completed,
+    Cancelled
+}
+
+/// <summary>What kind of value an analyte's result is, driving which input
+/// control the result-entry form shows for it.</summary>
+public enum LabResultType
+{
+    Numeric = 1,
+    Text,
+    Selection
+}
+
+/// <summary>Lifecycle of a lab order. Richer than <see cref="DiagnosticBillStatus"/>
+/// because a result has to be entered and verified before it can print —
+/// a real pathology-lab norm, not just a billing workflow.</summary>
+public enum LabOrderStatus
+{
+    Ordered = 1,
+    SampleCollected,
+    ResultEntered,
+    Verified,
+    Completed
+}
+
+/// <summary>Whether one result falls inside its matched reference range.
+/// Computed automatically for a numeric result; editable for a qualitative
+/// one, since "Reactive" has no numeric range to compare against.</summary>
+public enum LabResultFlag
+{
+    Normal = 1,
+    Low,
+    High,
+    Abnormal
+}
+
+/// <summary>
 /// A user's role — a label for who they are, not yet a fence around what
 /// they can do. Every logged-in role has the same full access today, the
 /// same as before login existed; the role exists so that changes to what

@@ -25,6 +25,11 @@
                                 IsEnabled="{Binding HasPatient}"
                                 Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolToVisible}}"
                                 AutomationProperties.AutomationId="PatientNewDiagnosticBill"/>
+                        <Button DockPanel.Dock="Right" Content="New vaccination" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,0" Command="{Binding NewVaccinationCommand}"
+                                IsEnabled="{Binding HasPatient}"
+                                Visibility="{Binding PediatricsEnabled, Converter={StaticResource BoolToVisible}}"
+                                AutomationProperties.AutomationId="PatientNewVaccination"/>
                         <Button DockPanel.Dock="Right" Content="Edit" Style="{StaticResource BtnGhost}"
                                 Margin="8,0,0,0" MinWidth="80"
                                 Command="{Binding EditPatientCommand}"
@@ -81,7 +86,8 @@
 
             <!-- Everything this patient has ever had, printable at any time. -->
             <Border Grid.Row="2" Style="{StaticResource Card}" Padding="8">
-                <TabControl BorderThickness="0" Background="Transparent">
+                <TabControl BorderThickness="0" Background="Transparent"
+                            AutomationProperties.AutomationId="PatientsTabs">
 
                     <TabItem Header="Visits &amp; prescriptions">
                         <DockPanel Margin="0,10,0,0">
@@ -187,6 +193,50 @@
                                                         ElementStyle="{StaticResource GridAmount}"
                                                         HeaderStyle="{StaticResource GridNumberHeader}"/>
                                     <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </TabItem>
+
+                    <TabItem Header="Vaccination history"
+                             Visibility="{Binding PediatricsEnabled, Converter={StaticResource BoolToVisible}}">
+                        <DockPanel Margin="0,10,0,0">
+                            <DataGrid ItemsSource="{Binding VaccinationHistory}" IsReadOnly="True"
+                                      AutomationProperties.AutomationId="PatientVaccinationHistoryGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="GIVEN ON" Binding="{Binding GivenOn, StringFormat='dd MMM yy'}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="VACCINE" Binding="{Binding VaccineName}" Width="220*" MinWidth="120"
+                                                        ElementStyle="{StaticResource GridName}"/>
+                                    <DataGridTextColumn Header="DOSE" Binding="{Binding DoseNumber}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridNumber}"/>
+                                    <DataGridTextColumn Header="BATCH" Binding="{Binding BatchNo}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="SITE" Binding="{Binding SiteOfInjection}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </TabItem>
+
+                    <TabItem Header="Growth chart"
+                             Visibility="{Binding PediatricsEnabled, Converter={StaticResource BoolToVisible}}">
+                        <DockPanel Margin="0,10,0,0">
+                            <DataGrid ItemsSource="{Binding GrowthHistory}" IsReadOnly="True"
+                                      AutomationProperties.AutomationId="PatientGrowthHistoryGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="MEASURED ON" Binding="{Binding MeasuredOn, StringFormat='dd MMM yy'}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="AGE (DAYS)" Binding="{Binding AgeDays}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridNumber}"/>
+                                    <DataGridTextColumn Header="WEIGHT (KG)" Binding="{Binding WeightKg, StringFormat=N1}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridNumber}"/>
+                                    <DataGridTextColumn Header="HEIGHT (CM)" Binding="{Binding HeightCm, StringFormat=N1}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridNumber}"/>
+                                    <DataGridTextColumn Header="HEAD CIRC. (CM)" Binding="{Binding HeadCircumferenceCm, StringFormat=N1}" Width="Auto"
+                                                        ElementStyle="{StaticResource GridNumber}"/>
+                                    <DataGridTextColumn Header="BMI" Binding="{Binding BmiValue, StringFormat=N1}" Width="220*" MinWidth="80"
+                                                        ElementStyle="{StaticResource GridNumber}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>

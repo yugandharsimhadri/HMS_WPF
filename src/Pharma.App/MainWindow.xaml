@@ -17,6 +17,7 @@
     <Window.Resources>
         <local:NavBrushConverter x:Key="NavBrush"/>
         <local:NavActiveConverter x:Key="NavActive"/>
+        <local:ExpandArrowConverter x:Key="ExpandArrow"/>
 
         <DataTemplate DataType="{x:Type vm:ConsultationViewModel}">
             <views:ConsultationView/>
@@ -49,6 +50,39 @@
         <DataTemplate DataType="{x:Type vm:DiagnosticTestEditorViewModel}">
             <views:DiagnosticTestEditorView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:VaccineEditorViewModel}">
+            <views:VaccineEditorView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AddProcedureLineViewModel}">
+            <views:AddProcedureLineView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:RecordVaccinationViewModel}">
+            <views:RecordVaccinationView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:RecordGrowthViewModel}">
+            <views:RecordGrowthView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProcedureEditorViewModel}">
+            <views:ProcedureEditorView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DentalReplacementEditorViewModel}">
+            <views:DentalReplacementEditorView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AnesthesiaTypeEditorViewModel}">
+            <views:AnesthesiaTypeEditorView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DentalPackageEditorViewModel}">
+            <views:DentalPackageEditorView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LabAnalyteEditorViewModel}">
+            <views:LabAnalyteEditorView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LabReportEditorViewModel}">
+            <views:LabReportEditorView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LabPackageEditorViewModel}">
+            <views:LabPackageEditorView/>
+        </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:DiagnosticTestPickerViewModel}">
             <views:DiagnosticTestPickerView/>
@@ -80,6 +114,24 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:DiagnosticsViewModel}">
             <views:DiagnosticsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:AppointmentsViewModel}">
+            <views:AppointmentsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PediatricsViewModel}">
+            <views:PediatricsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:DentistViewModel}">
+            <views:DentistView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PathologyLabViewModel}">
+            <views:PathologyLabView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PathologyLabMasterViewModel}">
+            <views:PathologyLabMasterView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:GeneralMasterViewModel}">
+            <views:GeneralMasterView/>
         </DataTemplate>
 
         <!--
@@ -117,6 +169,38 @@
                             <Trigger Property="Tag" Value="True">
                                 <Setter TargetName="ActiveBar" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="cp" Property="TextElement.FontWeight" Value="Bold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--
+            A collapsible group's own header — Pharmacy, and every clinical
+            module that now has a Master screen alongside its Patient
+            screen. Clicking anywhere on it toggles the group; the chevron
+            (bound to ExpandArrow) is the only visual difference from a
+            plain section label, so a group that has never been touched
+            still reads exactly as the static labels used to.
+        -->
+        <Style x:Key="NavGroupHeader" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource NavFocusVisual}"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="0,10,0,2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" Padding="18,0">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Opacity" Value="0.7"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -191,6 +275,11 @@
                                AutomationProperties.AutomationId="LogOutLink"><Hyperlink Style="{StaticResource NavLink}" Command="{Binding LogOutCommand}"><Run Text="Log out"/></Hyperlink></TextBlock>
                 </StackPanel>
 
+                <!-- Scrolls on its own — the brand header above and the
+                     credit/version footer below stay docked in place, so a
+                     clinic with every module switched on never clips the
+                     bottom of the list off the visible nav panel. -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
                     <Button Style="{StaticResource NavButton}" Content="Dashboard"
                             Command="{Binding GoCommand}" CommandParameter="dashboard"
@@ -200,6 +289,7 @@
                     <Button Style="{StaticResource NavButton}" Content="OPD"
                             Command="{Binding GoCommand}" CommandParameter="opd"
                             AutomationProperties.AutomationId="NavOpd"
+                            Visibility="{Binding OpdEnabled, Converter={StaticResource BoolToVisible}}"
                             Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=opd}"
                             Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=opd}"/>
                     <Button Style="{StaticResource NavButton}" Content="Patients"
@@ -207,21 +297,34 @@
                             AutomationProperties.AutomationId="NavPatients"
                             Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=patients}"
                             Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=patients}"/>
-                    <Button Style="{StaticResource NavButton}" Content="Pharmacy counter"
-                            Command="{Binding GoCommand}" CommandParameter="sale"
-                            AutomationProperties.AutomationId="NavSale"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=sale}"
-                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=sale}"/>
-                    <Button Style="{StaticResource NavButton}" Content="Medicines"
-                            Command="{Binding GoCommand}" CommandParameter="products"
-                            AutomationProperties.AutomationId="NavProducts"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=products}"
-                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=products}"/>
-                    <Button Style="{StaticResource NavButton}" Content="Inventory"
-                            Command="{Binding GoCommand}" CommandParameter="inventory"
-                            AutomationProperties.AutomationId="NavInventory"
-                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=inventory}"
-                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=inventory}"/>
+                    <StackPanel Visibility="{Binding PharmacyEnabled, Converter={StaticResource BoolToVisible}}">
+                        <Button Style="{StaticResource NavGroupHeader}" Command="{Binding TogglePharmacyNavCommand}"
+                                AutomationProperties.AutomationId="NavPharmacyGroup">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding PharmacyNavExpanded, Converter={StaticResource ExpandArrow}}"
+                                           FontSize="{StaticResource FontSmall}" Foreground="{DynamicResource NavInkFaint}"/>
+                                <TextBlock Text="PHARMACY" FontSize="{StaticResource FontSmall}"
+                                           Foreground="{DynamicResource NavInkFaint}" FontWeight="SemiBold"/>
+                            </DockPanel>
+                        </Button>
+                        <StackPanel Visibility="{Binding PharmacyNavExpanded, Converter={StaticResource BoolToVisible}}">
+                            <Button Style="{StaticResource NavButton}" Content="Pharmacy counter" Margin="10,0,0,0"
+                                    Command="{Binding GoCommand}" CommandParameter="sale"
+                                    AutomationProperties.AutomationId="NavSale"
+                                    Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=sale}"
+                                    Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=sale}"/>
+                            <Button Style="{StaticResource NavButton}" Content="Medicines" Margin="10,0,0,0"
+                                    Command="{Binding GoCommand}" CommandParameter="products"
+                                    AutomationProperties.AutomationId="NavProducts"
+                                    Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=products}"
+                                    Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=products}"/>
+                            <Button Style="{StaticResource NavButton}" Content="Inventory" Margin="10,0,0,0"
+                                    Command="{Binding GoCommand}" CommandParameter="inventory"
+                                    AutomationProperties.AutomationId="NavInventory"
+                                    Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=inventory}"
+                                    Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=inventory}"/>
+                        </StackPanel>
+                    </StackPanel>
                     <Button Style="{StaticResource NavButton}" Content="Reports"
                             Command="{Binding GoCommand}" CommandParameter="reports"
                             AutomationProperties.AutomationId="NavReports"
@@ -233,12 +336,59 @@
                             Visibility="{Binding DiagnosticsEnabled, Converter={StaticResource BoolToVisible}}"
                             Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=diagnostics}"
                             Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=diagnostics}"/>
+                    <Button Style="{StaticResource NavButton}" Content="Appointments"
+                            Command="{Binding GoCommand}" CommandParameter="appointments"
+                            AutomationProperties.AutomationId="NavAppointments"
+                            Visibility="{Binding AppointmentsEnabled, Converter={StaticResource BoolToVisible}}"
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=appointments}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=appointments}"/>
+                    <Button Style="{StaticResource NavButton}" Content="Pediatrics"
+                            Command="{Binding GoCommand}" CommandParameter="pediatrics"
+                            AutomationProperties.AutomationId="NavPediatrics"
+                            Visibility="{Binding PediatricsEnabled, Converter={StaticResource BoolToVisible}}"
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=pediatrics}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=pediatrics}"/>
+                    <Button Style="{StaticResource NavButton}" Content="Dentist"
+                            Command="{Binding GoCommand}" CommandParameter="dentist"
+                            AutomationProperties.AutomationId="NavDentist"
+                            Visibility="{Binding DentistEnabled, Converter={StaticResource BoolToVisible}}"
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=dentist}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=dentist}"/>
+                    <StackPanel Visibility="{Binding PathologyLabEnabled, Converter={StaticResource BoolToVisible}}">
+                        <Button Style="{StaticResource NavGroupHeader}" Command="{Binding TogglePathologyLabNavCommand}"
+                                AutomationProperties.AutomationId="NavPathologyLabGroup">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding PathologyLabNavExpanded, Converter={StaticResource ExpandArrow}}"
+                                           FontSize="{StaticResource FontSmall}" Foreground="{DynamicResource NavInkFaint}"/>
+                                <TextBlock Text="PATHOLOGY LAB" FontSize="{StaticResource FontSmall}"
+                                           Foreground="{DynamicResource NavInkFaint}" FontWeight="SemiBold"/>
+                            </DockPanel>
+                        </Button>
+                        <StackPanel Visibility="{Binding PathologyLabNavExpanded, Converter={StaticResource BoolToVisible}}">
+                            <Button Style="{StaticResource NavButton}" Content="Patient" Margin="10,0,0,0"
+                                    Command="{Binding GoCommand}" CommandParameter="pathologylab"
+                                    AutomationProperties.AutomationId="NavPathologyLab"
+                                    Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=pathologylab}"
+                                    Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=pathologylab}"/>
+                            <Button Style="{StaticResource NavButton}" Content="Master" Margin="10,0,0,0"
+                                    Command="{Binding GoCommand}" CommandParameter="pathologylab-master"
+                                    AutomationProperties.AutomationId="NavPathologyLabMaster"
+                                    Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=pathologylab-master}"
+                                    Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=pathologylab-master}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <Button Style="{StaticResource NavButton}" Content="General Master"
+                            Command="{Binding GoCommand}" CommandParameter="general-master"
+                            AutomationProperties.AutomationId="NavGeneralMaster"
+                            Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=general-master}"
+                            Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=general-master}"/>
                     <Button Style="{StaticResource NavButton}" Content="Settings"
                             Command="{Binding GoCommand}" CommandParameter="settings"
                             AutomationProperties.AutomationId="NavSettings"
                             Background="{Binding ActiveNav, Converter={StaticResource NavBrush}, ConverterParameter=settings}"
                             Tag="{Binding ActiveNav, Converter={StaticResource NavActive}, ConverterParameter=settings}"/>
                 </StackPanel>
+                </ScrollViewer>
             </DockPanel>
         </Border>
 

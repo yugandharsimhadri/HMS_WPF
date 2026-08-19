@@ -1,0 +1,244 @@
+<UserControl x:Class="Pharma.App.Views.PathologyLabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══════════════════════════════════════════════════════
+             Patient — search, select, clear. Above the tabs, so it
+             carries across whatever tab is open below rather than
+             living inside any one of them. -->
+        <Border Grid.Row="0" Style="{StaticResource Card}" Padding="16,12">
+            <Grid>
+                <StackPanel Visibility="{Binding HasSelectedPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="+ New patient" Style="{StaticResource BtnGhost}"
+                                Margin="8,0,0,0"
+                                Visibility="{Binding HasSelectedPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"
+                                Command="{Binding NewPatientCommand}"
+                                AutomationProperties.AutomationId="LabNewPatient"/>
+                        <TextBlock DockPanel.Dock="Left" Text="Patient" Style="{StaticResource Label}"
+                                   VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox Text="{Binding PatientSearch, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="0"
+                                 ToolTip="Search by patient name or phone number"
+                                 AutomationProperties.AutomationId="LabPatientSearch"/>
+                    </DockPanel>
+
+                    <ListBox ItemsSource="{Binding PatientMatches}"
+                             SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
+                             DisplayMemberPath="Display" MaxHeight="160" Margin="0,8,0,0"
+                             AutomationProperties.AutomationId="LabPatientMatches"/>
+                </StackPanel>
+
+                <DockPanel Visibility="{Binding HasSelectedPatient, Converter={StaticResource BoolVis}}">
+                    <Button DockPanel.Dock="Right" Content="Clear patient" Style="{StaticResource BtnGhost}"
+                            VerticalAlignment="Center"
+                            Command="{Binding ChangePatientCommand}"
+                            AutomationProperties.AutomationId="LabChangePatient"/>
+                    <StackPanel>
+                        <TextBlock Text="{Binding SelectedPatient.Name}" FontWeight="SemiBold"
+                                   FontSize="{StaticResource FontSubheading}"
+                                   AutomationProperties.AutomationId="LabSelectedPatient"/>
+                        <TextBlock Style="{StaticResource Muted}">
+                            <Run Text="{Binding SelectedPatient.PatientNo, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.Phone, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+                </DockPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="8">
+            <TabControl BorderThickness="0" Background="Transparent"
+                        AutomationProperties.AutomationId="PathologyLabTabs">
+
+                <TabItem Header="Orders">
+                    <Grid Margin="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="320"/>
+                            <ColumnDefinition Width="18"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <DockPanel Grid.Column="0">
+                            <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="420">
+                                    <StackPanel>
+                                        <TextBlock Text="New order" Style="{StaticResource H2}"/>
+
+                                        <TextBlock Text="Add report" Style="{StaticResource Label}"/>
+                                        <DockPanel Margin="0,0,0,6">
+                                            <Button DockPanel.Dock="Right" Content="Add" Style="{StaticResource BtnGhost}"
+                                                    Margin="6,0,0,0"
+                                                    Command="{Binding AddReportLineCommand}"
+                                                    AutomationProperties.AutomationId="LabAddReportLine"/>
+                                            <ComboBox ItemsSource="{Binding ReportsCatalog}" SelectedItem="{Binding ReportToAdd, Mode=TwoWay}"
+                                                      DisplayMemberPath="Name"
+                                                      AutomationProperties.AutomationId="LabReportPicker"/>
+                                        </DockPanel>
+
+                                        <TextBlock Text="or apply a package" Style="{StaticResource Label}"/>
+                                        <DockPanel Margin="0,0,0,6">
+                                            <Button DockPanel.Dock="Right" Content="Apply" Style="{StaticResource BtnGhost}"
+                                                    Margin="6,0,0,0"
+                                                    Command="{Binding ApplyPackageCommand}"
+                                                    AutomationProperties.AutomationId="LabApplyPackage"/>
+                                            <ComboBox ItemsSource="{Binding PackagesCatalog}" SelectedItem="{Binding PackageToApply, Mode=TwoWay}"
+                                                      DisplayMemberPath="Name"
+                                                      AutomationProperties.AutomationId="LabPackagePicker"/>
+                                        </DockPanel>
+
+                                        <ItemsControl ItemsSource="{Binding NewOrderLines}" Margin="0,4,0,6"
+                                                      AutomationProperties.AutomationId="LabNewOrderLines">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel Margin="0,2,0,2">
+                                                        <Button DockPanel.Dock="Right" Content="✕" BorderThickness="0"
+                                                                Background="Transparent" Foreground="{DynamicResource Danger}" Cursor="Hand"
+                                                                Command="{Binding DataContext.RemoveOrderLineCommand,
+                                                                          RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"/>
+                                                        <TextBlock Text="{Binding Price, StringFormat='₹{0:N2}'}" DockPanel.Dock="Right" Margin="0,0,8,0"/>
+                                                        <TextBlock Text="{Binding ReportName}"/>
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <TextBlock Text="Referred by" Style="{StaticResource Label}"/>
+                                        <TextBox Text="{Binding NewOrderReferredBy, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,6"
+                                                 AutomationProperties.AutomationId="LabReferredBy"/>
+
+                                        <TextBlock Text="Specimen ID" Style="{StaticResource Label}"/>
+                                        <TextBox Text="{Binding NewOrderSpecimenId, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0,0,0,6"
+                                                 AutomationProperties.AutomationId="LabSpecimenId"/>
+
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Discount" Style="{StaticResource Label}"/>
+                                                <TextBox Text="{Binding NewOrderDiscount, UpdateSourceTrigger=PropertyChanged}"
+                                                         local:NumericInput.Mode="Money"
+                                                         AutomationProperties.AutomationId="LabDiscount"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="Payment mode" Style="{StaticResource Label}"/>
+                                                <ComboBox ItemsSource="{Binding PaymentModes}" SelectedItem="{Binding NewOrderPaymentMode, Mode=TwoWay}"
+                                                          AutomationProperties.AutomationId="LabPaymentMode"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <StackPanel Visibility="{Binding ShowTransactionNo, Converter={StaticResource BoolVis}}" Margin="0,0,0,6">
+                                            <TextBlock Text="Transaction no." Style="{StaticResource Label}"/>
+                                            <TextBox Text="{Binding NewOrderTransactionNo, UpdateSourceTrigger=PropertyChanged}"
+                                                     AutomationProperties.AutomationId="LabTransactionNo"/>
+                                        </StackPanel>
+
+                                        <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,10">
+                                            <Run Text="Total "/><Run Text="{Binding NewOrderTotal, Mode=OneWay, StringFormat='₹{0:N2}'}"/><Run Text="   ·   Payable "/><Run Text="{Binding NewOrderFinal, Mode=OneWay, StringFormat='₹{0:N2}'}" FontWeight="Bold"/>
+                                        </TextBlock>
+
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="Save order" Style="{StaticResource BtnPrimaryLarge}" Margin="0,0,8,0"
+                                                    Command="{Binding SaveOrderCommand}"
+                                                    AutomationProperties.AutomationId="LabSaveOrder"/>
+                                            <Button Content="Clear" Style="{StaticResource BtnGhost}"
+                                                    Command="{Binding NewOrderFormCommand}"
+                                                    AutomationProperties.AutomationId="LabNewOrderForm"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="This patient's orders" Style="{StaticResource H2}"/>
+                                    <DataGrid ItemsSource="{Binding Orders}" IsReadOnly="True"
+                                              SelectedItem="{Binding SelectedOrder, Mode=TwoWay}"
+                                              SelectionMode="Single" RowHeight="40"
+                                              AutomationProperties.AutomationId="LabOrdersGrid">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="ORDER" Binding="{Binding OrderNo}" Width="110*" MinWidth="80"
+                                                                ElementStyle="{StaticResource GridName}"/>
+                                            <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="Auto"
+                                                                ElementStyle="{StaticResource GridMuted}"/>
+                                            <DataGridTextColumn Header="AMOUNT" Binding="{Binding FinalAmount, StringFormat=N2}" Width="Auto"
+                                                                ElementStyle="{StaticResource GridAmount}"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </DockPanel>
+                            </Border>
+                        </DockPanel>
+
+                        <Border Grid.Column="2" Style="{StaticResource Card}"
+                                Visibility="{Binding HasSelectedOrder, Converter={StaticResource BoolVis}}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,10">
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                            <Button Content="Mark collected" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
+                                                    Command="{Binding MarkCollectedCommand}"
+                                                    AutomationProperties.AutomationId="LabMarkCollected"/>
+                                            <Button Content="Verify" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
+                                                    Command="{Binding VerifyOrderCommand}"
+                                                    AutomationProperties.AutomationId="LabVerifyOrder"/>
+                                            <Button Content="Print report" Style="{StaticResource BtnPrimary}"
+                                                    Command="{Binding PrintReportCommand}"
+                                                    IsEnabled="{Binding CanPrintReport}"
+                                                    AutomationProperties.AutomationId="LabPrintReport"/>
+                                        </StackPanel>
+                                        <TextBlock AutomationProperties.AutomationId="LabSelectedOrderTitle">
+                                            <Run Text="{Binding SelectedOrder.OrderNo, Mode=OneWay}" FontWeight="Bold" FontSize="{StaticResource FontSubheading}"/><Run Text="  ·  "/><Run Text="{Binding SelectedOrder.Status, Mode=OneWay}"/>
+                                        </TextBlock>
+                                    </DockPanel>
+
+                                    <TextBlock Text="{Binding OrdersStatus}" Style="{StaticResource Muted}"
+                                               TextWrapping="Wrap" Margin="0,0,0,14"
+                                               AutomationProperties.AutomationId="LabOrdersStatus"/>
+
+                                    <TextBlock Text="Results" Style="{StaticResource H2}" Margin="0,0,0,6"/>
+
+                                    <DataGrid ItemsSource="{Binding ResultRows}" AutoGenerateColumns="False"
+                                              CanUserAddRows="False" RowHeight="36" MaxHeight="360"
+                                              AutomationProperties.AutomationId="LabResultsGrid">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="REPORT" Binding="{Binding ReportName}" Width="140*" MinWidth="90" IsReadOnly="True"
+                                                                ElementStyle="{StaticResource GridMuted}"/>
+                                            <DataGridTextColumn Header="ANALYTE" Binding="{Binding AnalyteName}" Width="140*" MinWidth="90" IsReadOnly="True"
+                                                                ElementStyle="{StaticResource GridName}"/>
+                                            <DataGridTextColumn Header="RESULT" Binding="{Binding ResultValue, UpdateSourceTrigger=PropertyChanged}" Width="90"/>
+                                            <DataGridTextColumn Header="UNITS" Binding="{Binding Units}" Width="70" IsReadOnly="True"
+                                                                ElementStyle="{StaticResource GridMuted}"/>
+                                            <DataGridTextColumn Header="RANGE" Binding="{Binding ReferenceRangeDisplay}" Width="120" IsReadOnly="True"
+                                                                ElementStyle="{StaticResource GridMuted}"/>
+                                            <DataGridTextColumn Header="FLAG" Binding="{Binding Flag}" Width="80" IsReadOnly="True"
+                                                                ElementStyle="{StaticResource GridMuted}"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <Button Content="Save results" Style="{StaticResource BtnPrimary}"
+                                            HorizontalAlignment="Left" Margin="0,10,0,0"
+                                            Command="{Binding SaveResultsCommand}"
+                                            AutomationProperties.AutomationId="LabSaveResults"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Border>
+    </Grid>
+</UserControl>

@@ -278,8 +278,16 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         return visit;
     }
 
-    /// <summary>Books a visit and allocates the next token for that day.</summary>
-    public async Task<Visit> BookVisitAsync(Guid patientId, Guid doctorId, DateTime scheduledOn, string? complaint, decimal fee)
+    /// <summary>
+    /// Books a visit and allocates the next token for that day. <paramref name="appointmentId"/>
+    /// is set only when this visit is the check-in of a previously booked
+    /// <c>Appointment</c> (the Appointments module's <c>General</c> context) —
+    /// null for the ordinary walk-in flow, which this parameter leaves
+    /// completely unchanged.
+    /// </summary>
+    public async Task<Visit> BookVisitAsync(
+        Guid patientId, Guid doctorId, DateTime scheduledOn, string? complaint, decimal fee,
+        Guid? appointmentId = null)
     {
         using var log = AppLog.Enter(
             nameof(BookVisitAsync),
@@ -302,7 +310,8 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
             ScheduledOn = scheduledOn,
             Complaint = complaint,
             Fee = fee,
-            Status = VisitStatus.Booked
+            Status = VisitStatus.Booked,
+            AppointmentId = appointmentId
         };
 
         db.Visits.Add(visit);

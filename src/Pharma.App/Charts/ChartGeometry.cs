@@ -58,6 +58,50 @@ public static class ChartGeometry
     }
 
     /// <summary>
+    /// A line through arbitrary (x, y) points — unlike <see cref="Trend"/>,
+    /// the x values are not assumed evenly spaced by index, so this is what
+    /// a growth chart needs: a patient's own measurements land at their
+    /// actual ages, and a smoothly sampled reference curve shares the same
+    /// x scale. <paramref name="xMin"/>/<paramref name="xMax"/>/
+    /// <paramref name="yMin"/>/<paramref name="yMax"/> are shared across
+    /// both the patient's line and the reference line so the two are
+    /// genuinely comparable on the same axes, not each stretched to its
+    /// own range.
+    /// </summary>
+    public static string XyLine(
+        IReadOnlyList<(double X, double Y)> points, double width, double height,
+        double xMin, double xMax, double yMin, double yMax)
+    {
+        if (points.Count == 0) return "";
+
+        var xSpan = xMax - xMin;
+        if (xSpan < 0.0001) xSpan = 1;
+        var ySpan = yMax - yMin;
+        if (ySpan < 0.0001) ySpan = 1;
+
+        var mapped = points.Select(p => (
+            X: (p.X - xMin) / xSpan * width,
+            Y: height - (p.Y - yMin) / ySpan * height));
+
+        return "M" + string.Join(" L", mapped.Select(p => $"{p.X:0.##},{p.Y:0.##}"));
+    }
+
+    /// <summary>Where one (x, y) point lands in the same chart space
+    /// <see cref="XyLine"/> maps into — for placing a dot on the patient's
+    /// own actual measurements, which the smooth reference curve does not
+    /// get one of.</summary>
+    public static (double X, double Y) XyPoint(
+        double x, double y, double width, double height, double xMin, double xMax, double yMin, double yMax)
+    {
+        var xSpan = xMax - xMin;
+        if (xSpan < 0.0001) xSpan = 1;
+        var ySpan = yMax - yMin;
+        if (ySpan < 0.0001) ySpan = 1;
+
+        return ((x - xMin) / xSpan * width, height - (y - yMin) / ySpan * height);
+    }
+
+    /// <summary>
     /// One donut wedge's path data, as an SVG-style arc — WPF's Path
     /// mini-language accepts the same "A rx,ry angle isLarge isSweep x,y" arc
     /// command SVG does. <paramref name="startDeg"/>/<paramref name="endDeg"/>

@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
+using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
+using FlaUI.Core.WindowsAPI;
 using FlaUI.UIA3;
 using Pharma.Data;
 using Application = FlaUI.Core.Application;
@@ -310,6 +312,31 @@ public class AppFixture : IDisposable
         var box = TextBox(automationId);
         box.Focus();
         box.Text = value;
+    }
+
+    /// <summary>
+    /// Sets a DatePicker's date. DatePickerUiTests' own note is about
+    /// synthetic keystrokes specifically — this harness cannot deliver
+    /// those reliably — not about setting a value through UI Automation's
+    /// Value pattern, which is what <see cref="Type"/> already uses for a
+    /// plain TextBox. DatePickerTextBox (the picker's inner editable part)
+    /// is a real TextBox underneath, so the same SetValue path applies:
+    /// find that inner part and set its Text, exactly the way DatePickerUiTests
+    /// already reaches it to check focus.
+    /// </summary>
+    public void SetDate(string automationId, DateTime date)
+    {
+        var field = Require(automationId)
+            .FindFirstDescendant(cf => cf.ByControlType(ControlType.Edit))!
+            .AsTextBox();
+
+        field.Focus();
+        field.Text = date.ToString("yyyy-MM-dd");
+
+        // DatePicker only parses the typed text into SelectedDate once the
+        // text box loses focus or Enter is pressed — commit it explicitly
+        // rather than relying on whatever the caller does next to blur it.
+        Keyboard.Press(VirtualKeyShort.ENTER);
     }
 
     public void Click(string automationId) => Button(automationId).Invoke();
