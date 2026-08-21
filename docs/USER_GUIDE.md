@@ -702,7 +702,7 @@ A patient moves from one to the other and can be moved back.
 | **Consult** | Opens the consultation window for this patient |
 | **Fee** | Opens the fee form — see [section 5](#5-taking-the-consultation-fee) |
 | **Done** | Moves the tile to Completed without a consultation |
-| **Cancel** | Cancels the visit. Asks first |
+| **Cancel** | Cancels the visit. Asks first. Greyed out once the fee has been taken or the visit is finished — see below |
 
 ## Buttons on a completed tile
 
@@ -711,6 +711,26 @@ A patient moves from one to the other and can be moved back.
 | **Rx** | Prints the prescription. Says so if there isn't one |
 | **Receipt** | Prints the fee receipt again, marked DUPLICATE |
 | **Reopen** | Moves the patient back to Waiting |
+
+## When a visit can no longer be cancelled
+
+Cancel is for a booking made in error, and it stays available only while
+nothing has happened yet. The button goes grey — and the application refuses
+the change even if you reach it another way — once either of these is true:
+
+- **The fee has been taken.** There is a numbered receipt in the patient's hand.
+  Cancelling would leave that receipt pointing at a visit the register says
+  never happened.
+- **The visit is completed.** The doctor has finished and the consultation is on
+  the record.
+
+A patient who has paid and then leaves is not a cancellation. Mark the visit
+**Done**, and handle the money the way you handle any other refund at the desk.
+The register keeps showing what actually happened, which is what the day book
+and the reports are counting.
+
+A visit that is only part-way through — the patient is in the room, nothing
+paid — can still be cancelled.
 
 ## Choosing tiles or rows
 
@@ -1479,6 +1499,19 @@ Everything previews before any paper moves.
 
 **Print** sends it. **Close** goes back. If no printer is set up the application
 says so plainly instead of failing, and you can still preview.
+
+The preview opens with the whole sheet fitted to the window, so you can see the
+page the way it will come out of the printer before deciding.
+
+| Control | What it does |
+|---|---|
+| **+** / **−** | Zooms in and out. Also **Ctrl** with the mouse wheel, or **Ctrl +** and **Ctrl −** |
+| **Fit** | Back to the whole page in view. Also **Ctrl 0** |
+| **‹** / **›** | Moves between pages on a document that runs to more than one. Greyed out when there is only one page |
+
+Zoomed in past the window, the sheet scrolls — useful for checking a batch
+number or a total without printing a test copy. Resizing the window re-fits the
+page until you zoom yourself, after which it leaves your zoom alone.
 
 | Document | Number | Print it from |
 |---|---|---|

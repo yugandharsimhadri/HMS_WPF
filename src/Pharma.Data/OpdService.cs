@@ -336,6 +336,20 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
             return;
         }
 
+        // Refused here and not only on screen: a paid or completed visit has a
+        // numbered receipt or a consultation hanging off it, and cancelling
+        // would strand them against a visit the register says never happened.
+        if (status == VisitStatus.Cancelled && !visit.CanCancel)
+        {
+            var why = visit.FeePaid
+                ? $"the fee has already been taken{(string.IsNullOrWhiteSpace(visit.FeeReceiptNo) ? "" : $" on receipt {visit.FeeReceiptNo}")}"
+                : $"it is already {visit.Status.ToString().ToLowerInvariant()}";
+
+            log.Skip($"refused: {visit.VisitNo} is {visit.Status}, feePaid={visit.FeePaid}");
+            throw new InvalidOperationException(
+                $"Token {visit.TokenNo} cannot be cancelled — {why}.");
+        }
+
         var was = visit.Status;
         visit.Status = status;
         await db.SaveChangesAsync();

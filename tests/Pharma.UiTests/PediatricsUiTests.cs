@@ -699,4 +699,37 @@ public class PediatricsUiTests(AppFixture app) : IClassFixture<AppFixture>
                 .Any(r => TextOfCell(r.Cells[1]).Contains(vaccineName) && TextOfCell(r.Cells[2]) == "Given"),
             "the dose to read Given on the card once the bill has saved");
     }
+
+    /// <summary>
+    /// The Immunization card fills its tab, the way Growth and Care do.
+    ///
+    /// It used to sit in a column capped at 820 wide and centred, so on a
+    /// full-screen window the card was marooned in the middle with the
+    /// schedule scrolling inside a 360px box while half the screen sat
+    /// empty. Comparing against the Care tab rather than against a fixed
+    /// number keeps this honest at any window size.
+    /// </summary>
+    [Fact]
+    public void The_immunization_card_fills_the_tab_like_the_other_tabs_do()
+    {
+        EnsurePediatricsEnabled();
+        RegisterAndSelectPatient(DateTime.Now.ToString("HHmmssfff"));
+
+        app.SelectTab("PediatricsTabs", "Care");
+        AppFixture.WaitUntil(() => app.Find("PediatricsLinesGrid") is not null, "the Care tab");
+        var care = app.Require("PediatricsLinesGrid").BoundingRectangle.Width;
+
+        app.SelectTab("PediatricsTabs", "Immunization");
+        AppFixture.WaitUntil(() => app.Find("PediatricsImmunizationGrid") is not null, "the Immunization tab");
+        var card = app.Require("PediatricsImmunizationGrid").BoundingRectangle;
+
+        Assert.True(card.Width > care * 0.9,
+            $"the immunization schedule should span the tab like Care does: Care is {care}px, this is {card.Width}px");
+
+        // And the schedule itself should use the height it is given rather
+        // than scrolling a dozen vaccines inside a short fixed box.
+        Assert.True(card.Height > 360,
+            $"the schedule should grow with the tab, not stay capped: {card.Height}px");
+    }
 }
+

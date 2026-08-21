@@ -145,6 +145,19 @@ public class Visit : BaseEntity
 
     public string FeeBadge => FeePaid ? "Fee paid" : "Fee due";
 
+    /// <summary>
+    /// Whether this visit may still be called off.
+    ///
+    /// Once the fee is taken a numbered receipt exists, and once the patient has
+    /// been seen there is a consultation on record — cancelling either would
+    /// leave a receipt or a prescription pointing at a visit the register says
+    /// never happened. Refund and reversal are deliberately not part of this
+    /// product, so the answer is simply no. <c>OpdService.SetStatusAsync</c>
+    /// enforces the same rule server-side; this is what lets the screen stop
+    /// offering it in the first place.
+    /// </summary>
+    public bool CanCancel => !FeePaid && Status is not (VisitStatus.Completed or VisitStatus.Cancelled);
+
     /// <summary>One line for the row layout, with no dangling separator when
     /// the complaint was left blank.</summary>
     public string RowSummary => string.IsNullOrWhiteSpace(Complaint)

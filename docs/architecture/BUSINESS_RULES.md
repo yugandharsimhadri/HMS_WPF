@@ -143,8 +143,23 @@ it — which is why this refusal is worded to be unmistakable.
 ## 4 · OPD
 
 ### A visit is booked, then queued, then consulted, then completed
-`VisitStatus`: `Booked → Waiting → InConsultation → Completed`, with `Cancelled`
-reachable throughout.
+`VisitStatus`: `Booked → Waiting → InConsultation → Completed`. `Cancelled` is
+reachable from the first three, but not once money or a consultation exists —
+see below.
+
+### A visit cannot be cancelled once it is paid or completed
+`Visit.CanCancel` is `!FeePaid && Status is not (Completed or Cancelled)`.
+Enforced **server-side** in `OpdService.SetStatusAsync`, which throws an
+`InvalidOperationException` naming the receipt; the tile's Cancel button binds to
+the same property, and `OpdViewModel.CancelVisitAsync` re-checks before asking
+for confirmation, because a tile drawn before the fee was taken on another
+screen is out of date by the time it is clicked.
+
+Cancelling a paid visit would strand a numbered receipt against a visit the
+register says never happened; cancelling a completed one would do the same to a
+consultation. **Refund and reversal are deliberately not in the product** — the
+desk settles the money on paper and the register keeps showing what happened.
+A part-way, unpaid visit (`InConsultation`) can still be cancelled.
 
 ### Tokens are per day
 Allocated on booking, sequential within the day, and shown on every tile.

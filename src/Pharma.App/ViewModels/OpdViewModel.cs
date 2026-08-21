@@ -234,14 +234,30 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     {
         if (visit is null) return;
 
+        // The button is disabled in this case, so this is the belt to that
+        // braces — reached only if the tile is stale, which it can be when the
+        // fee was taken on another screen since this list was drawn.
+        if (!visit.CanCancel)
+        {
+            Status = visit.FeePaid
+                ? $"Token {visit.TokenNo} has already been paid and cannot be cancelled."
+                : $"Token {visit.TokenNo} is already {visit.Status.ToString().ToLowerInvariant()}.";
+            await RefreshAsync();
+            return;
+        }
+
         var confirm = Dialog.Show(
             $"Cancel token {visit.TokenNo} for {visit.Patient.Name}?",
             "Cancel visit", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
         if (confirm != MessageBoxResult.Yes) return;
 
-        await opd.SetStatusAsync(visit.Id, VisitStatus.Cancelled);
-        await RefreshAsync();
+        await Safely.RunAsync(async () =>
+        {
+            await opd.SetStatusAsync(visit.Id, VisitStatus.Cancelled);
+            await RefreshAsync();
+            Status = $"Token {visit.TokenNo} cancelled.";
+        }, "Cancelling the visit", m => Status = m);
     }
 
     [RelayCommand]

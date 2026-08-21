@@ -408,13 +408,15 @@
                             </StackPanel>
                         </Border>
 
-                        <StackPanel MaxWidth="820" HorizontalAlignment="Stretch"
-                                    Visibility="{Binding HasSelectedPatient, Converter={StaticResource BoolVis}}">
-                            <DockPanel Margin="0,0,0,10">
-                                <TextBlock Text="Immunization card" Style="{StaticResource H2}"/>
-                            </DockPanel>
+                        <!-- Fills the tab, like Care does. This was capped at 820
+                             wide, which left the card marooned in the middle of a
+                             wide window with the grid scrolling inside 360px while
+                             half the screen sat empty. -->
+                        <DockPanel Visibility="{Binding HasSelectedPatient, Converter={StaticResource BoolVis}}">
+                            <TextBlock DockPanel.Dock="Top" Text="Immunization card" Style="{StaticResource H2}"
+                                       Margin="0,0,0,10"/>
 
-                            <UniformGrid Columns="4" Margin="0,0,0,14">
+                            <UniformGrid DockPanel.Dock="Top" Columns="4" Margin="0,0,0,14">
                                 <Border Style="{StaticResource Card}" Margin="0,0,6,0" Padding="12,10">
                                     <StackPanel>
                                         <TextBlock Text="{Binding ImmunizationGivenCount}" FontWeight="Bold"
@@ -450,7 +452,7 @@
                             </UniformGrid>
 
                             <DataGrid ItemsSource="{Binding ImmunizationRows}" IsReadOnly="True"
-                                      CanUserSortColumns="False" MaxHeight="360"
+                                      CanUserSortColumns="False"
                                       AutomationProperties.AutomationId="PediatricsImmunizationGrid">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="AGE" Binding="{Binding RecommendedAgeDays, Converter={StaticResource ImmunizationAgeLabel}}"
@@ -497,7 +499,7 @@
                                     </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
-                        </StackPanel>
+                        </DockPanel>
                     </Grid>
                 </TabItem>
             </TabControl>
