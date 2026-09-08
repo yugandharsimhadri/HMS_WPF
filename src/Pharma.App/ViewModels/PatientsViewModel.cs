@@ -16,7 +16,8 @@ namespace Pharma.App.ViewModels;
 /// Booking still happens on the OPD screen — this is the record, not the queue.
 /// </summary>
 public partial class PatientsViewModel(
-    OpdService opd, PharmacyService pharmacy, SettingsService settings, DiagnosticsService diagnostics)
+    OpdService opd, PharmacyService pharmacy, SettingsService settings, DiagnosticsService diagnostics,
+    PediatricsService pediatrics)
     : ObservableObject, IPage
 {
     public string Title => "Patients";
@@ -26,6 +27,8 @@ public partial class PatientsViewModel(
     public ObservableCollection<Visit> History { get; } = [];
     public ObservableCollection<Sale> Bills { get; } = [];
     public ObservableCollection<DiagnosticBill> DiagnosticBills { get; } = [];
+    public ObservableCollection<VaccinationRecord> VaccinationHistory { get; } = [];
+    public ObservableCollection<GrowthMeasurement> GrowthHistory { get; } = [];
 
     [ObservableProperty] private string _search = "";
     [ObservableProperty] private Visit? _selectedVisit;
@@ -43,9 +46,15 @@ public partial class PatientsViewModel(
     /// diagnostic bill" button and the history tab only make sense if it is.</summary>
     [ObservableProperty] private bool _diagnosticsEnabled;
 
+    /// <summary>Whether the Pediatrics module is switched on — the
+    /// vaccination/growth history tabs only make sense if it is.</summary>
+    [ObservableProperty] private bool _pediatricsEnabled;
+
     public async Task LoadAsync()
     {
-        DiagnosticsEnabled = (await settings.GetGeneralAsync()).DiagnosticsEnabled;
+        var general = await settings.GetGeneralAsync();
+        DiagnosticsEnabled = general.DiagnosticsEnabled;
+        PediatricsEnabled = general.PediatricsEnabled;
         await FindAsync();
     }
 
@@ -68,6 +77,8 @@ public partial class PatientsViewModel(
             History.Clear();
             Bills.Clear();
             DiagnosticBills.Clear();
+            VaccinationHistory.Clear();
+            GrowthHistory.Clear();
             return;
         }
 
@@ -85,6 +96,14 @@ public partial class PatientsViewModel(
         DiagnosticBills.Clear();
         if (DiagnosticsEnabled)
             foreach (var b in await diagnostics.GetBillsByPatientAsync(patientId)) DiagnosticBills.Add(b);
+
+        VaccinationHistory.Clear();
+        GrowthHistory.Clear();
+        if (PediatricsEnabled)
+        {
+            foreach (var v in await pediatrics.GetVaccinationHistoryAsync(patientId)) VaccinationHistory.Add(v);
+            foreach (var g in await pediatrics.GetGrowthHistoryAsync(patientId)) GrowthHistory.Add(g);
+        }
     }
 
     // ── Reprinting, however long ago it was ────────────────────────────────
@@ -185,6 +204,20 @@ public partial class PatientsViewModel(
 
         await shell.GoCommand.ExecuteAsync("diagnostics");
         await diagnosticsPage.SelectPatientAsync(patient.Id);
+    }
+
+    /// <summary>Jumps to the Pediatrics screen with this patient already
+    /// selected, same reasoning as <see cref="NewDiagnosticBillAsync"/>.</summary>
+    [RelayCommand]
+    private async Task NewVaccinationAsync()
+    {
+        if (SelectedPatient is not { } patient) return;
+
+        var shell = App.Services.GetRequiredService<MainViewModel>();
+        var pediatricsPage = App.Services.GetRequiredService<PediatricsViewModel>();
+
+        await shell.GoCommand.ExecuteAsync("pediatrics");
+        await pediatricsPage.SelectPatientAsync(patient.Id);
     }
 
     // ── Adding and editing ─────────────────────────────────────────────────

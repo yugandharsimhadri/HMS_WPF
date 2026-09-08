@@ -1,0 +1,205 @@
+<UserControl x:Class="Pharma.App.Views.LabAnalyteEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App"
+             Background="{DynamicResource Bg}"
+             Width="560">
+
+    <DockPanel Margin="18">
+
+        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14" Padding="16,12">
+            <TextBlock Text="{Binding Header}" Style="{StaticResource H2}"
+                       TextTrimming="CharacterEllipsis"
+                       AutomationProperties.AutomationId="AnalyteEditorHeader"/>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Margin="0,14,0,0">
+            <DockPanel>
+                <Button DockPanel.Dock="Left" Content="Delete" Style="{StaticResource BtnDanger}"
+                        MinWidth="100"
+                        Command="{Binding DeleteCommand}"
+                        Visibility="{Binding CanDelete, Converter={StaticResource BoolVis}}"
+                        AutomationProperties.AutomationId="AnalyteEditorDelete"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
+                            MinWidth="100" IsCancel="True"
+                            Command="{Binding CancelCommand}"
+                            AutomationProperties.AutomationId="AnalyteEditorCancel"/>
+                    <Button Content="Save analyte" Style="{StaticResource BtnPrimaryLarge}"
+                            MinWidth="130" IsDefault="True"
+                            Command="{Binding SaveCommand}"
+                            AutomationProperties.AutomationId="AnalyteEditorSave"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Style="{StaticResource Muted}"
+                   TextWrapping="Wrap" Margin="2,10,2,0"
+                   AutomationProperties.AutomationId="AnalyteEditorStatus"/>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="560">
+            <StackPanel>
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <local:RequiredLabel Text="Analyte name"/>
+                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                 local:Field.IsMissing="{Binding NameMissing}"
+                                 AutomationProperties.AutomationId="AnalyteEditorName"/>
+
+                        <Grid Margin="0,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Category" Style="{StaticResource Label}"/>
+                                <ComboBox ItemsSource="{Binding Categories}" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True"
+                                          AutomationProperties.AutomationId="AnalyteEditorCategory"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Units" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding Units, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="AnalyteEditorUnits"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Result type" Style="{StaticResource Label}"/>
+                                <ComboBox ItemsSource="{Binding ResultTypes}" SelectedItem="{Binding ResultType, Mode=TwoWay}"
+                                          AutomationProperties.AutomationId="AnalyteEditorResultType"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Decimal places" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding DecimalPlaces, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Whole"
+                                         AutomationProperties.AutomationId="AnalyteEditorDecimalPlaces"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Sequence" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding SequenceOrder, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Whole"
+                                         AutomationProperties.AutomationId="AnalyteEditorSequence"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <CheckBox Content="Active" IsChecked="{Binding Active, Mode=TwoWay}"
+                                  Margin="0,10,0,0"
+                                  AutomationProperties.AutomationId="AnalyteEditorActive"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Reference ranges" Style="{StaticResource H2}" Margin="0,0,0,2"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,10"
+                                   Text="The first row whose gender and age band admit the patient is used at result entry. Leave gender/age blank to apply to everyone."/>
+
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="70"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Label" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding RangeLabel, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="AnalyteEditorRangeLabel"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Gender" Style="{StaticResource Label}"/>
+                                <ComboBox ItemsSource="{Binding GenderChoices}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                                          SelectedValue="{Binding RangeGender, Mode=TwoWay}"
+                                          AutomationProperties.AutomationId="AnalyteEditorRangeGender"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Min age" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding RangeMinAge, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Money"
+                                         AutomationProperties.AutomationId="AnalyteEditorRangeMinAge"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="6">
+                                <TextBlock Text="Max age" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding RangeMaxAge, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Money"
+                                         AutomationProperties.AutomationId="AnalyteEditorRangeMaxAge"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Low" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding RangeLow, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Money"
+                                         AutomationProperties.AutomationId="AnalyteEditorRangeLow"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="High" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding RangeHigh, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Money"
+                                         AutomationProperties.AutomationId="AnalyteEditorRangeHigh"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="or text range (e.g. Non-reactive)" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding RangeTextRange, UpdateSourceTrigger=PropertyChanged}"
+                                         AutomationProperties.AutomationId="AnalyteEditorRangeTextRange"/>
+                            </StackPanel>
+                            <Button Grid.Column="6" Content="Add" Style="{StaticResource BtnPrimary}"
+                                    VerticalAlignment="Bottom" Margin="8,0,0,0"
+                                    Command="{Binding AddRangeCommand}"
+                                    AutomationProperties.AutomationId="AnalyteEditorAddRange"/>
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding Ranges}"
+                                      AutomationProperties.AutomationId="AnalyteEditorRanges">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="0,6">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Content="✕" BorderThickness="0"
+                                                    Background="Transparent" Foreground="{DynamicResource Danger}" Cursor="Hand"
+                                                    Command="{Binding DataContext.RemoveRangeCommand,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" Width="140"/>
+                                            <TextBlock Text="{Binding GenderLabel}" Width="60" Style="{StaticResource Muted}"/>
+                                            <TextBlock Width="90" Style="{StaticResource Muted}">
+                                                <Run Text="{Binding MinAgeYears, Mode=OneWay, TargetNullValue=''}"/><Run Text="–"/><Run Text="{Binding MaxAgeYears, Mode=OneWay, TargetNullValue=''}"/><Run Text="y"/>
+                                            </TextBlock>
+                                            <TextBlock Style="{StaticResource Muted}">
+                                                <Run Text="{Binding LowValue, Mode=OneWay, TargetNullValue=''}"/><Run Text=" – "/><Run Text="{Binding HighValue, Mode=OneWay, TargetNullValue=''}"/><Run Text=" "/><Run Text="{Binding TextRange, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

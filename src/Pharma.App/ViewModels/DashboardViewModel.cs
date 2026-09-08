@@ -23,7 +23,8 @@ public record DashboardActivityRow(DateTime When, string BillNo, string PatientN
 /// across seven separate marks first.
 /// </summary>
 public partial class DashboardViewModel(
-    OpdService opd, PharmacyService pharmacy, DiagnosticsService diagnostics, SettingsService settings)
+    OpdService opd, PharmacyService pharmacy, DiagnosticsService diagnostics, SettingsService settings,
+    ProcedureBillsService procedureBills, DentistService dentist, PathologyLabService pathologyLab)
     : ObservableObject, IPage
 {
     public string Title => "Dashboard";
@@ -58,6 +59,16 @@ public partial class DashboardViewModel(
 
     // ── Today's revenue split (donut) ────────────────────────────────────
     [ObservableProperty] private bool _diagnosticsEnabled;
+
+    // Not part of the revenue donut/trend below — those stay the original
+    // OPD/Pharmacy/Diagnostics picture so the KPI tile and the chart always
+    // agree with each other. These three only gate what shows in the
+    // Recent Activity feed, so today's Pediatrics/Dentist/Pathology Lab
+    // transactions are visible on the landing screen without folding their
+    // money into a total the chart does not also account for.
+    [ObservableProperty] private bool _pediatricsEnabled;
+    [ObservableProperty] private bool _dentistEnabled;
+    [ObservableProperty] private bool _pathologyLabEnabled;
     [ObservableProperty] private decimal _opdRevenueToday;
     [ObservableProperty] private decimal _pharmacyRevenueToday;
     [ObservableProperty] private decimal _diagnosticsRevenueToday;
@@ -90,7 +101,11 @@ public partial class DashboardViewModel(
 
     public async Task LoadAsync()
     {
-        DiagnosticsEnabled = (await settings.GetGeneralAsync()).DiagnosticsEnabled;
+        var general = await settings.GetGeneralAsync();
+        DiagnosticsEnabled = general.DiagnosticsEnabled;
+        PediatricsEnabled = general.PediatricsEnabled;
+        DentistEnabled = general.DentistEnabled;
+        PathologyLabEnabled = general.PathologyLabEnabled;
 
         var from = DateTime.Today.AddDays(-(TrendDays - 1));
         var to = DateTime.Today;
@@ -175,7 +190,13 @@ public partial class DashboardViewModel(
         LowStock.Clear();
         foreach (var p in lowStock.Take(5)) LowStock.Add(p);
 
-        BuildActivityFeed(todaysVisits, salesRange.Where(s => s.BillDate.Date == to), diagRange.Where(b => b.BillDate.Date == to));
+        var procedureBillsToday = PediatricsEnabled || DentistEnabled ? await procedureBills.SearchBillsAsync(to, to) : [];
+        var dentalPaymentsToday = DentistEnabled ? await dentist.SearchPaymentsAsync(to, to) : [];
+        var labOrdersToday = PathologyLabEnabled ? await pathologyLab.SearchOrdersAsync(to, to) : [];
+
+        BuildActivityFeed(
+            todaysVisits, salesRange.Where(s => s.BillDate.Date == to), diagRange.Where(b => b.BillDate.Date == to),
+            procedureBillsToday, dentalPaymentsToday, labOrdersToday);
 
         OnPropertyChanged(nameof(Subtitle));
     }
@@ -213,7 +234,9 @@ public partial class DashboardViewModel(
     }
 
     private void BuildActivityFeed(
-        IEnumerable<Visit> todaysVisits, IEnumerable<Sale> todaysSales, IEnumerable<DiagnosticBill> todaysDiagBills)
+        IEnumerable<Visit> todaysVisits, IEnumerable<Sale> todaysSales, IEnumerable<DiagnosticBill> todaysDiagBills,
+        IEnumerable<ProcedureBill> todaysProcedureBills, IEnumerable<DentalPayment> todaysDentalPayments,
+        IEnumerable<LabOrder> todaysLabOrders)
     {
         var rows = new List<DashboardActivityRow>();
 
@@ -227,6 +250,18 @@ public partial class DashboardViewModel(
 
         rows.AddRange(todaysDiagBills
             .Select(b => new DashboardActivityRow(b.BillDate, b.BillNo, b.PatientName, "Diagnostics", b.FinalAmount)));
+
+        // A procedure bill does not carry which department raised it — see
+        // ProcedureBillsService's own note — so it reads simply "Procedure"
+        // rather than guessing Pediatrics or Dentist.
+        rows.AddRange(todaysProcedureBills
+            .Select(b => new DashboardActivityRow(b.BillDate, b.BillNo, b.PatientName, "Procedure", b.FinalAmount)));
+
+        rows.AddRange(todaysDentalPayments
+            .Select(p => new DashboardActivityRow(p.PaidOn, p.ReceiptNo, p.DentalCase.PatientName, "Dentist", p.Amount)));
+
+        rows.AddRange(todaysLabOrders
+            .Select(o => new DashboardActivityRow(o.OrderDate, o.OrderNo, o.PatientName, "Pathology Lab", o.FinalAmount)));
 
         RecentActivity.Clear();
         foreach (var row in rows.OrderByDescending(r => r.When).Take(8)) RecentActivity.Add(row);

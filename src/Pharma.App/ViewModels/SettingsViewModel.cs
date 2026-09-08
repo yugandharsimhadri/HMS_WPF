@@ -41,6 +41,12 @@ public partial class SettingsViewModel(
         QueueLayout = general.QueueLayout;
         Theme = general.Theme;
         DiagnosticsEnabled = general.DiagnosticsEnabled;
+        OpdEnabled = general.OpdEnabled;
+        PharmacyEnabled = general.PharmacyEnabled;
+        AppointmentsEnabled = general.AppointmentsEnabled;
+        PediatricsEnabled = general.PediatricsEnabled;
+        DentistEnabled = general.DentistEnabled;
+        PathologyLabEnabled = general.PathologyLabEnabled;
         RequireLogin = general.RequireLogin;
 
         var clinic = await settings.GetClinicAsync();
@@ -103,14 +109,25 @@ public partial class SettingsViewModel(
         // in-memory value along with it — leaving one out here would reset it
         // to its default the next time General (rather than that field's own
         // tab) is the one saved.
-        await settings.SaveGeneralAsync(new GeneralSettings
-        {
-            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled,
-            RequireLogin = RequireLogin
-        });
+        await settings.SaveGeneralAsync(BuildGeneralSettings());
         Status = $"Saved. The OPD queue will use {QueueLayout.ToString().ToLowerInvariant()}, " +
                  $"in the {Theme.ToString().ToLowerInvariant()} theme.";
     }
+
+    /// <summary>
+    /// Every save to <c>GeneralSettings</c> — from any of its three tabs —
+    /// has to carry every field's current in-memory value, itself included,
+    /// or a save from one tab resets whatever the others hold. See the
+    /// comment on <see cref="SaveGeneralAsync"/>.
+    /// </summary>
+    private GeneralSettings BuildGeneralSettings() => new()
+    {
+        QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled,
+        OpdEnabled = OpdEnabled, PharmacyEnabled = PharmacyEnabled,
+        AppointmentsEnabled = AppointmentsEnabled, PediatricsEnabled = PediatricsEnabled,
+        DentistEnabled = DentistEnabled, PathologyLabEnabled = PathologyLabEnabled,
+        RequireLogin = RequireLogin
+    };
 
     // ── Features ───────────────────────────────────────────────────────────
 
@@ -121,22 +138,59 @@ public partial class SettingsViewModel(
     /// </summary>
     [ObservableProperty] private bool _diagnosticsEnabled;
 
+    /// <summary>
+    /// On by default, unlike every other module here — every clinic already
+    /// running this application is already using the OPD queue. See
+    /// <see cref="GeneralSettings.OpdEnabled"/>.
+    /// </summary>
+    [ObservableProperty] private bool _opdEnabled = true;
+
+    /// <summary>On by default, for the same reason as <see cref="OpdEnabled"/>.</summary>
+    [ObservableProperty] private bool _pharmacyEnabled = true;
+
+    /// <summary>Off by default. Advance booking, cancellation/reschedule,
+    /// the daily check-in screen, and on-screen reminders.</summary>
+    [ObservableProperty] private bool _appointmentsEnabled;
+
+    /// <summary>Off by default. Vaccine master, vaccination and growth
+    /// history, and pediatric procedure billing.</summary>
+    [ObservableProperty] private bool _pediatricsEnabled;
+
+    /// <summary>Off by default. Dental cases, sittings, replacements,
+    /// packages and per-case payment collection.</summary>
+    [ObservableProperty] private bool _dentistEnabled;
+
+    // Backs the same Features tab and round-trips through every save the
+    // same way DiagnosticsEnabled does, but does not have its own checkbox
+    // on the Features tab yet — it gets one, and a working nav item to
+    // gate, as its own module is built out.
+    [ObservableProperty] private bool _pathologyLabEnabled;
+
     [RelayCommand]
     private async Task SaveFeaturesAsync()
     {
-        await settings.SaveGeneralAsync(new GeneralSettings
+        try
         {
-            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled,
-            RequireLogin = RequireLogin
-        });
+            await settings.SaveGeneralAsync(BuildGeneralSettings());
+        }
+        catch (InvalidOperationException ex)
+        {
+            Dialog.Show(ex.Message, "Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
-        // The shell reads this once at startup; poke it directly so the nav
+        // The shell reads these once at startup; poke them directly so a nav
         // button appears or disappears immediately rather than after a restart.
-        App.Services.GetRequiredService<MainViewModel>().DiagnosticsEnabled = DiagnosticsEnabled;
+        var main = App.Services.GetRequiredService<MainViewModel>();
+        main.DiagnosticsEnabled = DiagnosticsEnabled;
+        main.OpdEnabled = OpdEnabled;
+        main.PharmacyEnabled = PharmacyEnabled;
+        main.AppointmentsEnabled = AppointmentsEnabled;
+        main.PediatricsEnabled = PediatricsEnabled;
+        main.DentistEnabled = DentistEnabled;
+        main.PathologyLabEnabled = PathologyLabEnabled;
 
-        Status = DiagnosticsEnabled
-            ? "Saved. The Diagnostics module is now available from the sidebar."
-            : "Saved. The Diagnostics module is hidden from the sidebar.";
+        Status = "Saved.";
     }
 
     /// <summary>One line about the licence, so the state is visible without opening the dialog.</summary>
@@ -588,11 +642,7 @@ public partial class SettingsViewModel(
     [RelayCommand]
     private async Task SaveSecurityAsync()
     {
-        await settings.SaveGeneralAsync(new GeneralSettings
-        {
-            QueueLayout = QueueLayout, Theme = Theme, DiagnosticsEnabled = DiagnosticsEnabled,
-            RequireLogin = RequireLogin
-        });
+        await settings.SaveGeneralAsync(BuildGeneralSettings());
 
         Status = RequireLogin
             ? "Saved. Sign-in will be asked for the next time the application is started."

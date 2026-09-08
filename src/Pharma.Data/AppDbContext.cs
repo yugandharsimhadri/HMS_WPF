@@ -23,6 +23,36 @@ public class AppDbContext : DbContext
     public DbSet<PrescriptionItem> PrescriptionItems => Set<PrescriptionItem>();
     public DbSet<VisitDiagnosticRequest> VisitDiagnosticRequests => Set<VisitDiagnosticRequest>();
 
+    public DbSet<Appointment> Appointments => Set<Appointment>();
+    public DbSet<ReminderLog> ReminderLogs => Set<ReminderLog>();
+
+    public DbSet<VaccineMaster> VaccineMasters => Set<VaccineMaster>();
+    public DbSet<VaccinationRecord> VaccinationRecords => Set<VaccinationRecord>();
+    public DbSet<GrowthMeasurement> GrowthMeasurements => Set<GrowthMeasurement>();
+    public DbSet<PediatricProfile> PediatricProfiles => Set<PediatricProfile>();
+    public DbSet<Procedure> Procedures => Set<Procedure>();
+    public DbSet<ProcedureBill> ProcedureBills => Set<ProcedureBill>();
+    public DbSet<ProcedureBillItem> ProcedureBillItems => Set<ProcedureBillItem>();
+
+    public DbSet<DentalCase> DentalCases => Set<DentalCase>();
+    public DbSet<DentalSitting> DentalSittings => Set<DentalSitting>();
+    public DbSet<DentalReplacementMaster> DentalReplacementMasters => Set<DentalReplacementMaster>();
+    public DbSet<DentalCaseReplacement> DentalCaseReplacements => Set<DentalCaseReplacement>();
+    public DbSet<AnesthesiaTypeMaster> AnesthesiaTypeMasters => Set<AnesthesiaTypeMaster>();
+    public DbSet<DentalPackageMaster> DentalPackageMasters => Set<DentalPackageMaster>();
+    public DbSet<DentalPackageItem> DentalPackageItems => Set<DentalPackageItem>();
+    public DbSet<DentalPayment> DentalPayments => Set<DentalPayment>();
+
+    public DbSet<LabAnalyte> LabAnalytes => Set<LabAnalyte>();
+    public DbSet<LabAnalyteReferenceRange> LabAnalyteReferenceRanges => Set<LabAnalyteReferenceRange>();
+    public DbSet<LabReport> LabReports => Set<LabReport>();
+    public DbSet<LabReportAnalyte> LabReportAnalytes => Set<LabReportAnalyte>();
+    public DbSet<LabPackageMaster> LabPackageMasters => Set<LabPackageMaster>();
+    public DbSet<LabPackageReport> LabPackageReports => Set<LabPackageReport>();
+    public DbSet<LabOrder> LabOrders => Set<LabOrder>();
+    public DbSet<LabOrderReport> LabOrderReports => Set<LabOrderReport>();
+    public DbSet<LabResult> LabResults => Set<LabResult>();
+
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Batch> Batches => Set<Batch>();
     public DbSet<StockEntry> StockEntries => Set<StockEntry>();
@@ -73,6 +103,13 @@ public class AppDbContext : DbContext
                 .HasForeignKey(p => p.VisitId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.DiagnosticRequests).WithOne(r => r.Visit)
                 .HasForeignKey(r => r.VisitId).OnDelete(DeleteBehavior.Cascade);
+
+            // Advisory back-reference to the Appointment that produced this
+            // visit, if any — no navigation property either side, same shape
+            // as DiagnosticBillItem.TestId below. Deleting the appointment
+            // later must never cascade into deleting the visit it produced.
+            e.HasOne<Appointment>().WithMany()
+                .HasForeignKey(x => x.AppointmentId).OnDelete(DeleteBehavior.SetNull);
 
             e.Ignore(x => x.IsWaiting);
             e.Ignore(x => x.PatientLine);
@@ -183,6 +220,195 @@ public class AppDbContext : DbContext
         {
             e.HasOne(x => x.Test).WithMany()
                 .HasForeignKey(x => x.TestId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Appointment>(e =>
+        {
+            e.HasIndex(x => x.AppointmentNo).IsUnique();
+            e.HasIndex(x => x.ScheduledOn);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Doctor).WithMany()
+                .HasForeignKey(x => x.DoctorId).OnDelete(DeleteBehavior.Restrict);
+
+            // Self-referencing — the chain of reschedules a slot went
+            // through. No navigation property; RescheduledFromId is only
+            // ever read back, never joined against.
+            e.HasOne<Appointment>().WithMany()
+                .HasForeignKey(x => x.RescheduledFromId).OnDelete(DeleteBehavior.SetNull);
+
+            e.Ignore(x => x.IsPending);
+        });
+
+        b.Entity<ReminderLog>(e =>
+        {
+            e.HasIndex(x => x.DueOn);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.Ignore(x => x.IsActioned);
+        });
+
+        b.Entity<VaccineMaster>(e => e.HasIndex(x => x.Name));
+
+        b.Entity<VaccinationRecord>(e =>
+        {
+            e.HasIndex(x => x.PatientId);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Vaccine).WithMany()
+                .HasForeignKey(x => x.VaccineId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Product).WithMany()
+                .HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Batch).WithMany()
+                .HasForeignKey(x => x.BatchId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<GrowthMeasurement>(e =>
+        {
+            e.HasIndex(x => x.PatientId);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Visit>().WithMany()
+                .HasForeignKey(x => x.VisitId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<PediatricProfile>(e =>
+        {
+            e.HasIndex(x => x.PatientId).IsUnique();
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Procedure>(e => e.HasIndex(x => new { x.Department, x.Name }));
+
+        b.Entity<ProcedureBill>(e =>
+        {
+            e.HasIndex(x => x.BillNo).IsUnique();
+            e.HasIndex(x => x.BillDate);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Visit).WithMany()
+                .HasForeignKey(x => x.VisitId).OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(x => x.Items).WithOne(i => i.Bill)
+                .HasForeignKey(i => i.BillId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<ProcedureBillItem>(e =>
+        {
+            e.HasOne<Procedure>().WithMany()
+                .HasForeignKey(x => x.ProcedureId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<DentalCase>(e =>
+        {
+            e.HasIndex(x => x.PatientId);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Doctor).WithMany()
+                .HasForeignKey(x => x.DoctorId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Procedure>().WithMany()
+                .HasForeignKey(x => x.ProcedureId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<DentalPackageMaster>().WithMany()
+                .HasForeignKey(x => x.PackageId).OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(x => x.Sittings).WithOne(s => s.DentalCase)
+                .HasForeignKey(s => s.DentalCaseId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Replacements).WithOne(r => r.DentalCase)
+                .HasForeignKey(r => r.DentalCaseId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.Payments).WithOne(p => p.DentalCase)
+                .HasForeignKey(p => p.DentalCaseId).OnDelete(DeleteBehavior.Cascade);
+            e.Ignore(x => x.TotalCost);
+            e.Ignore(x => x.AmountPaid);
+            e.Ignore(x => x.Balance);
+        });
+
+        b.Entity<DentalSitting>(e =>
+        {
+            e.HasOne(x => x.Doctor).WithMany()
+                .HasForeignKey(x => x.DoctorId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<AnesthesiaTypeMaster>().WithMany()
+                .HasForeignKey(x => x.AnesthesiaTypeId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<DentalReplacementMaster>(e => e.HasIndex(x => x.Name));
+
+        b.Entity<DentalCaseReplacement>(e =>
+        {
+            e.HasOne<DentalReplacementMaster>().WithMany()
+                .HasForeignKey(x => x.ReplacementId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<AnesthesiaTypeMaster>(e => e.HasIndex(x => x.Name));
+
+        b.Entity<DentalPackageMaster>(e => e.HasIndex(x => x.Name));
+
+        b.Entity<DentalPackageItem>(e =>
+        {
+            e.HasOne(x => x.Package).WithMany()
+                .HasForeignKey(x => x.PackageId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Procedure>().WithMany()
+                .HasForeignKey(x => x.ProcedureId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<DentalPayment>(e =>
+        {
+            e.HasIndex(x => x.ReceiptNo).IsUnique();
+            e.HasIndex(x => x.PaidOn);
+        });
+
+        b.Entity<LabAnalyte>(e => e.HasIndex(x => x.Name));
+
+        b.Entity<LabAnalyteReferenceRange>(e =>
+        {
+            e.HasOne(x => x.Analyte).WithMany()
+                .HasForeignKey(x => x.AnalyteId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<LabReport>(e => e.HasIndex(x => x.Name));
+
+        b.Entity<LabReportAnalyte>(e =>
+        {
+            e.HasOne(x => x.Report).WithMany()
+                .HasForeignKey(x => x.ReportId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Analyte).WithMany()
+                .HasForeignKey(x => x.AnalyteId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<LabPackageMaster>(e => e.HasIndex(x => x.Name));
+
+        b.Entity<LabPackageReport>(e =>
+        {
+            e.HasOne(x => x.Package).WithMany()
+                .HasForeignKey(x => x.PackageId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Report).WithMany()
+                .HasForeignKey(x => x.ReportId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        b.Entity<LabOrder>(e =>
+        {
+            e.HasIndex(x => x.OrderNo).IsUnique();
+            e.HasIndex(x => x.OrderDate);
+            e.HasOne(x => x.Patient).WithMany()
+                .HasForeignKey(x => x.PatientId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Visit).WithMany()
+                .HasForeignKey(x => x.VisitId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<LabPackageMaster>().WithMany()
+                .HasForeignKey(x => x.PackageId).OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(x => x.Reports).WithOne(r => r.Order)
+                .HasForeignKey(r => r.OrderId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<LabOrderReport>(e =>
+        {
+            e.HasOne<LabReport>().WithMany()
+                .HasForeignKey(x => x.ReportId).OnDelete(DeleteBehavior.SetNull);
+            e.HasMany(x => x.Results).WithOne(r => r.OrderReport)
+                .HasForeignKey(r => r.OrderReportId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<LabResult>(e =>
+        {
+            e.HasOne<LabAnalyte>().WithMany()
+                .HasForeignKey(x => x.AnalyteId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<Setting>(e => e.HasIndex(x => x.Key).IsUnique());

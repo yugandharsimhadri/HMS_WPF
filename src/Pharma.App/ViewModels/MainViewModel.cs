@@ -25,6 +25,12 @@ public partial class MainViewModel : ObservableObject
     private readonly ReportsViewModel _reports;
     private readonly SettingsViewModel _settings;
     private readonly DiagnosticsViewModel _diagnostics;
+    private readonly AppointmentsViewModel _appointments;
+    private readonly PediatricsViewModel _pediatrics;
+    private readonly DentistViewModel _dentist;
+    private readonly PathologyLabViewModel _pathologyLab;
+    private readonly PathologyLabMasterViewModel _pathologyLabMaster;
+    private readonly GeneralMasterViewModel _generalMaster;
 
     [ObservableProperty] private object? _currentPage;
     [ObservableProperty] private string _activeNav = "dashboard";
@@ -38,6 +44,53 @@ public partial class MainViewModel : ObservableObject
     /// so turning it on never needs a restart.
     /// </summary>
     [ObservableProperty] private bool _diagnosticsEnabled;
+
+    /// <summary>
+    /// Whether the OPD nav item shows at all. Unlike every other module
+    /// toggle, this defaults true — every clinic already running this
+    /// application is already using the OPD queue — and is only ever off for
+    /// a clinic that deliberately switched it off (a dentist- or
+    /// pediatrician-only practice). Same live-update shape as
+    /// <see cref="DiagnosticsEnabled"/>.
+    /// </summary>
+    [ObservableProperty] private bool _opdEnabled = true;
+
+    /// <summary>Whether the Pharmacy counter / Medicines / Inventory nav
+    /// items show at all. Defaults true for the same reason as
+    /// <see cref="OpdEnabled"/>.</summary>
+    [ObservableProperty] private bool _pharmacyEnabled = true;
+
+    /// <summary>Whether the Appointments nav item shows at all. Off by
+    /// default, same live-update shape as <see cref="DiagnosticsEnabled"/>.</summary>
+    [ObservableProperty] private bool _appointmentsEnabled;
+
+    /// <summary>Whether the Pediatrics nav item shows at all. Off by
+    /// default, same live-update shape as <see cref="DiagnosticsEnabled"/>.</summary>
+    [ObservableProperty] private bool _pediatricsEnabled;
+
+    /// <summary>Whether the Dentist nav item shows at all. Off by default,
+    /// same live-update shape as <see cref="DiagnosticsEnabled"/>.</summary>
+    [ObservableProperty] private bool _dentistEnabled;
+
+    /// <summary>Whether the Pathology Lab nav item shows at all. Off by
+    /// default, same live-update shape as <see cref="DiagnosticsEnabled"/>.</summary>
+    [ObservableProperty] private bool _pathologyLabEnabled;
+
+    // ── Collapsible nav groups — Pharmacy and Pathology Lab are the only
+    //    two left with children of their own (Pediatrics and Dentist are
+    //    flat single destinations again now that their masters live on
+    //    General Master); whether a group is open is purely a UI
+    //    preference, not persisted, and defaults open so nothing looks
+    //    different from before until someone actually collapses one. ─────
+
+    [ObservableProperty] private bool _pharmacyNavExpanded = true;
+    [ObservableProperty] private bool _pathologyLabNavExpanded = true;
+
+    [RelayCommand]
+    private void TogglePharmacyNav() => PharmacyNavExpanded = !PharmacyNavExpanded;
+
+    [RelayCommand]
+    private void TogglePathologyLabNav() => PathologyLabNavExpanded = !PathologyLabNavExpanded;
 
     /// <summary>
     /// The clinic's own name, read once at startup and pushed live the moment
@@ -93,6 +146,12 @@ public partial class MainViewModel : ObservableObject
         ReportsViewModel reports,
         SettingsViewModel settings,
         DiagnosticsViewModel diagnostics,
+        AppointmentsViewModel appointments,
+        PediatricsViewModel pediatrics,
+        DentistViewModel dentist,
+        PathologyLabViewModel pathologyLab,
+        PathologyLabMasterViewModel pathologyLabMaster,
+        GeneralMasterViewModel generalMaster,
         SettingsService settingsService,
         CurrentUserService currentUser,
         AuthService auth)
@@ -106,17 +165,32 @@ public partial class MainViewModel : ObservableObject
         _reports = reports;
         _settings = settings;
         _diagnostics = diagnostics;
+        _appointments = appointments;
+        _pediatrics = pediatrics;
+        _dentist = dentist;
+        _pathologyLab = pathologyLab;
+        _pathologyLabMaster = pathologyLabMaster;
+        _generalMaster = generalMaster;
         _settingsService = settingsService;
         CurrentUser = currentUser;
         _auth = auth;
 
         GoAsync("dashboard").Forget("Loading the first page");
-        LoadDiagnosticsToggleAsync().Forget("Loading the Diagnostics module toggle");
+        LoadModuleTogglesAsync().Forget("Loading the module toggles");
         LoadClinicDisplayNameAsync().Forget("Loading the clinic name for the title bar");
     }
 
-    private async Task LoadDiagnosticsToggleAsync()
-        => DiagnosticsEnabled = (await _settingsService.GetGeneralAsync()).DiagnosticsEnabled;
+    private async Task LoadModuleTogglesAsync()
+    {
+        var general = await _settingsService.GetGeneralAsync();
+        DiagnosticsEnabled = general.DiagnosticsEnabled;
+        OpdEnabled = general.OpdEnabled;
+        PharmacyEnabled = general.PharmacyEnabled;
+        AppointmentsEnabled = general.AppointmentsEnabled;
+        PediatricsEnabled = general.PediatricsEnabled;
+        DentistEnabled = general.DentistEnabled;
+        PathologyLabEnabled = general.PathologyLabEnabled;
+    }
 
     private async Task LoadClinicDisplayNameAsync()
         => ClinicDisplayName = (await _settingsService.GetClinicAsync()).Name;
@@ -138,6 +212,12 @@ public partial class MainViewModel : ObservableObject
             "reports" => _reports,
             "settings" => _settings,
             "diagnostics" => _diagnostics,
+            "appointments" => _appointments,
+            "pediatrics" => _pediatrics,
+            "dentist" => _dentist,
+            "pathologylab" => _pathologyLab,
+            "pathologylab-master" => _pathologyLabMaster,
+            "general-master" => _generalMaster,
             _ => _dashboard
         };
 

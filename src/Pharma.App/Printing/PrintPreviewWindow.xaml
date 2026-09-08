@@ -1,7 +1,7 @@
 <Window x:Class="Pharma.App.Printing.PrintPreviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Print preview" Height="820" Width="720"
+        Title="Print preview" Height="860" Width="920" MinWidth="560" MinHeight="420"
         WindowStartupLocation="CenterOwner"
         FontFamily="{StaticResource UiFont}"
         Background="#DDE2E7">
@@ -21,8 +21,48 @@
                 BorderThickness="0,1,0,0" Padding="16,12">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Left" Text="{Binding JobName, RelativeSource={RelativeSource AncestorType=Window}}"
-                           Foreground="#333333" FontSize="12" VerticalAlignment="Center"/>
+                           Foreground="#333333" FontSize="12" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="240"/>
+
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Page navigation, taken off the viewer's own strip and put
+                         here with everything else that can be clicked. -->
+                    <Button Content="&#x2039;" Style="{StaticResource BtnGhost}" Width="32" Padding="0"
+                            ToolTip="Previous page"
+                            Command="NavigationCommands.PreviousPage"
+                            CommandTarget="{Binding ElementName=Viewer}"
+                            AutomationProperties.AutomationId="PreviewPrevPage"/>
+                    <TextBlock Width="86" Margin="4,0" Foreground="#333333" FontSize="12.5"
+                               VerticalAlignment="Center" TextAlignment="Center"
+                               AutomationProperties.AutomationId="PreviewPageLabel">
+                        <Run Text="Page "/><Run Text="{Binding MasterPageNumber, ElementName=Viewer, Mode=OneWay}"/><Run Text=" of "/><Run Text="{Binding PageCount, ElementName=Viewer, Mode=OneWay}"/>
+                    </TextBlock>
+                    <Button Content="&#x203A;" Style="{StaticResource BtnGhost}" Width="32" Padding="0"
+                            ToolTip="Next page"
+                            Command="NavigationCommands.NextPage"
+                            CommandTarget="{Binding ElementName=Viewer}"
+                            AutomationProperties.AutomationId="PreviewNextPage"/>
+
+                    <Border Width="1" Background="#C7CDD3" Margin="14,2"/>
+
+                    <!-- Zoom. Without these there is nothing to click, and
+                         Ctrl+wheel is the only (undiscoverable) way to resize. -->
+                    <Button Content="&#x2212;" Style="{StaticResource BtnGhost}" Width="36" Padding="0"
+                            ToolTip="Zoom out (Ctrl+-)"
+                            Click="ZoomOut_Click" AutomationProperties.AutomationId="PreviewZoomOut"/>
+                    <TextBlock x:Name="ZoomLabel" Text="100%" Width="52" Margin="4,0"
+                               Foreground="#333333" FontSize="12.5" VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               AutomationProperties.AutomationId="PreviewZoomLabel"/>
+                    <Button Content="+" Style="{StaticResource BtnGhost}" Width="36" Padding="0"
+                            ToolTip="Zoom in (Ctrl++)"
+                            Click="ZoomIn_Click" AutomationProperties.AutomationId="PreviewZoomIn"/>
+                    <Button Content="Fit" Style="{StaticResource BtnGhost}" Width="48" Margin="8,0,0,0" Padding="0"
+                            ToolTip="Fit the whole page in the window (Ctrl+0)"
+                            Click="ZoomFit_Click" AutomationProperties.AutomationId="PreviewZoomFit"/>
+
+                    <Border Width="1" Background="#C7CDD3" Margin="14,2"/>
+
                     <Button Content="Close" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
                             Click="Close_Click" AutomationProperties.AutomationId="PreviewClose"/>
                     <Button Content="Print" Style="{StaticResource BtnPrimary}" MinWidth="110"
@@ -34,9 +74,47 @@
         <!-- Page-at-a-time so what is on screen is what comes out of the printer.
              The surrounding well is a fixed neutral grey so the white page
              always reads as a distinct sheet of paper sitting on it. -->
-        <Border Background="#DDE2E7">
+        <!--
+            Zoom is a ScaleTransform on the viewer, NOT FlowDocumentPageViewer.Zoom.
+
+            That property resizes the page only within the space the viewer
+            already has, and the control does not scroll — so it can fit a page
+            or shrink it, but it can never render one larger than the window.
+            Zooming in past "fit" simply did nothing, which is what made zoom
+            look broken.
+
+            So: the viewer is given exactly one page's worth of room and left at
+            100%, a LayoutTransform scales what it renders, and the ScrollViewer
+            around it supplies the panning that makes zooming in worth doing.
+            LayoutTransform rather than RenderTransform so the scrollbars size
+            themselves to the scaled page.
+        -->
+        <ScrollViewer x:Name="Well" Background="#DDE2E7"
+                      HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                      SizeChanged="Well_SizeChanged"
+                      PreviewMouseWheel="Viewer_PreviewMouseWheel">
             <FlowDocumentPageViewer x:Name="Viewer" Background="#DDE2E7" Padding="12"
-                                    AutomationProperties.AutomationId="PreviewViewer"/>
-        </Border>
+                                    Zoom="100" MinZoom="100" MaxZoom="100"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    AutomationProperties.AutomationId="PreviewViewer">
+                <!--
+                    Stripped back to the sheet alone. The stock template draws a
+                    page-navigation and zoom strip under the page, and pinning the
+                    viewer to 100% above left that built-in zoom slider sitting
+                    there doing nothing — a dead control an inch from a live one.
+                    Page navigation moved up to the toolbar instead.
+                -->
+                <FlowDocumentPageViewer.Template>
+                    <ControlTemplate TargetType="{x:Type FlowDocumentPageViewer}">
+                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <DocumentPageView DocumentViewerBase.IsMasterPage="True"/>
+                        </Border>
+                    </ControlTemplate>
+                </FlowDocumentPageViewer.Template>
+                <FlowDocumentPageViewer.LayoutTransform>
+                    <ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1"/>
+                </FlowDocumentPageViewer.LayoutTransform>
+            </FlowDocumentPageViewer>
+        </ScrollViewer>
     </DockPanel>
 </Window>

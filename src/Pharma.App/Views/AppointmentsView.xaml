@@ -1,0 +1,268 @@
+<UserControl x:Class="Pharma.App.Views.AppointmentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App">
+
+    <Grid Margin="20">
+        <Border Style="{StaticResource Card}" Padding="8">
+            <TabControl BorderThickness="0" Background="Transparent"
+                        SelectedIndex="{Binding SelectedTabIndex, Mode=TwoWay}"
+                        AutomationProperties.AutomationId="AppointmentsTabs">
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="Today's appointments">
+                    <Grid Margin="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="18"/>
+                            <ColumnDefinition Width="300"/>
+                        </Grid.ColumnDefinitions>
+
+                        <DockPanel Grid.Column="0">
+                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                                <TextBlock DockPanel.Dock="Left" Text="Day" Style="{StaticResource Label}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <DatePicker SelectedDate="{Binding SelectedDate, Mode=TwoWay}"
+                                            Width="160" HorizontalAlignment="Left"
+                                            AutomationProperties.AutomationId="AppointmentsSelectedDate"/>
+                            </DockPanel>
+
+                            <DataGrid ItemsSource="{Binding TodaysAppointments}" IsReadOnly="True"
+                                      SelectedItem="{Binding SelectedAppointment, Mode=TwoWay}"
+                                      SelectionMode="Single" RowHeight="40"
+                                      AutomationProperties.AutomationId="AppointmentsTodayGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="TIME" Binding="{Binding ScheduledOn, StringFormat=HH:mm}" Width="Auto"
+                                                         ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="PATIENT" Binding="{Binding PatientName}" Width="200*" MinWidth="120"
+                                                         ElementStyle="{StaticResource GridName}"/>
+                                    <DataGridTextColumn Header="DOCTOR" Binding="{Binding DoctorName}" Width="160*" MinWidth="100"
+                                                         ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="MODULE" Binding="{Binding ModuleContext}" Width="Auto"
+                                                         ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="STATUS" Binding="{Binding Status}" Width="Auto"
+                                                         ElementStyle="{StaticResource GridMuted}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+
+                        <Border Grid.Column="2" Style="{StaticResource Card}"
+                                Visibility="{Binding HasSelectedAppointment, Converter={StaticResource BoolVis}}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="Selected appointment" Style="{StaticResource H2}"/>
+                                    <TextBlock Text="{Binding SelectedAppointment.PatientName}" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                                    <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,10">
+                                        <Run Text="{Binding SelectedAppointment.AppointmentNo, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedAppointment.DoctorName, Mode=OneWay}"/>
+                                    </TextBlock>
+
+                                    <Button Content="Check in" Style="{StaticResource BtnPrimaryLarge}" Margin="0,0,0,14"
+                                            Command="{Binding CheckInCommand}" CommandParameter="{Binding SelectedAppointment}"
+                                            AutomationProperties.AutomationId="AppointmentsCheckIn"/>
+
+                                    <TextBlock Text="Cancel" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding CancelReason, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,6"
+                                             ToolTip="Why the appointment is being cancelled"
+                                             AutomationProperties.AutomationId="AppointmentsCancelReason"/>
+                                    <Button Content="Cancel appointment" Style="{StaticResource BtnGhost}" Margin="0,0,0,14"
+                                            Command="{Binding CancelAppointmentCommand}" CommandParameter="{Binding SelectedAppointment}"
+                                            AutomationProperties.AutomationId="AppointmentsCancel"/>
+
+                                    <TextBlock Text="Reschedule to" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding RescheduleDate, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,4"
+                                             ToolTip="New date, e.g. 2026-08-15"
+                                             AutomationProperties.AutomationId="AppointmentsRescheduleDate"/>
+                                    <TextBox Text="{Binding RescheduleTime, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,6"
+                                             ToolTip="New time, e.g. 11:30"
+                                             AutomationProperties.AutomationId="AppointmentsRescheduleTime"/>
+                                    <Button Content="Reschedule" Style="{StaticResource BtnGhost}"
+                                            Command="{Binding RescheduleAppointmentCommand}" CommandParameter="{Binding SelectedAppointment}"
+                                            AutomationProperties.AutomationId="AppointmentsReschedule"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                        <TextBlock Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Bottom"
+                                   Text="{Binding DailyStatus}" Style="{StaticResource Muted}"
+                                   TextWrapping="Wrap" Margin="0,8,0,0"
+                                   AutomationProperties.AutomationId="AppointmentsDailyStatus"/>
+                    </Grid>
+                </TabItem>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="Book appointment">
+                    <Grid Margin="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="18"/>
+                            <ColumnDefinition Width="320"/>
+                        </Grid.ColumnDefinitions>
+
+                        <DockPanel Grid.Column="0">
+                            <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Text="Patient" Style="{StaticResource H2}"/>
+
+                                    <DockPanel Margin="0,0,0,8">
+                                        <Button DockPanel.Dock="Right" Content="+ New patient" Style="{StaticResource BtnGhost}"
+                                                Margin="8,0,0,0"
+                                                Visibility="{Binding HasSelectedPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"
+                                                Command="{Binding NewPatientCommand}"
+                                                AutomationProperties.AutomationId="AppointmentsNewPatient"/>
+                                        <TextBox Text="{Binding PatientSearch, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="0"
+                                                 ToolTip="Search by patient name or phone number"
+                                                 AutomationProperties.AutomationId="AppointmentsPatientSearch"/>
+                                    </DockPanel>
+
+                                    <ListBox ItemsSource="{Binding PatientMatches}"
+                                             SelectedItem="{Binding SelectedPatient, Mode=TwoWay}"
+                                             DisplayMemberPath="Display" MaxHeight="120"
+                                             Visibility="{Binding HasSelectedPatient, Converter={StaticResource BoolVis}, ConverterParameter=invert}"
+                                             AutomationProperties.AutomationId="AppointmentsPatientMatches"/>
+
+                                    <Border Visibility="{Binding HasSelectedPatient, Converter={StaticResource BoolVis}}"
+                                            Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" CornerRadius="6" Padding="10">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Content="Change" Style="{StaticResource BtnGhost}"
+                                                    VerticalAlignment="Top"
+                                                    Command="{Binding ChangePatientCommand}"
+                                                    AutomationProperties.AutomationId="AppointmentsChangePatient"/>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding SelectedPatient.Name}" FontWeight="SemiBold"
+                                                           FontSize="{StaticResource FontSubheading}"
+                                                           AutomationProperties.AutomationId="AppointmentsSelectedPatient"/>
+                                                <TextBlock Style="{StaticResource Muted}">
+                                                    <Run Text="{Binding SelectedPatient.PatientNo, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.Phone, Mode=OneWay}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Doctor" Style="{StaticResource Label}"/>
+                                    <ComboBox ItemsSource="{Binding Doctors}" SelectedItem="{Binding SelectedDoctor, Mode=TwoWay}"
+                                              DisplayMemberPath="Name" Margin="0,0,0,10"
+                                              AutomationProperties.AutomationId="AppointmentsDoctor"/>
+
+                                    <TextBlock Text="Module" Style="{StaticResource Label}"/>
+                                    <ComboBox ItemsSource="{Binding EnabledContexts}" SelectedItem="{Binding SelectedContext, Mode=TwoWay}"
+                                              Margin="0,0,0,10"
+                                              AutomationProperties.AutomationId="AppointmentsContext"/>
+
+                                    <TextBlock Text="Reason" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding Reason, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,10"
+                                             AutomationProperties.AutomationId="AppointmentsReason"/>
+                                </StackPanel>
+                            </Border>
+                        </DockPanel>
+
+                        <Border Grid.Column="2" Style="{StaticResource Card}">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel>
+                                    <TextBlock Text="When" Style="{StaticResource H2}"/>
+
+                                    <TextBlock Text="Date" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding BookingDate, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,6"
+                                             ToolTip="yyyy-MM-dd"
+                                             AutomationProperties.AutomationId="AppointmentsBookingDate"/>
+
+                                    <TextBlock Text="Time" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding BookingTime, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,6"
+                                             ToolTip="HH:mm"
+                                             AutomationProperties.AutomationId="AppointmentsBookingTime"/>
+
+                                    <TextBlock Text="Duration (minutes)" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding DurationMinutes, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,6"
+                                             local:NumericInput.Mode="Whole"
+                                             AutomationProperties.AutomationId="AppointmentsDuration"/>
+
+                                    <TextBlock Text="Notes" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                             Margin="0,0,0,10" TextWrapping="Wrap" AcceptsReturn="True" Height="60"
+                                             AutomationProperties.AutomationId="AppointmentsNotes"/>
+
+                                    <Button Content="Book &amp; print" Style="{StaticResource BtnPrimaryLarge}"
+                                            Command="{Binding BookAndPrintCommand}"
+                                            AutomationProperties.AutomationId="AppointmentsBookAndPrint"/>
+                                    <Button Content="Book without printing" Style="{StaticResource BtnGhost}" Margin="0,6,0,0"
+                                            Command="{Binding BookCommand}"
+                                            AutomationProperties.AutomationId="AppointmentsBook"/>
+                                    <Button Content="Clear" Style="{StaticResource BtnGhost}" Margin="0,6,0,0"
+                                            Command="{Binding NewBookingCommand}"
+                                            AutomationProperties.AutomationId="AppointmentsNewBooking"/>
+
+                                    <TextBlock Text="{Binding BookingStatus}" Style="{StaticResource Muted}"
+                                               TextWrapping="Wrap" Margin="0,8,0,0"
+                                               AutomationProperties.AutomationId="AppointmentsBookingStatus"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <TabItem Header="Reminders">
+                    <Grid Margin="16">
+                        <DockPanel>
+                            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                                <TextBlock DockPanel.Dock="Left" Text="Due within (days)" Style="{StaticResource Label}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox ItemsSource="{Binding ReminderLeadDayOptions}"
+                                          Text="{Binding ReminderLeadDays, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True"
+                                          Width="80" HorizontalAlignment="Left"
+                                          AutomationProperties.AutomationId="AppointmentsReminderLeadDays"/>
+                            </DockPanel>
+
+                            <DockPanel DockPanel.Dock="Bottom" Margin="2,10,2,0">
+                                <Button DockPanel.Dock="Right" Content="{Binding ReminderActionLabel}" Style="{StaticResource BtnGhost}"
+                                        IsEnabled="{Binding HasSelectedReminder}"
+                                        Command="{Binding ToggleReminderActionedCommand}"
+                                        AutomationProperties.AutomationId="AppointmentsMarkReminded"/>
+                                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                           Text="Shown on screen only today — WhatsApp and email delivery are not built yet."/>
+                            </DockPanel>
+
+                            <DataGrid ItemsSource="{Binding DueReminders}" IsReadOnly="True"
+                                      SelectedItem="{Binding SelectedReminder, Mode=TwoWay}"
+                                      SelectionMode="Single" RowHeight="40"
+                                      AutomationProperties.AutomationId="AppointmentsRemindersGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="DUE" Binding="{Binding DueOn, StringFormat=dd MMM yyyy}" Width="Auto"
+                                                         ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTextColumn Header="PATIENT" Binding="{Binding PatientName}" Width="200*" MinWidth="120"
+                                                         ElementStyle="{StaticResource GridName}"/>
+                                    <DataGridTextColumn Header="WHAT" Binding="{Binding Description}" Width="320*" MinWidth="160"
+                                                         ElementStyle="{StaticResource GridMuted}"/>
+                                    <DataGridTemplateColumn Header="REMINDED" Width="Auto">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="4" Padding="6,1" HorizontalAlignment="Left"
+                                                        Background="{Binding IsReminded, Converter={StaticResource FeeBrush}}">
+                                                    <TextBlock Text="{Binding StatusLabel}" FontSize="{StaticResource FontSmall}"
+                                                               Foreground="{Binding IsReminded, Converter={StaticResource FeeInk}}"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </DockPanel>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Border>
+    </Grid>
+</UserControl>

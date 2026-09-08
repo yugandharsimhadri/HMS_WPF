@@ -447,9 +447,23 @@
                 <TabItem Header="Features">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <StackPanel Margin="16" MaxWidth="560" HorizontalAlignment="Left">
-                            <TextBlock Text="Optional modules" Style="{StaticResource H2}"/>
+                            <TextBlock Text="Modules" Style="{StaticResource H2}"/>
                             <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
-                                       Text="Turn on the parts of the software this clinic actually uses. Off by default — a module that is off stays out of the sidebar and everywhere else until it is switched on here."/>
+                                       Text="Turn on the parts of the software this clinic actually uses — a dental practice needs only Dentist, a pediatrician only Pediatrics. A module that is off stays out of the sidebar, Reports and everywhere else until it is switched on here. At least one module has to stay on."/>
+
+                            <CheckBox Content="OPD — walk-in queue, consultation, prescription, fee receipt" IsChecked="{Binding OpdEnabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitch}"
+                                      Margin="0,4,0,4"
+                                      AutomationProperties.AutomationId="OpdEnabled"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="On by default — every clinic already using this application is already using the OPD queue. A dentist- or pediatrician-only clinic is the one that turns this off."/>
+
+                            <CheckBox Content="Pharmacy — counter sale, medicines, inventory" IsChecked="{Binding PharmacyEnabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitch}"
+                                      Margin="0,4,0,4"
+                                      AutomationProperties.AutomationId="PharmacyEnabled"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="On by default, for the same reason as OPD."/>
 
                             <CheckBox Content="Diagnostics — lab test billing" IsChecked="{Binding DiagnosticsEnabled, Mode=TwoWay}"
                                       Style="{StaticResource ToggleSwitch}"
@@ -457,6 +471,34 @@
                                       AutomationProperties.AutomationId="DiagnosticsEnabled"/>
                             <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
                                        Text="Adds a Diagnostics item to the sidebar: a test master and a diagnostic bill for clinics that run their own lab tests."/>
+
+                            <CheckBox Content="Appointments — advance booking, check-in and reminders" IsChecked="{Binding AppointmentsEnabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitch}"
+                                      Margin="0,4,0,4"
+                                      AutomationProperties.AutomationId="AppointmentsEnabled"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="Adds an Appointments item to the sidebar: book ahead, cancel or reschedule, check in against today's list, and see follow-up and appointment reminders in one place."/>
+
+                            <CheckBox Content="Pediatrics — vaccinations, growth chart, procedure billing" IsChecked="{Binding PediatricsEnabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitch}"
+                                      Margin="0,4,0,4"
+                                      AutomationProperties.AutomationId="PediatricsEnabled"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="Adds a Pediatrics item to the sidebar: vaccine master, vaccination history, and procedure billing for clinics running a pediatric practice."/>
+
+                            <CheckBox Content="Dentist — cases, sittings, packages and payments" IsChecked="{Binding DentistEnabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitch}"
+                                      Margin="0,4,0,4"
+                                      AutomationProperties.AutomationId="DentistEnabled"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="Adds a Dentist item to the sidebar: procedure, replacement, anesthesia and package masters, and cases billed and paid across however many sittings they take."/>
+
+                            <CheckBox Content="Pathology Lab — analyte and report masters, orders, result entry" IsChecked="{Binding PathologyLabEnabled, Mode=TwoWay}"
+                                      Style="{StaticResource ToggleSwitch}"
+                                      Margin="0,4,0,4"
+                                      AutomationProperties.AutomationId="PathologyLabEnabled"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,14"
+                                       Text="Adds a Pathology Lab item to the sidebar: analyte and report (panel) masters with reference ranges, packages, orders billed against them, and result entry with automatic high/low flagging."/>
 
                             <Button Content="Save features" Style="{StaticResource BtnPrimary}"
                                     HorizontalAlignment="Left"

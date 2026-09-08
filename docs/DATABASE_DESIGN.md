@@ -1,6 +1,6 @@
 # Twinkle — database design and data dictionary
 
-SQLite, one file, sixteen tables.
+SQLite, one file, forty-seven tables.
 
 The columns and types below are taken from the schema the application actually
 creates — `dotnet ef dbcontext script` — not transcribed from the entity classes.
@@ -447,6 +447,422 @@ vendor match unasked.
 
 ---
 
+# Appointments
+
+Shared by every module. A booking is not a visit — it becomes whichever
+module's own record check-in creates.
+
+## Appointments
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `AppointmentNo` | TEXT | no | `APT00001`. **Unique**, gap-free |
+| `PatientId` | TEXT | no | → `Patients`, **restrict** |
+| `PatientName` · `PatientPhone` | TEXT | no | Denormalised, so the list needs no join and survives a later rename |
+| `DoctorId` | TEXT | no | → `Doctors`, **restrict** |
+| `DoctorName` | TEXT | no | Denormalised, same reason |
+| `ScheduledOn` | TEXT | no | **Indexed** — the day's list |
+| `DurationMinutes` | INTEGER | no | Default 15 |
+| `ModuleContext` | INTEGER | no | [AppointmentModuleContext](#appointmentmodulecontext) |
+| `Status` | INTEGER | no | [AppointmentStatus](#appointmentstatus) |
+| `Reason` · `Notes` | TEXT | yes | |
+| `RescheduledFromId` | TEXT | yes | → the appointment this replaced. A reschedule writes a new row rather than editing |
+| `LinkedRecordId` | TEXT | yes | The record check-in created — a `Visit` today. **Deliberately not a foreign key**: it points into whichever module's table the context names |
+
+> `LinkedRecordId` is the one polymorphic reference in the schema. It cannot be
+> a foreign key because its target table depends on `ModuleContext`. Only
+> `General` sets it today; the others are booked and tracked but checked in from
+> their own screens.
+
+## ReminderLogs
+
+Records that the desk followed up. **It sends nothing.**
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `SourceKind` | INTEGER | no | [ReminderSourceKind](#remindersourcekind) |
+| `SourceId` | TEXT | no | The follow-up, appointment, vaccine or sitting it came from. Polymorphic, like `LinkedRecordId` |
+| `PatientId` | TEXT | no | → `Patients`, **restrict** |
+| `DueOn` | TEXT | no | |
+| `Channel` | INTEGER | no | [ReminderChannel](#reminderchannel). Only `OnScreen` is ever written |
+| `ActionedOn` · `ActionedBy` | TEXT | yes | Null until the desk marks it done |
+
+> The reminders **list** is computed at query time from follow-up dates,
+> appointments, vaccine due dates and next-sitting dates. This table stores only
+> the fact that somebody actioned a row — there is no stored list to keep in
+> step.
+
+---
+
+# Diagnostics
+
+## DiagnosticTests
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `Name` | TEXT | no | |
+| `Category` | TEXT | no | **Free text, not an enum** — staff add tests and categories without a code change |
+| `Price` | TEXT | no | |
+| `Active` | INTEGER | no | Deactivate rather than delete once billed |
+
+~24 tests seeded on first run and never re-inserted or overwritten.
+
+## DiagnosticBills
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `BillNo` | TEXT | no | `DX00001`. **Unique**, gap-free |
+| `BillDate` | TEXT | no | **Indexed** |
+| `PatientId` | TEXT | no | → `Patients`, **restrict**. **Required** — unlike `Sales`, there is no walk-in diagnostic bill |
+| `PatientName` · `PatientNo` | TEXT | no | Denormalised |
+| `TotalAmount` · `Discount` · `FinalAmount` | TEXT | no | Recomputed server-side on save |
+| `PaymentMode` | INTEGER | no | [PaymentMode](#paymentmode) |
+| `TransactionNo` | TEXT | yes | UPI or card only |
+| `Status` | INTEGER | no | [DiagnosticBillStatus](#diagnosticbillstatus). Edit and delete refused once `Completed` |
+| `VisitId` | TEXT | yes | → `Visits`, **set null**. Set when loaded from an OPD request |
+| `ReferredBy` | TEXT | yes | Only for a patient who did not come through this clinic's OPD |
+| `Remarks` | TEXT | yes | |
+
+## DiagnosticBillItems
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `BillId` | TEXT | no | → `DiagnosticBills`, **cascade** |
+| `TestId` | TEXT | yes | → `DiagnosticTests`, **set null** |
+| `TestName` · `Price` | | no | **As billed.** A later master price change never moves this |
+| `Quantity` · `Amount` | | no | |
+
+## VisitDiagnosticRequests
+
+What the doctor asked for during a consultation — a request, not a bill.
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `VisitId` | TEXT | no | → `Visits`, **cascade** |
+| `TestId` | TEXT | yes | → `DiagnosticTests`, **set null** |
+| `TestName` | TEXT | no | Free text if the test is not in the catalogue |
+| `Notes` | TEXT | yes | |
+
+The Diagnostics desk loads these into a bill in one click; they are never billed
+from the consultation itself.
+
+---
+
+# Pediatrics
+
+## VaccineMasters
+
+This clinic's own schedule, seeded from WHO/UIP and editable.
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `Name` | TEXT | no | |
+| `DoseNumber` | INTEGER | no | 0 for OPV's birth dose |
+| `RecommendedAgeDays` | INTEGER | no | Days from birth. `0` = at birth |
+| `Category` | TEXT | no | Free text |
+| `SequenceOrder` | INTEGER | no | Display order |
+| `Active` | INTEGER | no | Deactivate rather than delete once given |
+
+Matched on **name + dose number** by the seeder, so an edited row survives every
+later run.
+
+## VaccinationRecords
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `PatientId` | TEXT | no | → `Patients`, **restrict** |
+| `PatientName` | TEXT | no | Denormalised |
+| `VaccineId` | TEXT | yes | → `VaccineMasters`, **set null** |
+| `VaccineName` · `DoseNumber` | | no | As given |
+| `GivenOn` | TEXT | no | |
+| `BatchNo` · `SiteOfInjection` · `AdministeredBy` | TEXT | yes | |
+| `ProductId` · `BatchId` | TEXT | yes | → `Products` / `Batches`. **The pharmacy stock the vial came out of** |
+| `ProductName` · `Manufacturer` | TEXT | yes | The brand actually given |
+| `NextDueOn` | TEXT | yes | Computed from the next dose in the series at the time of giving |
+| `ProcedureBillItemId` | TEXT | yes | The bill line this dose rode in on. Null for a dose recorded before billing existed |
+
+> Two rules live in this table. The dose is **priced and stocked from Pharmacy**
+> — `BatchId` is what gets decremented, so vaccination is not a parallel
+> inventory. And a record is only written once the bill it belongs to
+> **saves** — there is no such thing as an unbilled dose on record, including a
+> free one, which saves at ₹0.
+
+## GrowthMeasurements
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `PatientId` | TEXT | no | → `Patients`, **restrict** |
+| `VisitId` | TEXT | yes | |
+| `MeasuredOn` | TEXT | no | |
+| `AgeDays` | INTEGER | no | Computed from date of birth at entry |
+| `WeightKg` · `HeightCm` · `HeadCircumferenceCm` | TEXT | yes | All optional — record what was actually measured |
+| `BmiValue` | TEXT | yes | Computed when both weight and height are present |
+
+## PediatricProfiles
+
+One row per patient. **Upserted, never duplicated.**
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `PatientId` | TEXT | no | → `Patients`, **restrict** |
+| `FatherName` · `MotherName` · `ParentPhone` · `ParentOccupation` | TEXT | yes | |
+| `BirthWeightKg` | TEXT | yes | |
+| `Notes` | TEXT | yes | |
+
+---
+
+# Procedure billing
+
+Shared by Pediatrics, Dentist and General — one catalogue and one bill shape
+rather than three near-duplicates.
+
+## Procedures
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `Name` · `Category` | TEXT | no | Category is free text |
+| `Department` | INTEGER | no | [ProcedureDepartment](#proceduredepartment) — what the department pills on General Master filter by |
+| `Price` | TEXT | no | |
+| `Active` | INTEGER | no | Deactivate rather than delete once billed |
+
+## ProcedureBills
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `BillNo` | TEXT | no | `PRC00001`. **Unique**, gap-free |
+| `BillDate` | TEXT | no | **Indexed** |
+| `PatientId` | TEXT | no | → `Patients`, **restrict** |
+| `PatientName` · `PatientNo` | TEXT | no | Denormalised |
+| `TotalAmount` · `Discount` · `FinalAmount` | TEXT | no | |
+| `PaymentMode` | INTEGER | no | [PaymentMode](#paymentmode) |
+| `TransactionNo` | TEXT | yes | |
+| `Status` | INTEGER | no | [ProcedureBillStatus](#procedurebillstatus). Edit refused once `Completed` |
+| `VisitId` | TEXT | yes | → `Visits`, **set null** |
+| `ReferredBy` | TEXT | yes | |
+
+## ProcedureBillItems
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `BillId` | TEXT | no | → `ProcedureBills`, **cascade** |
+| `ProcedureId` | TEXT | yes | → `Procedures`, **set null** |
+| `ProcedureName` · `Price` | | no | **As billed** |
+| `Quantity` · `Amount` | | no | |
+
+A vaccine dose reaches this table as an ordinary line — which is how a dose and
+a procedure land on one bill.
+
+---
+
+# Dentist
+
+A **case** is the unit: one procedure or package on one patient, across however
+many sittings and payments it takes.
+
+## DentalCases
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `PatientId` | TEXT | no | → `Patients`, **restrict** |
+| `PatientName` | TEXT | no | Denormalised |
+| `ProcedureId` · `ProcedureName` | | yes | → `Procedures`, **set null** |
+| `PackageId` · `PackageName` | | yes | → `DentalPackageMasters`, **set null** |
+| `ToothNumber` | TEXT | yes | Free text — FDI or Universal |
+| `DoctorId` | TEXT | no | → `Doctors`, **restrict** |
+| `Status` | INTEGER | no | [DentalCaseStatus](#dentalcasestatus) |
+| `StartedOn` · `CompletedOn` | TEXT | | |
+| `BaseCost` | TEXT | no | **Snapshotted when the case opens.** A later master price change never moves it |
+| `Notes` | TEXT | yes | |
+
+`ProcedureId` and `PackageId` are **mutually exclusive**, enforced in the
+service. A package case bills the flat `PackagePrice`, not the sum of its items.
+
+`TotalCost`, `AmountPaid` and `Balance` are **computed in the entity**, not
+stored: base cost plus each sitting's anesthesia plus each replacement's amount,
+less payments.
+
+## DentalSittings
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `DentalCaseId` | TEXT | no | → `DentalCases`, **cascade** |
+| `SittingNumber` | INTEGER | no | Allocated per case |
+| `SittingDate` | TEXT | no | |
+| `DoctorId` | TEXT | no | → `Doctors`, **restrict**. May differ from the case's doctor |
+| `WorkDone` | TEXT | yes | |
+| `AnesthesiaTypeId` · `AnesthesiaTypeName` | | yes | → `AnesthesiaTypeMasters`, **set null** |
+| `AnesthesiaCost` | TEXT | yes | Joins the case total |
+| `NextSittingOn` | TEXT | yes | Feeds the Reminders list |
+
+## DentalReplacementMasters · AnesthesiaTypeMasters · DentalPackageMasters
+
+| Table | Columns |
+|---|---|
+| `DentalReplacementMasters` | `Name`, `Category`, `UnitCost`, `Active` |
+| `AnesthesiaTypeMasters` | `Name`, `DefaultCost`, `Active` |
+| `DentalPackageMasters` | `Name`, `Description`, `PackagePrice`, `Active` |
+
+## DentalCaseReplacements
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `DentalCaseId` | TEXT | no | → `DentalCases`, **cascade** |
+| `ReplacementId` | TEXT | yes | → `DentalReplacementMasters`, **set null** |
+| `Name` · `UnitCost` | | no | **As billed** |
+| `Quantity` · `Amount` | | no | |
+
+## DentalPackageItems
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `PackageId` | TEXT | no | → `DentalPackageMasters`, **cascade** |
+| `ProcedureId` · `ProcedureName` | | | → `Procedures`, **set null** |
+| `Quantity` | INTEGER | no | |
+
+The breakdown is documentation of what the package covers. **It does not drive
+the price.**
+
+## DentalPayments
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `DentalCaseId` | TEXT | no | → `DentalCases`, **cascade** |
+| `ReceiptNo` | TEXT | no | `DPR00001`. **Unique**, gap-free |
+| `PaidOn` | TEXT | no | |
+| `Amount` | TEXT | no | Part payment |
+| `PaymentMode` | INTEGER | no | [PaymentMode](#paymentmode) |
+| `TransactionNo` | TEXT | yes | |
+
+> **The one place the clinic carries a balance.** Elsewhere every bill settles in
+> full at the counter, which is why `PaymentMode` has no Credit member. A dental
+> case runs across sittings, so it accepts part-payments and the balance carries
+> — and a *completed* case still accepts payment, because finishing the work and
+> finishing paying are different events.
+
+---
+
+# Pathology Lab
+
+Analytes make up reports; reports make up packages; an order is placed against
+reports and produces results.
+
+## LabAnalytes
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `Name` · `Category` | TEXT | no | |
+| `Units` | TEXT | no | `g/dL`, `mg/dL`, `/cumm` |
+| `ResultType` | INTEGER | no | [LabResultType](#labresulttype) — drives the input control |
+| `DecimalPlaces` | INTEGER | no | |
+| `SequenceOrder` | INTEGER | no | Order within a report |
+| `Active` | INTEGER | no | |
+
+## LabAnalyteReferenceRanges
+
+Many per analyte — this is how "normal" differs by sex and age.
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `AnalyteId` | TEXT | no | → `LabAnalytes`, **cascade** |
+| `Gender` | INTEGER | yes | Null = any |
+| `MinAgeYears` · `MaxAgeYears` | TEXT | yes | Null = unbounded |
+| `LowValue` · `HighValue` | TEXT | yes | Numeric range |
+| `TextRange` | TEXT | yes | For a qualitative analyte |
+| `Label` | TEXT | no | Printed on the report |
+
+Matched at result entry by the patient's sex and age; the closest match sets the
+flag.
+
+## LabReports · LabReportAnalytes
+
+| Table | Columns |
+|---|---|
+| `LabReports` | `Name`, `Category`, `Price`, `SequenceOrder`, `Active` |
+| `LabReportAnalytes` | `ReportId` → **cascade**, `AnalyteId` → **restrict**, `SequenceOrder` |
+
+`AnalyteId` is **restrict**: an analyte used by a report cannot be deleted out
+from under it.
+
+## LabPackageMasters · LabPackageReports
+
+| Table | Columns |
+|---|---|
+| `LabPackageMasters` | `Name`, `PackagePrice`, `Active` |
+| `LabPackageReports` | `PackageId` → **cascade**, `ReportId` → **restrict** |
+
+Flat package price wins over the sum of its reports, the same rule dental
+packages follow.
+
+## LabOrders
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `OrderNo` | TEXT | no | `LAB00001`. **Unique**, gap-free |
+| `OrderDate` | TEXT | no | **Indexed** |
+| `PatientId` | TEXT | no | → `Patients`, **restrict** |
+| `PatientName` · `PatientNo` | TEXT | no | Denormalised |
+| `PackageId` | TEXT | yes | → `LabPackageMasters`, **set null** |
+| `VisitId` | TEXT | yes | → `Visits`, **set null** |
+| `ReferredBy` · `SpecimenId` | TEXT | yes | |
+| `CollectedOn` · `ReceivedOn` | TEXT | yes | Sample timestamps |
+| `TotalAmount` · `Discount` · `FinalAmount` | TEXT | no | |
+| `PaymentMode` | INTEGER | no | [PaymentMode](#paymentmode) |
+| `TransactionNo` · `Remarks` | TEXT | yes | |
+| `Status` | INTEGER | no | [LabOrderStatus](#laborderstatus) |
+
+## LabOrderReports
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `OrderId` | TEXT | no | → `LabOrders`, **cascade** |
+| `ReportId` | TEXT | yes | → `LabReports`, **set null** |
+| `ReportName` · `Price` · `Amount` | | no | **As billed** |
+| `Notes` | TEXT | yes | |
+
+## LabResults
+
+One row per analyte on each ordered report, created blank when the order saves.
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `OrderReportId` | TEXT | no | → `LabOrderReports`, **cascade** |
+| `AnalyteId` | TEXT | yes | → `LabAnalytes`, **set null** |
+| `AnalyteName` · `Units` | TEXT | no | As ordered |
+| `ResultValue` | TEXT | no | Empty until entered |
+| `ReferenceRangeDisplay` | TEXT | no | The matched range, **frozen at entry** — a later change to the master range never rewrites a past report |
+| `Flag` | INTEGER | no | [LabResultFlag](#labresultflag). Computed for numeric, editable for qualitative |
+| `EnteredOn` · `EnteredBy` | | | |
+| `VerifiedOn` · `VerifiedBy` | | yes | Null until verified |
+
+> The order walks `Ordered → SampleCollected → ResultEntered → Verified →
+> Completed`, and **the report will not print before `Verified`**. That is a
+> pathology-lab norm, not a billing convenience.
+
+---
+
+# Users
+
+## Users
+
+| Column | Type | Null | Description |
+|---|---|---|---|
+| `Username` | TEXT | no | **Unique** |
+| `DisplayName` | TEXT | no | |
+| `PasswordHash` · `PasswordSalt` | TEXT | no | Salted hash |
+| `Role` | INTEGER | no | [UserRole](#userrole) |
+| `IsActive` | INTEGER | no | |
+| `MustChangePassword` | INTEGER | no | Forced at first sign-in |
+| `LastLoginOn` | TEXT | yes | |
+
+> **Roles are attribution, not authorisation.** Every signed-in role has full
+> access today; the role exists so that `CreatedByUserId` and `UpdatedByUserId`
+> on every row mean something. Sign-in is off by default, and those columns stay
+> null in a clinic that never turns it on — a permanent normal state, not a gap
+> to backfill.
+
+
+---
+
 ## Foreign keys and delete behaviour
 
 | From | To | On delete | Why |
@@ -538,6 +954,77 @@ combination, and has no Schedule G or S. See [BILL_REVIEW.md](BILL_REVIEW.md).
 version.
 
 ---
+
+### DiagnosticBillStatus
+`1` Ordered · `2` SampleCollected · `3` ResultReceived · `4` Completed
+
+Editing or deleting a diagnostic bill is refused once `Completed`.
+
+### AppointmentStatus
+`1` Scheduled · `2` CheckedIn · `3` Cancelled · `4` Rescheduled · `5` NoShow
+
+A reschedule writes a **new** appointment linked by `RescheduledFromId` and
+leaves the original as `Rescheduled`.
+
+### AppointmentModuleContext
+`1` General · `2` Pediatrics · `3` Dentist · `4` PathologyLab
+
+Which module's record a check-in creates. Only offered for modules actually
+switched on, and re-checked server-side when booking. `General` is only offered
+when OPD itself is on.
+
+### ReminderSourceKind
+`1` FollowUp · `2` Appointment · `3` VaccineDue · `4` DentalSitting
+
+### ReminderChannel
+`1` OnScreen · `2` Whatsapp · `3` Email
+
+**Only `OnScreen` is ever written.** The others exist so that turning on WhatsApp
+or email later is "send instead of just log", not a migration.
+
+### ProcedureDepartment
+`1` Pediatrics · `2` Dentist · `3` General
+
+Which module a shared `Procedure` row belongs to. `General` exists so a future
+module needing plain "pick items, bill them" reuses this catalogue rather than a
+fourth near-duplicate.
+
+### ProcedureBillStatus
+`1` Ordered · `2` Completed
+
+Deliberately simpler than `DiagnosticBillStatus` — a procedure bill has no lab
+sample behind it. Editing refused once `Completed`.
+
+### DentalCaseStatus
+`1` Planned · `2` InProgress · `3` Completed · `4` Cancelled
+
+A `Completed` case **still accepts payment** — finishing the work and finishing
+paying are different events.
+
+### LabResultType
+`1` Numeric · `2` Text · `3` Selection
+
+Drives which input control result entry shows, and whether a flag can be
+computed.
+
+### LabOrderStatus
+`1` Ordered · `2` SampleCollected · `3` ResultEntered · `4` Verified · `5` Completed
+
+Richer than `DiagnosticBillStatus` because a result must be entered **and
+verified** before the report will print.
+
+### LabResultFlag
+`1` Normal · `2` Low · `3` High · `4` Abnormal
+
+Computed automatically for a numeric result against its matched reference range;
+editable for a qualitative one, since "Reactive" has no numeric range.
+
+### UserRole
+`1` Admin · `2` Doctor · `3` Pharmacy · `4` Diagnosis
+
+**A label, not a fence.** Every signed-in role has the same full access today —
+the role exists so actions are attributed sensibly, and so restrictions can be
+added later without another migration.
 
 ## Things that look like columns and are not
 

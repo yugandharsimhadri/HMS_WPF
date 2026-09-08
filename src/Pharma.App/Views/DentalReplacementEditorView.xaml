@@ -1,0 +1,64 @@
+<UserControl x:Class="Pharma.App.Views.DentalReplacementEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pharma.App"
+             Background="{DynamicResource Bg}"
+             Width="420">
+
+    <DockPanel Margin="18">
+
+        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14" Padding="16,12">
+            <TextBlock Text="{Binding Header}" Style="{StaticResource H2}"
+                       TextTrimming="CharacterEllipsis"
+                       AutomationProperties.AutomationId="ReplacementEditorHeader"/>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Margin="0,14,0,0">
+            <DockPanel>
+                <Button DockPanel.Dock="Left" Content="Delete" Style="{StaticResource BtnDanger}"
+                        MinWidth="100"
+                        Command="{Binding DeleteCommand}"
+                        Visibility="{Binding CanDelete, Converter={StaticResource BoolVis}}"
+                        AutomationProperties.AutomationId="ReplacementEditorDelete"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel" Style="{StaticResource BtnGhost}" Margin="0,0,8,0"
+                            MinWidth="100" IsCancel="True"
+                            Command="{Binding CancelCommand}"
+                            AutomationProperties.AutomationId="ReplacementEditorCancel"/>
+                    <Button Content="Save" Style="{StaticResource BtnPrimaryLarge}"
+                            MinWidth="130" IsDefault="True"
+                            Command="{Binding SaveCommand}"
+                            AutomationProperties.AutomationId="ReplacementEditorSave"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Style="{StaticResource Muted}"
+                   TextWrapping="Wrap" Margin="2,10,2,0"
+                   AutomationProperties.AutomationId="ReplacementEditorStatus"/>
+
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <local:RequiredLabel Text="Replacement name"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                         local:Field.IsMissing="{Binding NameMissing}"
+                         AutomationProperties.AutomationId="ReplacementEditorName"/>
+
+                <TextBlock Text="Category" Style="{StaticResource Label}"/>
+                <ComboBox ItemsSource="{Binding Categories}" Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
+                          IsEditable="True"
+                          AutomationProperties.AutomationId="ReplacementEditorCategory"/>
+
+                <TextBlock Text="Unit cost" Style="{StaticResource Label}"/>
+                <TextBox Text="{Binding UnitCost, UpdateSourceTrigger=PropertyChanged}"
+                         local:NumericInput.Mode="Money"
+                         AutomationProperties.AutomationId="ReplacementEditorUnitCost"/>
+
+                <CheckBox Content="Active" IsChecked="{Binding Active, Mode=TwoWay}"
+                          Margin="0,10,0,4"
+                          AutomationProperties.AutomationId="ReplacementEditorActive"/>
+            </StackPanel>
+        </Border>
+    </DockPanel>
+</UserControl>

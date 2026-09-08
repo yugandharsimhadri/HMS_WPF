@@ -123,6 +123,31 @@ public class PrintDocumentTests
     public void Paise_are_spelled_out_too()
         => Assert.Equal("Rupees Ninety Three and Eighteen Paise only", FeeReceiptDocument.InWords(93.18m));
 
+    // ── Appointment slip ───────────────────────────────────────────────────
+
+    private static Appointment Appointment() => new()
+    {
+        AppointmentNo = "APT00003",
+        ScheduledOn = new DateTime(2026, 8, 20, 11, 30, 0),
+        PatientName = "Baby Anika",
+        PatientPhone = "9000000000",
+        DoctorName = "Dr. A. Kumar",
+        ModuleContext = AppointmentModuleContext.General,
+        Reason = "Fever review"
+    };
+
+    [StaFact]
+    public void An_appointment_slip_carries_its_number_patient_doctor_and_reason()
+    {
+        var text = TextOf(AppointmentSlipDocument.Build(Appointment(), Clinic(), Theme()));
+
+        Assert.Contains("APT00003", text);
+        Assert.Contains("Baby Anika", text);
+        Assert.Contains("Dr. A. Kumar", text);
+        Assert.Contains("9000000000", text);
+        Assert.Contains("Fever review", text);
+    }
+
     // ── Prescription ───────────────────────────────────────────────────────
 
     [StaFact]
@@ -282,6 +307,153 @@ public class PrintDocumentTests
     [StaFact]
     public void A_reprinted_diagnostic_bill_is_marked_duplicate()
         => Assert.Contains("DUPLICATE", TextOf(DiagnosticBillPrinter.Build(DiagnosticBill(), Clinic(), Theme(), isReprint: true)));
+
+    // ── Procedure bill (Pediatrics, Dentist) ─────────────────────────────────
+
+    private static ProcedureBill ProcedureBill() => new()
+    {
+        BillNo = "PRC00003",
+        BillDate = new DateTime(2026, 7, 25, 11, 5, 0),
+        PatientName = "Baby Anika",
+        PatientNo = "P00012",
+        PaymentMode = PaymentMode.Cash,
+        Status = ProcedureBillStatus.Ordered,
+        TotalAmount = 300m,
+        Discount = 50m,
+        FinalAmount = 250m,
+        Items =
+        [
+            new ProcedureBillItem { ProcedureName = "BCG (dose 1)", Price = 200m, Quantity = 1, Amount = 200m },
+            new ProcedureBillItem { ProcedureName = "Ear piercing", Price = 100m, Quantity = 1, Amount = 100m }
+        ]
+    };
+
+    [StaFact]
+    public void A_procedure_bill_carries_no_gst_and_keeps_its_billed_prices()
+    {
+        var text = TextOf(ProcedureBillDocument.Build(ProcedureBill(), Clinic(), Theme()));
+
+        Assert.Contains("PROCEDURE BILL", text);
+        Assert.Contains("PRC00003", text);
+        Assert.Contains("BCG (dose 1)", text);
+        Assert.Contains("Ear piercing", text);
+        Assert.Contains("250.00", text);
+        Assert.DoesNotContain("GST", text);
+    }
+
+    [StaFact]
+    public void A_reprinted_procedure_bill_is_marked_duplicate()
+        => Assert.Contains("DUPLICATE", TextOf(ProcedureBillDocument.Build(ProcedureBill(), Clinic(), Theme(), isReprint: true)));
+
+    // ── Dental payment receipt ────────────────────────────────────────────
+
+    private static DentalCase DentalCaseWithPayments() => new()
+    {
+        PatientName = "Aarav Rao",
+        ProcedureName = "Root Canal",
+        ToothNumber = "36",
+        BaseCost = 5000m,
+        Sittings = [new DentalSitting { AnesthesiaCost = 300m }],
+        Payments = [new DentalPayment { Amount = 2000m }]
+    };
+
+    private static DentalPayment DentalPayment() => new()
+    {
+        ReceiptNo = "DPR00002",
+        PaidOn = new DateTime(2026, 7, 25, 11, 5, 0),
+        Amount = 2000m,
+        PaymentMode = PaymentMode.Cash
+    };
+
+    [StaFact]
+    public void A_dental_receipt_shows_the_payment_and_the_cases_remaining_balance()
+    {
+        var text = TextOf(DentalReceiptDocument.Build(DentalPayment(), DentalCaseWithPayments(), Clinic(), Theme()));
+
+        Assert.Contains("DPR00002", text);
+        Assert.Contains("Aarav Rao", text);
+        Assert.Contains("Root Canal", text);
+        Assert.Contains("2000.00", text);
+        // Total 5300 (5000 base + 300 anesthesia), paid 2000 -> balance 3300.
+        Assert.Contains("3300.00", text);
+    }
+
+    // ── Pathology lab report ──────────────────────────────────────────────
+
+    private static LabOrder LabOrder() => new()
+    {
+        OrderNo = "LAB00002",
+        OrderDate = new DateTime(2026, 7, 25, 11, 5, 0),
+        PatientName = "Baby Anika",
+        PatientNo = "P00012",
+        ReferredBy = "Dr. A. Kumar",
+        PaymentMode = PaymentMode.Cash,
+        Status = LabOrderStatus.Verified,
+        TotalAmount = 450m,
+        Discount = 50m,
+        FinalAmount = 400m,
+        Reports =
+        [
+            new LabOrderReport
+            {
+                ReportName = "CBP", Price = 450m, Amount = 450m,
+                Results =
+                [
+                    new LabResult
+                    {
+                        AnalyteName = "Hemoglobin", Units = "g/dL", ResultValue = "9.2",
+                        ReferenceRangeDisplay = "12 – 16", Flag = LabResultFlag.Low,
+                        VerifiedOn = new DateTime(2026, 7, 25, 12, 0, 0), VerifiedBy = "Dr. Rao"
+                    },
+                    new LabResult
+                    {
+                        AnalyteName = "WBC Count", Units = "/cumm", ResultValue = "7200",
+                        ReferenceRangeDisplay = "4000 – 11000", Flag = LabResultFlag.Normal,
+                        VerifiedOn = new DateTime(2026, 7, 25, 12, 0, 0), VerifiedBy = "Dr. Rao"
+                    }
+                ]
+            }
+        ]
+    };
+
+    [StaFact]
+    public void A_lab_report_carries_its_analytes_results_and_flags_the_abnormal_one()
+    {
+        var text = TextOf(LabReportDocument.Build(LabOrder(), Clinic(), Theme()));
+
+        Assert.Contains("LABORATORY REPORT", text);
+        Assert.Contains("LAB00002", text);
+        Assert.Contains("Baby Anika", text);
+        Assert.Contains("CBP", text);
+        Assert.Contains("Hemoglobin", text);
+        Assert.Contains("9.2", text);
+        Assert.Contains("LOW", text);
+        Assert.Contains("WBC Count", text);
+        Assert.Contains("400.00", text);
+        Assert.Contains("Verified by Dr. Rao", text);
+    }
+
+    [StaFact]
+    public void A_normal_result_carries_no_flag_text()
+    {
+        var text = TextOf(LabReportDocument.Build(LabOrder(), Clinic(), Theme()));
+
+        // The Normal-flagged WBC Count row prints no flag word beside it —
+        // only the Low-flagged Hemoglobin row does.
+        Assert.DoesNotContain("NORMAL", text);
+    }
+
+    [StaFact]
+    public void A_lab_report_is_black_ink_on_a_white_page()
+        => AssertPrintSafe(LabReportDocument.Build(LabOrder(), Clinic(), Theme()));
+
+    [StaFact]
+    public void Every_paragraph_on_the_lab_report_has_its_own_brush()
+        => AssertEveryParagraphHasAnExplicitBrush(LabReportDocument.Build(LabOrder(), Clinic(), Theme()));
+
+    [StaFact]
+    public void Date_and_time_are_adjacent_on_the_lab_report()
+        => AssertDateImmediatelyFollowedByTime(LabReportDocument.Build(LabOrder(), Clinic(), Theme()));
 
     [StaFact]
     public void A_bill_shows_the_licences_and_the_gst_split()
@@ -571,6 +743,18 @@ public class PrintDocumentTests
     public void Date_and_time_are_adjacent_on_the_diagnostic_bill()
         => AssertDateImmediatelyFollowedByTime(DiagnosticBillPrinter.Build(DiagnosticBill(), Clinic(), Theme()));
 
+    [StaFact]
+    public void Date_and_time_are_adjacent_on_the_appointment_slip()
+        => AssertDateImmediatelyFollowedByTime(AppointmentSlipDocument.Build(Appointment(), Clinic(), Theme()));
+
+    [StaFact]
+    public void Date_and_time_are_adjacent_on_the_procedure_bill()
+        => AssertDateImmediatelyFollowedByTime(ProcedureBillDocument.Build(ProcedureBill(), Clinic(), Theme()));
+
+    [StaFact]
+    public void Date_and_time_are_adjacent_on_the_dental_receipt()
+        => AssertDateImmediatelyFollowedByTime(DentalReceiptDocument.Build(DentalPayment(), DentalCaseWithPayments(), Clinic(), Theme()));
+
     // ── Configurable print font (Settings → Reports) ────────────────────────
 
     [StaFact]
@@ -687,4 +871,60 @@ public class PrintDocumentTests
 
         Assert.Contains(cells, c => c.Label == "D.L. No" && c.Value == "AP/21B/2024/1234");
     }
+
+    // ── Vaccination history ─────────────────────────────────────────────────
+
+    private static Patient VaccinatedPatient() => new()
+    {
+        Name = "Baby Anika", PatientNo = "P00012", Age = 2, Gender = Gender.Female, GuardianName = "R. Kumar"
+    };
+
+    private static List<VaccinationRecord> VaccinationRecords() =>
+    [
+        new()
+        {
+            VaccineName = "BCG", DoseNumber = 1, GivenOn = new DateTime(2024, 3, 1), BatchNo = "B001", SiteOfInjection = "Left arm",
+            ProductName = "BCG Vaccine IP", Manufacturer = "Serum Institute"
+        },
+        new() { VaccineName = "OPV", DoseNumber = 1, GivenOn = new DateTime(2024, 4, 12), BatchNo = "B002", SiteOfInjection = "Oral" }
+    ];
+
+    [StaFact]
+    public void A_vaccination_history_document_lists_every_dose_for_the_patient()
+    {
+        var text = TextOf(VaccinationHistoryDocument.Build(VaccinatedPatient(), VaccinationRecords(), Clinic(), Theme()));
+
+        Assert.Contains("VACCINATION RECORD", text);
+        Assert.Contains("Baby Anika", text);
+        Assert.Contains("P00012", text);
+        Assert.Contains("BCG", text);
+        Assert.Contains("B001", text);
+        Assert.Contains("OPV", text);
+        Assert.Contains("B002", text);
+    }
+
+    /// <summary>The type (from Vaccine Master) and the actual brand given
+    /// (from Pharmacy) are two different facts — the printed record must
+    /// carry both, not just the clinical type.</summary>
+    [StaFact]
+    public void A_vaccination_history_document_shows_the_brand_given_alongside_the_vaccine_type()
+    {
+        var text = TextOf(VaccinationHistoryDocument.Build(VaccinatedPatient(), VaccinationRecords(), Clinic(), Theme()));
+
+        Assert.Contains("BRAND GIVEN", text);
+        Assert.Contains("BCG Vaccine IP", text);
+        Assert.Contains("Serum Institute", text);
+    }
+
+    [StaFact]
+    public void A_vaccination_history_document_with_no_doses_says_so_rather_than_printing_a_blank_table()
+    {
+        var text = TextOf(VaccinationHistoryDocument.Build(VaccinatedPatient(), [], Clinic(), Theme()));
+
+        Assert.Contains("No doses recorded yet.", text);
+    }
+
+    [StaFact]
+    public void A_vaccination_history_document_is_black_ink_on_a_white_page()
+        => AssertPrintSafe(VaccinationHistoryDocument.Build(VaccinatedPatient(), VaccinationRecords(), Clinic(), Theme()));
 }

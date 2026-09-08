@@ -278,8 +278,16 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         return visit;
     }
 
-    /// <summary>Books a visit and allocates the next token for that day.</summary>
-    public async Task<Visit> BookVisitAsync(Guid patientId, Guid doctorId, DateTime scheduledOn, string? complaint, decimal fee)
+    /// <summary>
+    /// Books a visit and allocates the next token for that day. <paramref name="appointmentId"/>
+    /// is set only when this visit is the check-in of a previously booked
+    /// <c>Appointment</c> (the Appointments module's <c>General</c> context) —
+    /// null for the ordinary walk-in flow, which this parameter leaves
+    /// completely unchanged.
+    /// </summary>
+    public async Task<Visit> BookVisitAsync(
+        Guid patientId, Guid doctorId, DateTime scheduledOn, string? complaint, decimal fee,
+        Guid? appointmentId = null)
     {
         using var log = AppLog.Enter(
             nameof(BookVisitAsync),
@@ -302,7 +310,8 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
             ScheduledOn = scheduledOn,
             Complaint = complaint,
             Fee = fee,
-            Status = VisitStatus.Booked
+            Status = VisitStatus.Booked,
+            AppointmentId = appointmentId
         };
 
         db.Visits.Add(visit);
@@ -325,6 +334,20 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         {
             log.Skip("visit not found");
             return;
+        }
+
+        // Refused here and not only on screen: a paid or completed visit has a
+        // numbered receipt or a consultation hanging off it, and cancelling
+        // would strand them against a visit the register says never happened.
+        if (status == VisitStatus.Cancelled && !visit.CanCancel)
+        {
+            var why = visit.FeePaid
+                ? $"the fee has already been taken{(string.IsNullOrWhiteSpace(visit.FeeReceiptNo) ? "" : $" on receipt {visit.FeeReceiptNo}")}"
+                : $"it is already {visit.Status.ToString().ToLowerInvariant()}";
+
+            log.Skip($"refused: {visit.VisitNo} is {visit.Status}, feePaid={visit.FeePaid}");
+            throw new InvalidOperationException(
+                $"Token {visit.TokenNo} cannot be cancelled — {why}.");
         }
 
         var was = visit.Status;

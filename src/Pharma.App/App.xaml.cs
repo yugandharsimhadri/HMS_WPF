@@ -72,6 +72,11 @@ public partial class App : Application
         services.AddSingleton<DataHealthService>();
         services.AddSingleton<Pharma.Data.Import.PurchaseImportService>();
         services.AddSingleton<DiagnosticsService>();
+        services.AddSingleton<AppointmentsService>();
+        services.AddSingleton<PediatricsService>();
+        services.AddSingleton<ProcedureBillsService>();
+        services.AddSingleton<DentistService>();
+        services.AddSingleton<PathologyLabService>();
         services.AddSingleton<AuthService>();
 
         // Registered as both its own type (the shell reads CurrentUser off it)
@@ -98,6 +103,12 @@ public partial class App : Application
         services.AddSingleton<ReportsViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<DiagnosticsViewModel>();
+        services.AddSingleton<AppointmentsViewModel>();
+        services.AddSingleton<PediatricsViewModel>();
+        services.AddSingleton<DentistViewModel>();
+        services.AddSingleton<PathologyLabViewModel>();
+        services.AddSingleton<PathologyLabMasterViewModel>();
+        services.AddSingleton<GeneralMasterViewModel>();
 
         return services.BuildServiceProvider();
     }

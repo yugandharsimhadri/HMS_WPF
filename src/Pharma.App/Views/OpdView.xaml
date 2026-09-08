@@ -56,7 +56,8 @@
                                 CommandParameter="{Binding}"
                                 AutomationProperties.AutomationId="TileDone"
                                 AutomationProperties.Name="{Binding Patient.Name}"/>
-                        <Button Content="Cancel" Style="{StaticResource BtnDanger}" Padding="2,4"
+                        <Button Content="Cancel" Style="{StaticResource BtnDanger}" IsEnabled="{Binding CanCancel}"
+                                ToolTip="A visit cannot be cancelled once the fee is taken or the patient has been seen" Padding="2,4"
                                 FontSize="{StaticResource FontSmall}" MinHeight="26"
                                 Command="{Binding DataContext.CancelVisitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}"
@@ -140,7 +141,8 @@
                                 CommandParameter="{Binding}"
                                 AutomationProperties.AutomationId="TileDone"
                                 AutomationProperties.Name="{Binding Patient.Name}"/>
-                        <Button Content="Cancel" Style="{StaticResource BtnDanger}" Padding="9,5"
+                        <Button Content="Cancel" Style="{StaticResource BtnDanger}" IsEnabled="{Binding CanCancel}"
+                                ToolTip="A visit cannot be cancelled once the fee is taken or the patient has been seen" Padding="9,5"
                                 Command="{Binding DataContext.CancelVisitCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}"
                                 AutomationProperties.AutomationId="TileCancel"
