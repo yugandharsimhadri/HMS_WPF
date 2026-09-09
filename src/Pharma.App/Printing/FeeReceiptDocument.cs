@@ -23,15 +23,23 @@ public static class FeeReceiptDocument
 
         AddClinicHeader(doc, clinic, theme, "CASH RECEIPT");
 
-        // Row 1 is the receipt itself, row 2 the patient, row 3 the doctor, and
-        // row 4 what kind of visit this was.
+        // Two rows of four: what this receipt is, then who it is about.
+        //
+        // Date and time are one field because they are one fact — nobody reads
+        // the hour without the day. The speciality is gone from here; it still
+        // names the consultation on the particulars line below, where it is
+        // doing some work, rather than being repeated as a label of its own.
         //
         // Neither the visit number nor the patient number is printed. Both are
         // internal references the parent has no use for and cannot act on; what
         // they need to quote is the receipt number, which row 1 carries.
+        //
+        // Column widths are shared down the grid, so they are set for the
+        // longest thing in each column — column three carries the doctor's name
+        // and degrees and needs the room; column two carries the date and time.
         var when = visit.FeePaidOn ?? visit.ScheduledOn;
 
-        var grid = NewTable(1, 1, 1);
+        var grid = NewTable(1.0, 1.1, 1.4, 0.9);
         var group = new TableRowGroup();
 
         // A renewal is never given a receipt number of its own. No money is
@@ -43,45 +51,23 @@ public static class FeeReceiptDocument
             ? ("Against receipt", visit.FeeWaivedAgainstVisit?.FeeReceiptNo ?? "—")
             : ("Receipt No", visit.FeeReceiptNo ?? "(not issued)");
 
+        // The token is the patient's place in the day's queue, and it is on the
+        // receipt at the clinic's request: it is what the desk and the parent
+        // both used to refer to the visit while they were in the building.
         group.Rows.Add(IdentityRow(SizeDelta,
             reference,
-            ("Date", $"{when:dd/MM/yyyy}"),
-            ("Time", $"{when:hh\\:mm tt}")));
+            ("Date & time", $"{when:dd/MM/yyyy}  {when:hh\\:mm tt}"),
+            ("Visit", visit.VisitKind),
+            ("Token No", visit.TokenNo.ToString())));
 
-        // The token is the patient's place in the day's queue, and it goes back
-        // on the receipt at the clinic's request: it is what the desk and the
-        // parent both used to refer to the visit while they were in the building.
+        // Degrees beside the name and the registration under its own label — a
+        // receipt is a medico-legal document, and who gave the consultation is
+        // what it is expected to state plainly.
         group.Rows.Add(IdentityRow(SizeDelta,
             ("Patient", visit.Patient.Name),
             ("Age / Sex", $"{visit.Patient.Age} / {visit.Patient.Gender}"),
-            ("Token No", visit.TokenNo.ToString())));
-
-        // Degrees beside the name, registration and speciality each under their
-        // own label rather than run together after the name — a receipt is a
-        // medico-legal document and these are the three things it is expected to
-        // state plainly about who gave the consultation.
-        group.Rows.Add(IdentityRow(SizeDelta,
             ("Doctor", visit.Doctor.NameWithQualification),
-            ("Reg. No", visit.Doctor.RegistrationNo ?? "—"),
-            ("Speciality", visit.Doctor.Speciality ?? "—")));
-
-        // New or Review, and what the payment covers. A review is free because
-        // an earlier fee to the same doctor is still inside its window, so the
-        // slip names the receipt that money was taken on; a first visit that
-        // opens a window prints the date the cover runs to, which is the whole
-        // point of printing it — the parent leaves knowing the date rather than
-        // being told a number of days to count from something.
-        var third = visit.IsReview
-            ? ("Fee paid on", visit.FeeWaivedAgainstVisit?.FeePaidOn is { } paidOnDate
-                ? $"{paidOnDate:dd MMM yyyy}" : "—")
-            : visit.FreeFollowUpUntil is { } until
-                ? ("Free renewal until", $"{until:dd MMM yyyy}")
-                : ("", "");
-
-        group.Rows.Add(IdentityRow(SizeDelta,
-            ("Visit", visit.VisitKind),
-            third,
-            ("", "")));
+            ("Reg. No", visit.Doctor.RegistrationNo ?? "—")));
 
         grid.RowGroups.Add(group);
         doc.Blocks.Add(grid);

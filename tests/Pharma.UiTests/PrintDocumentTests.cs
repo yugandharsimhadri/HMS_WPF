@@ -74,21 +74,44 @@ public class PrintDocumentTests
     }
 
     /// <summary>
-    /// Registration and speciality each get their own label rather than being
-    /// run together after the name, and the degrees sit beside the name — the
-    /// three things a receipt is expected to state plainly about who gave the
-    /// consultation.
+    /// The registration gets its own label rather than being run together after
+    /// the name, and the degrees sit beside the name — who gave the
+    /// consultation is what a receipt is expected to state plainly.
+    ///
+    /// The speciality is deliberately not a label of its own: it already names
+    /// the consultation on the particulars line, and a second copy of it in the
+    /// identity block was a field earning nothing.
     /// </summary>
     [StaFact]
-    public void A_fee_receipt_labels_the_doctors_registration_speciality_and_degrees()
+    public void A_fee_receipt_labels_the_doctors_registration_and_degrees()
     {
-        var text = TextOf(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
+        var doc = FeeReceiptDocument.Build(Visit(), Clinic(), Theme());
+        var text = TextOf(doc);
 
         Assert.Contains("Dr. A. Kumar, MBBS, MD (Paediatrics)", text);
         Assert.Contains("Reg. No", text);
         Assert.Contains("REG-4471", text);
-        Assert.Contains("Speciality", text);
-        Assert.Contains("Paediatrics", text);
+
+        // Gone from the identity grid, still on the fee line below it.
+        var labels = doc.Blocks.OfType<Table>().First().RowGroups.First().Rows
+            .SelectMany(r => r.Cells).Select(IdentityCellText).Select(c => c.Label).ToList();
+
+        Assert.DoesNotContain("Speciality", labels);
+        Assert.Contains("Consultation fee — Paediatrics", text);
+    }
+
+    /// <summary>Two rows, and nothing left blank in them.</summary>
+    [StaFact]
+    public void The_fee_receipts_identity_block_is_two_full_rows()
+    {
+        var rows = FeeReceiptDocument.Build(Visit(), Clinic(), Theme())
+            .Blocks.OfType<Table>().First().RowGroups.First().Rows;
+
+        Assert.Equal(2, rows.Count);
+
+        var cells = rows.SelectMany(r => r.Cells).Select(IdentityCellText).ToList();
+        Assert.All(cells, c => Assert.False(string.IsNullOrWhiteSpace(c.Label),
+                                            "an identity cell was left without a label"));
     }
 
     /// <summary>
@@ -821,9 +844,31 @@ public class PrintDocumentTests
         Assert.Equal("Time", cells[dateIndex + 1].Label);
     }
 
+    /// <summary>
+    /// The receipt goes one better than the other two documents and puts the
+    /// date and the time in a single field — they are one fact, since nobody
+    /// reads the hour without the day. The sibling tests below still hold the
+    /// prescription and the bill to keeping their two cells side by side.
+    /// </summary>
     [StaFact]
-    public void Date_and_time_are_adjacent_on_the_fee_receipt()
-        => AssertDateImmediatelyFollowedByTime(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
+    public void Date_and_time_are_one_field_on_the_fee_receipt()
+    {
+        var cells = FirstIdentityRow(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()))
+            .Cells.Select(IdentityCellText).ToList();
+
+        var when = cells.Find(c => c.Label == "Date & time");
+
+        // Not pinned to a separator: the running culture decides whether a
+        // date prints with slashes or dashes, and that is not what this is about.
+        Assert.NotNull(when.Label);
+        Assert.Matches(@"25.07.2026", when.Value);
+        Assert.Contains("10:35", when.Value);
+
+        // Split back apart, the pair would be two of the three columns and
+        // crowd out everything else the row has to carry.
+        Assert.DoesNotContain(cells, c => c.Label == "Date");
+        Assert.DoesNotContain(cells, c => c.Label == "Time");
+    }
 
     [StaFact]
     public void Date_and_time_are_adjacent_on_the_prescription()

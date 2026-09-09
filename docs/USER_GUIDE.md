@@ -1555,14 +1555,20 @@ it cannot be mistaken for the original.
 
 ## What the consultation receipt carries
 
-| Line | Notes |
-|---|---|
-| Receipt no, date, time | The number to quote if anyone asks about this payment |
-| Patient, age / sex, **token no** | The token is the patient's place in that day's queue |
-| Doctor **with degrees**, **Reg. No**, **Speciality** | Each under its own label — what a receipt is expected to state about who gave the consultation |
-| **Visit: New or Renew** | Renew means an earlier fee to the same doctor still covers it |
-| Amount, payment mode, amount in words | |
-| Free renewal until *date* | Only when the doctor has an OPD validity window — see [section 2](#doctors) |
+Two rows of four, and nothing in them left blank:
+
+| | | | |
+|---|---|---|---|
+| **Receipt No** | **Date & time** | **Visit** — New or Renew | **Token No** |
+| **Patient** | **Age / Sex** | **Doctor**, with degrees | **Reg. No** |
+
+Then the fee line, the amount, the payment mode and the amount in words. A
+first visit with an OPD validity window also prints the date the cover runs to
+— see [section 2](#doctors).
+
+The **speciality** is not a label of its own: it already names the consultation
+on the fee line (*Consultation fee — Paediatrics*), and a second copy of it in
+the identity block earned nothing.
 
 The **visit number and patient number are not printed**. Both are internal
 references nobody at the counter can act on; the receipt number is the one to
