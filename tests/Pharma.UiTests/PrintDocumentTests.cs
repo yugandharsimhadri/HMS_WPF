@@ -205,12 +205,15 @@ public class PrintDocumentTests
         Assert.Contains("0.00", text);
         Assert.Contains("Rupees Zero only", text);
 
-        // Quotes the receipt the money was actually taken on, and is given no
-        // number of its own — a nil receipt burning an RCP number would leave a
-        // hole in the day when the collection is reconciled.
-        Assert.Contains("Against receipt", text);
-        Assert.Contains("RCP00004", text);
-        Assert.DoesNotContain("Receipt No", text);
+        // Carries the number the money was actually taken on, and is given none
+        // of its own — a nil receipt burning an RCP number would leave a hole in
+        // the day when the collection is reconciled. Same label as any other
+        // receipt, so this checks the value rather than the wording.
+        var cells = FeeReceiptDocument.Build(renewal, Clinic(), Theme())
+            .Blocks.OfType<Table>().First().RowGroups.First().Rows
+            .SelectMany(r => r.Cells).Select(IdentityCellText).ToList();
+
+        Assert.Equal("RCP00004", cells.Find(c => c.Label == "Receipt No").Value);
 
         // A renewal does not open a window of its own, so it must not promise
         // one — and it never reads as a payment that was collected.

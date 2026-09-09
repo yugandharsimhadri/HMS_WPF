@@ -1580,10 +1580,11 @@ same receipt, with three differences:
 - **Visit** reads **Renew** instead of New.
 - The amount is **₹0.00**, said out loud rather than left blank. A receipt with
   no figure on it invites exactly the question the figure answers.
-- It is given **no receipt number of its own**. It quotes the receipt the fee
-  was actually taken on, under **Against receipt**, and the date it was paid.
-  Burning an `RCP` number on a nil amount would leave a hole in the day when
-  the collection is reconciled.
+- It is given **no receipt number of its own**. **Receipt No** shows the number
+  the fee was actually taken on. Burning an `RCP` number on a nil amount would
+  leave a hole in the day when the collection is reconciled — so a renewal and
+  the visit it rides on show the same number, and it is the **Visit** line and
+  the nil amount that tell the two apart.
 
 ---
 

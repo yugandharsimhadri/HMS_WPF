@@ -44,18 +44,19 @@ public static class FeeReceiptDocument
 
         // A renewal is never given a receipt number of its own. No money is
         // taken, and burning an RCP number on a nil amount would put a hole in
-        // the day's collection when the receipts are reconciled. It quotes the
-        // number the fee was actually taken on instead, which is the number
-        // anyone checking the visit would want anyway.
-        var reference = visit.IsReview
-            ? ("Against receipt", visit.FeeWaivedAgainstVisit?.FeeReceiptNo ?? "—")
-            : ("Receipt No", visit.FeeReceiptNo ?? "(not issued)");
+        // the day's collection when the receipts are reconciled. It carries the
+        // number the fee was actually taken on instead, under the same label —
+        // so a renewal slip and the receipt it rides on quote the same number,
+        // and the Visit line and the nil amount are what tell them apart.
+        var receiptNo = visit.IsReview
+            ? visit.FeeWaivedAgainstVisit?.FeeReceiptNo ?? "—"
+            : visit.FeeReceiptNo ?? "(not issued)";
 
         // The token is the patient's place in the day's queue, and it is on the
         // receipt at the clinic's request: it is what the desk and the parent
         // both used to refer to the visit while they were in the building.
         group.Rows.Add(IdentityRow(SizeDelta,
-            reference,
+            ("Receipt No", receiptNo),
             ("Date & time", $"{when:dd/MM/yyyy}  {when:hh\\:mm tt}"),
             ("Visit", visit.VisitKind),
             ("Token No", visit.TokenNo.ToString())));
