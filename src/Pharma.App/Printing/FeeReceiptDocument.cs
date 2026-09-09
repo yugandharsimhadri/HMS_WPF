@@ -21,9 +21,7 @@ public static class FeeReceiptDocument
     {
         var doc = NewDocument();
 
-        // A review takes no money, so calling its slip a cash receipt would be a
-        // lie on a document the parent keeps.
-        AddClinicHeader(doc, clinic, theme, visit.IsReview ? "VISIT SLIP" : "CASH RECEIPT");
+        AddClinicHeader(doc, clinic, theme, "CASH RECEIPT");
 
         // Row 1 is the receipt itself, row 2 the patient, row 3 the doctor, and
         // row 4 what kind of visit this was.
@@ -36,8 +34,17 @@ public static class FeeReceiptDocument
         var grid = NewTable(1, 1, 1);
         var group = new TableRowGroup();
 
+        // A renewal is never given a receipt number of its own. No money is
+        // taken, and burning an RCP number on a nil amount would put a hole in
+        // the day's collection when the receipts are reconciled. It quotes the
+        // number the fee was actually taken on instead, which is the number
+        // anyone checking the visit would want anyway.
+        var reference = visit.IsReview
+            ? ("Against receipt", visit.FeeWaivedAgainstVisit?.FeeReceiptNo ?? "—")
+            : ("Receipt No", visit.FeeReceiptNo ?? "(not issued)");
+
         group.Rows.Add(IdentityRow(SizeDelta,
-            ("Receipt No", visit.FeeReceiptNo ?? "(not issued)"),
+            reference,
             ("Date", $"{when:dd/MM/yyyy}"),
             ("Time", $"{when:hh\\:mm tt}")));
 
@@ -65,9 +72,10 @@ public static class FeeReceiptDocument
         // point of printing it — the parent leaves knowing the date rather than
         // being told a number of days to count from something.
         var third = visit.IsReview
-            ? ("Covered by receipt", visit.FeeWaivedAgainstVisit?.FeeReceiptNo ?? "—")
+            ? ("Fee paid on", visit.FeeWaivedAgainstVisit?.FeePaidOn is { } paidOnDate
+                ? $"{paidOnDate:dd MMM yyyy}" : "—")
             : visit.FreeFollowUpUntil is { } until
-                ? ("Free review until", $"{until:dd MMM yyyy}")
+                ? ("Free renewal until", $"{until:dd MMM yyyy}")
                 : ("", "");
 
         group.Rows.Add(IdentityRow(SizeDelta,
@@ -87,7 +95,7 @@ public static class FeeReceiptDocument
             : $"Consultation fee — {visit.Doctor.Speciality}";
 
         lineGroup.Rows.Add(Row(false, SizeDelta,
-            visit.IsReview ? $"{particulars} (review — already paid)" : particulars,
+            visit.IsReview ? $"{particulars} (renewal — already paid)" : particulars,
             "",
             visit.Fee.ToString("0.00")));
         lines.RowGroups.Add(lineGroup);
@@ -95,37 +103,35 @@ public static class FeeReceiptDocument
 
         doc.Blocks.Add(Rule());
 
+        // Nil on a renewal, and said out loud rather than left blank — a receipt
+        // with no amount on it invites the question the figure answers.
+        doc.Blocks.Add(Text($"RECEIVED   ₹{visit.Fee:0.00}", 13 + SizeDelta, FontWeights.Bold,
+                            align: TextAlignment.Right, topMargin: 1));
+
         if (visit.IsReview)
         {
-            // No amount, no payment mode and no words: nothing was taken today,
-            // and a bold "RECEIVED ₹0.00" reads like a failed transaction rather
-            // than like a visit the patient had already paid for.
-            doc.Blocks.Add(Text("NO FEE — REVIEW VISIT", 13 + SizeDelta, FontWeights.Bold,
-                                align: TextAlignment.Right, topMargin: 1));
-
             var paidOn = visit.FeeWaivedAgainstVisit?.FeePaidOn;
-            if (paidOn is { } on)
-                doc.Blocks.Add(Text($"Covered by the fee paid on {on:dd MMM yyyy}",
-                                    8 + SizeDelta, brush: Muted, align: TextAlignment.Right));
+            doc.Blocks.Add(Text(
+                paidOn is { } on
+                    ? $"No fee — already paid on {on:dd MMM yyyy}"
+                    : "No fee — already paid",
+                8 + SizeDelta, brush: Muted, align: TextAlignment.Right));
         }
         else
         {
-            doc.Blocks.Add(Text($"RECEIVED   ₹{visit.Fee:0.00}", 13 + SizeDelta, FontWeights.Bold,
-                                align: TextAlignment.Right, topMargin: 1));
-
             doc.Blocks.Add(Text($"Paid by {visit.FeePaymentMode?.ToString() ?? "Cash"}",
                                 8 + SizeDelta, brush: Muted, align: TextAlignment.Right));
-
-            doc.Blocks.Add(Text(InWords(visit.Fee), 8 + SizeDelta, brush: Muted,
-                                align: TextAlignment.Right, topMargin: 4));
-
-            // Says the date, not a number of days to count. This is the line the
-            // desk points at when a parent asks whether they have to pay again.
-            if (visit.FreeFollowUpUntil is { } coverUntil)
-                doc.Blocks.Add(Text(
-                    $"Review free with {visit.Doctor.Name} until {coverUntil:dd MMM yyyy}",
-                    9 + SizeDelta, FontWeights.SemiBold, topMargin: 5));
         }
+
+        doc.Blocks.Add(Text(InWords(visit.Fee), 8 + SizeDelta, brush: Muted,
+                            align: TextAlignment.Right, topMargin: 4));
+
+        // Says the date, not a number of days to count. This is the line the
+        // desk points at when a parent asks whether they have to pay again.
+        if (!visit.IsReview && visit.FreeFollowUpUntil is { } coverUntil)
+            doc.Blocks.Add(Text(
+                $"Renewal free with {visit.Doctor.Name} until {coverUntil:dd MMM yyyy}",
+                9 + SizeDelta, FontWeights.SemiBold, topMargin: 5));
 
         if (visit.FollowUpOn is { } follow)
             doc.Blocks.Add(Text($"Review on {follow:dd MMM yyyy}", 9 + SizeDelta, FontWeights.SemiBold, topMargin: 5));

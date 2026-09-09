@@ -250,7 +250,7 @@ public class OpdValidDaysTests : IDisposable
         Assert.True(reloaded.FeeSettled);
         Assert.False(reloaded.FeePaid);
         Assert.False(reloaded.CanCollectFee);
-        Assert.Equal("Review", reloaded.VisitKind);
+        Assert.Equal("Renew", reloaded.VisitKind);
     }
 
     [Fact]

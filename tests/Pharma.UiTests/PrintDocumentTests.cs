@@ -154,36 +154,45 @@ public class PrintDocumentTests
         var text = TextOf(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
 
         Assert.Contains("New", text);
-        Assert.DoesNotContain("Free review until", text);
-        Assert.DoesNotContain("Review free with", text);
+        Assert.DoesNotContain("Free renewal until", text);
+        Assert.DoesNotContain("Renewal free with", text);
     }
 
     /// <summary>
-    /// A review takes no money, so its slip must not read like a cash receipt
-    /// for nothing. It names the receipt the fee was actually paid on, which is
-    /// what the patient needs if anyone later asks why they were seen free.
+    /// A return inside the window reads Renew and is receipted for nil — the
+    /// amount is stated rather than left blank, because a receipt with no
+    /// figure on it invites exactly the question the figure answers. It also
+    /// names the receipt the fee was actually paid on, which is what the
+    /// patient needs if anyone later asks why they were seen free.
     /// </summary>
     [StaFact]
-    public void A_review_prints_a_visit_slip_rather_than_a_receipt_for_zero()
+    public void A_renewal_is_receipted_for_nil_and_reads_renew()
     {
         var paid = Visit();
-        var review = Visit(paid: false);
-        review.Fee = 0m;
-        review.TokenNo = 12;
-        review.FeeWaivedAgainstVisitId = paid.Id;
-        review.FeeWaivedAgainstVisit = paid;
+        var renewal = Visit(paid: false);
+        renewal.Fee = 0m;
+        renewal.TokenNo = 12;
+        renewal.FeeWaivedAgainstVisitId = paid.Id;
+        renewal.FeeWaivedAgainstVisit = paid;
 
-        var text = TextOf(FeeReceiptDocument.Build(review, Clinic(), Theme()));
+        var text = TextOf(FeeReceiptDocument.Build(renewal, Clinic(), Theme()));
 
-        Assert.Contains("VISIT SLIP", text);
-        Assert.Contains("Review", text);
-        Assert.Contains("NO FEE", text);
+        Assert.Contains("CASH RECEIPT", text);
+        Assert.Contains("Renew", text);
+        Assert.Contains("0.00", text);
+        Assert.Contains("Rupees Zero only", text);
+
+        // Quotes the receipt the money was actually taken on, and is given no
+        // number of its own — a nil receipt burning an RCP number would leave a
+        // hole in the day when the collection is reconciled.
+        Assert.Contains("Against receipt", text);
         Assert.Contains("RCP00004", text);
+        Assert.DoesNotContain("Receipt No", text);
 
-        // The things that would make it read as a failed payment.
-        Assert.DoesNotContain("CASH RECEIPT", text);
-        Assert.DoesNotContain("RECEIVED", text);
-        Assert.DoesNotContain("Rupees Zero only", text);
+        // A renewal does not open a window of its own, so it must not promise
+        // one — and it never reads as a payment that was collected.
+        Assert.DoesNotContain("Renewal free with", text);
+        Assert.DoesNotContain("Paid by", text);
     }
 
     [StaFact]
