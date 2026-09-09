@@ -69,9 +69,77 @@ public partial class BookVisitViewModel : ObservableObject
         if (!string.IsNullOrWhiteSpace(value)) NewNameMissing = false;
     }
 
+    /// <summary>
+    /// The earlier paid visit that still covers this patient with this doctor,
+    /// when the doctor runs an OPD validity window and the patient is inside it.
+    /// Null the rest of the time, which is every booking until a doctor turns
+    /// the scheme on in Settings.
+    /// </summary>
+    [ObservableProperty] private Visit? _feeCover;
+
+    public bool HasFeeCover => FeeCover is not null;
+
+    /// <summary>
+    /// Why this booking is free, in the terms the desk would use to explain it
+    /// to the person standing in front of them.
+    /// </summary>
+    public string FeeCoverNote => FeeCover is not { } cover
+        ? ""
+        : $"Review — ₹{cover.Fee:0} paid on {cover.FeePaidOn:dd MMM}" +
+          (string.IsNullOrWhiteSpace(cover.FeeReceiptNo) ? "" : $" (receipt {cover.FeeReceiptNo})") +
+          $", free with this doctor until {cover.FreeFollowUpUntil:dd MMM yyyy}.";
+
+    partial void OnFeeCoverChanged(Visit? value)
+    {
+        OnPropertyChanged(nameof(HasFeeCover));
+        OnPropertyChanged(nameof(FeeCoverNote));
+    }
+
+    partial void OnSelectedPatientChanged(Patient? value) => RefreshFeeCover();
+
     partial void OnSelectedDoctorChanged(Doctor? value)
     {
-        if (value is not null && Fee == 0) Fee = value.ConsultationFee;
+        if (value is not null && Fee == 0 && !HasFeeCover) Fee = value.ConsultationFee;
+        RefreshFeeCover();
+    }
+
+    private void RefreshFeeCover() => RefreshFeeCoverAsync().Forget("Checking the OPD validity window");
+
+    /// <summary>
+    /// Asks whether this patient has already paid this doctor inside a live
+    /// window, and if so drops the fee to zero.
+    ///
+    /// A default, not a lock. The desk can type a fee back in — a return inside
+    /// the window but for a genuinely new complaint is usually chargeable, and
+    /// that is a judgement no rule here can make. Whether the visit is recorded
+    /// as a free review is decided by what the fee box actually says when Book
+    /// is pressed, not by what this suggested.
+    /// </summary>
+    private async Task RefreshFeeCoverAsync()
+    {
+        var patient = SelectedPatient;
+        var doctor = SelectedDoctor;
+
+        if (patient is null || doctor is null || doctor.OpdValidDays <= 0)
+        {
+            FeeCover = null;
+            return;
+        }
+
+        var cover = await _opd.FindFeeCoverAsync(patient.Id, doctor.Id, _date);
+        FeeCover = cover;
+
+        if (cover is not null)
+        {
+            Fee = 0;
+            Status = FeeCoverNote;
+        }
+        else if (Fee == 0)
+        {
+            // The window closed, or a different doctor was picked — put the
+            // doctor's own fee back rather than leaving a zero nobody chose.
+            Fee = doctor.ConsultationFee;
+        }
     }
 
     [RelayCommand]
@@ -174,12 +242,21 @@ public partial class BookVisitViewModel : ObservableObject
             var scheduled = _date.Date;
             if (TimeSpan.TryParse(Time, out var t)) scheduled = scheduled.Add(t);
 
+            // Re-checked here rather than trusted from the banner: the patient
+            // may have been picked before the doctor, or changed after it, and
+            // an overridden fee means the desk decided to charge after all.
+            var cover = SelectedDoctor.OpdValidDays > 0 && Fee <= 0
+                ? await _opd.FindFeeCoverAsync(patient.Id, SelectedDoctor.Id, scheduled)
+                : null;
+
             var visit = await _opd.BookVisitAsync(
                 patient.Id, SelectedDoctor.Id, scheduled,
                 string.IsNullOrWhiteSpace(Complaint) ? null : Complaint.Trim(),
-                Fee);
+                Fee, feeWaivedAgainstVisitId: cover?.Id);
 
-            Outcome = $"Token {visit.TokenNo} booked for {patient.Name}.";
+            Outcome = cover is null
+                ? $"Token {visit.TokenNo} booked for {patient.Name}."
+                : $"Token {visit.TokenNo} booked for {patient.Name} — review, no fee due.";
             log.Ok($"token={visit.TokenNo} patient={patient.Name}");
             RequestClose?.Invoke();
         }

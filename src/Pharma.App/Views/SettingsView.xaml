@@ -319,6 +319,31 @@
                                 </StackPanel>
                             </Grid>
 
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Qualification (optional)" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding Qualification, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="Degrees as they should print beside the name, e.g. MBBS, MD (Paediatrics)"
+                                             AutomationProperties.AutomationId="DoctorQualification"/>
+                                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                               Text="Prints beside the name on receipts, e.g. MBBS, MD (Paediatrics)."/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="OPD valid for (days)" Style="{StaticResource Label}"/>
+                                    <TextBox Text="{Binding OpdValidDays, UpdateSourceTrigger=PropertyChanged}"
+                                             local:NumericInput.Mode="Whole"
+                                             ToolTip="0 charges every visit. 7 means one fee covers this doctor for seven days."
+                                             AutomationProperties.AutomationId="DoctorOpdValidDays"/>
+                                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                               Text="{Binding OpdValidDaysNote}"/>
+                                </StackPanel>
+                            </Grid>
+
                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                 <Button Content="Save doctor" Style="{StaticResource BtnPrimary}" Margin="0,0,8,0"
                                         Command="{Binding SaveDoctorCommand}"

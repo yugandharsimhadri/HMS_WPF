@@ -184,6 +184,12 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     {
         if (visit is null) return;
 
+        if (visit.IsReview)
+        {
+            Status = $"Token {visit.TokenNo} is a review inside the doctor's OPD validity window — no fee is due.";
+            return;
+        }
+
         if (visit.FeePaid)
         {
             Status = $"Token {visit.TokenNo} has already paid — use the receipt button to reprint.";
@@ -297,7 +303,11 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
     {
         if (visit is null) return;
 
-        if (!visit.FeePaid)
+        // A review takes no money and gets no receipt number, but it still gets
+        // paper: the slip names the doctor, the token and the receipt the fee
+        // was actually paid on, which is what the patient needs if anyone later
+        // asks why they were seen without paying.
+        if (!visit.FeeSettled)
         {
             Status = $"Token {visit.TokenNo} has not paid yet — there is no receipt to print.";
             return;
@@ -308,8 +318,10 @@ public partial class OpdViewModel(OpdService opd, SettingsService settings) : Ob
 
         var clinic = await settings.GetClinicAsync();
         var theme = await settings.GetDocumentThemeAsync();
-        PrintService.Preview(() => FeeReceiptDocument.Build(full, clinic, theme, isReprint: true),
-                             $"Receipt {full.FeeReceiptNo} (duplicate)");
+        PrintService.Preview(() => FeeReceiptDocument.Build(full, clinic, theme, isReprint: full.FeePaid),
+                             full.IsReview
+                                 ? $"Visit slip — token {full.TokenNo}"
+                                 : $"Receipt {full.FeeReceiptNo} (duplicate)");
     }
 
     [RelayCommand]

@@ -268,6 +268,9 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
             .Include(v => v.Doctor)
             .Include(v => v.Prescription)
             .Include(v => v.DiagnosticRequests)
+            // The payment a review rides on, so the slip can quote the receipt
+            // number the money was actually taken on.
+            .Include(v => v.FeeWaivedAgainstVisit)
             .FirstOrDefaultAsync(v => v.Id == id);
 
         log.Ok(visit is null
@@ -287,7 +290,7 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
     /// </summary>
     public async Task<Visit> BookVisitAsync(
         Guid patientId, Guid doctorId, DateTime scheduledOn, string? complaint, decimal fee,
-        Guid? appointmentId = null)
+        Guid? appointmentId = null, Guid? feeWaivedAgainstVisitId = null)
     {
         using var log = AppLog.Enter(
             nameof(BookVisitAsync),
@@ -311,7 +314,8 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
             Complaint = complaint,
             Fee = fee,
             Status = VisitStatus.Booked,
-            AppointmentId = appointmentId
+            AppointmentId = appointmentId,
+            FeeWaivedAgainstVisitId = feeWaivedAgainstVisitId
         };
 
         db.Visits.Add(visit);
@@ -321,6 +325,43 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
 
         log.Ok($"{visit.VisitNo} id={visit.Id} token={visit.TokenNo}");
         return visit;
+    }
+
+    /// <summary>
+    /// The paid visit whose fee still covers this patient seeing this doctor on
+    /// <paramref name="onDate"/>, or null if they have to pay.
+    ///
+    /// Day-wise throughout: the stored window is a date, the comparison is
+    /// against a date, and nothing here looks at a clock. A patient who paid at
+    /// 9pm on the 1st with a seven-day cover is still covered at 8am on the 8th.
+    ///
+    /// Matched on the same doctor, deliberately — a fee paid to one doctor does
+    /// not buy a free visit to their colleague. Cancelled visits are excluded,
+    /// though a paid visit cannot be cancelled anyway (see <see cref="Visit.CanCancel"/>),
+    /// which is what stops a review ever pointing at a payment that vanished.
+    /// </summary>
+    /// <param name="onDate">
+    /// The day of the visit being booked, not today — booking on the 2nd for
+    /// the 20th is outside a window that closes on the 8th, and charging it as
+    /// free because it was *booked* in time would give the cover away.
+    /// </param>
+    public async Task<Visit?> FindFeeCoverAsync(Guid patientId, Guid doctorId, DateTime onDate)
+    {
+        var day = onDate.Date;
+
+        await using var db = await factory.CreateDbContextAsync();
+
+        return await db.Visits
+            .AsNoTracking()
+            .Where(v => !v.IsDeleted
+                        && v.PatientId == patientId
+                        && v.DoctorId == doctorId
+                        && v.FeePaid
+                        && v.Status != VisitStatus.Cancelled
+                        && v.FreeFollowUpUntil != null
+                        && v.FreeFollowUpUntil >= day)
+            .OrderByDescending(v => v.FeePaidOn)
+            .FirstOrDefaultAsync();
     }
 
     public async Task SetStatusAsync(Guid visitId, VisitStatus status)
@@ -404,6 +445,21 @@ public class OpdService(IDbContextFactory<AppDbContext> factory)
         visit.FeePaidOn = DateTime.Now;
         visit.FeePaymentMode = mode;
         visit.FeeTransactionNo = string.IsNullOrWhiteSpace(transactionNo) ? null : transactionNo.Trim();
+
+        // The window this payment buys, fixed here and never recomputed. Dated
+        // from the day the money arrived rather than the day the visit was
+        // booked, because a patient who books on Monday and pays on Thursday
+        // was told "seven days" on Thursday.
+        //
+        // Only a payment opens a window. If a review re-anchored it the cover
+        // would roll forward every visit and never end.
+        var validDays = visit.Doctor?.OpdValidDays ?? 0;
+        if (validDays > 0 && !visit.IsReview)
+        {
+            visit.FreeFollowUpUntil = visit.FeePaidOn.Value.Date.AddDays(validDays);
+            AppLog.Info($"Fee on {visit.VisitNo} covers return visits to {visit.Doctor!.Name} " +
+                        $"until {visit.FreeFollowUpUntil:dd MMM yyyy} ({validDays} days).");
+        }
 
         await db.SaveChangesAsync();
 

@@ -44,7 +44,8 @@
                             AutomationProperties.Name="{Binding Patient.Name}"/>
 
                     <UniformGrid Columns="3" Margin="0,5,0,0">
-                        <Button Content="Fee" Style="{StaticResource BtnGhost}" Margin="0,0,4,0" Padding="2,4"
+                        <Button Content="Fee" Style="{StaticResource BtnGhost}" IsEnabled="{Binding CanCollectFee}"
+                                ToolTip="A review inside the doctor's OPD validity window has no fee to take" Margin="0,0,4,0" Padding="2,4"
                                 FontSize="{StaticResource FontSmall}" MinHeight="26"
                                 Command="{Binding DataContext.CollectFeeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}"
@@ -131,7 +132,8 @@
                                 CommandParameter="{Binding}"
                                 AutomationProperties.AutomationId="TileConsult"
                                 AutomationProperties.Name="{Binding Patient.Name}"/>
-                        <Button Content="Fee" Style="{StaticResource BtnGhost}" Padding="9,5" Margin="0,0,4,0"
+                        <Button Content="Fee" Style="{StaticResource BtnGhost}" IsEnabled="{Binding CanCollectFee}"
+                                ToolTip="A review inside the doctor's OPD validity window has no fee to take" Padding="9,5" Margin="0,0,4,0"
                                 Command="{Binding DataContext.CollectFeeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}"
                                 AutomationProperties.AutomationId="TileFee"

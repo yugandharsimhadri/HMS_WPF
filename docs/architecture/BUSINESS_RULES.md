@@ -164,6 +164,37 @@ A part-way, unpaid visit (`InConsultation`) can still be cancelled.
 ### Tokens are per day
 Allocated on booking, sequential within the day, and shown on every tile.
 
+### One fee can cover several visits, per doctor, day-wise
+`Doctor.OpdValidDays` (0 = off, the default) is how many days one consultation
+fee covers that doctor. `OpdService.CollectFeeAsync` stamps
+`Visit.FreeFollowUpUntil = FeePaidOn.Date.AddDays(OpdValidDays)` **once**, when
+the money is taken, and nothing recomputes it afterwards — the patient was told
+a date and it is printed on their receipt, so a later change to the doctor's
+setting must not revoke or extend a window already given. It also confines the
+day-wise arithmetic to one line.
+
+`FindFeeCoverAsync(patient, doctor, onDate)` answers whether a booking is
+covered: same patient, **same doctor**, paid, not cancelled, and
+`FreeFollowUpUntil >= onDate.Date`. Dated on the visit being booked, not today,
+so booking ahead past the window is still charged. Inclusive at the far end —
+seven days paid on the 1st covers the 8th.
+
+A covered booking is stored with `Visit.FeeWaivedAgainstVisitId` pointing at the
+paying visit, which makes `IsReview` true, `FeeSettled` true and `FeePaid`
+false. **Only a payment opens a window** — a review never sets
+`FreeFollowUpUntil`, or cover would roll forward indefinitely.
+
+The booking screen applies this as a **default, not a lock**: it zeroes the fee
+and says why, and the desk can type a fee back in for a new complaint, in which
+case the visit is recorded as New and paid.
+
+### FeePaid alone means "still owes"
+`FeePaid` is not the question the screens should ask — it is false both for a
+visit that has not paid and for a review that never will. `FeeSettled`
+(`FeePaid || IsReview`) is the one that means "no money outstanding", and
+`CanCollectFee` is its inverse. Revenue reporting still filters on `FeePaid`
+and is correct unchanged, because a review carries `Fee = 0`.
+
 ### The fee is separate from the visit
 `FeePaid`, `FeeReceiptNo`, `FeePaidOn`, `FeePaymentMode` live on `Visit`. A
 patient can be seen before paying, and can pay without being seen yet — the two

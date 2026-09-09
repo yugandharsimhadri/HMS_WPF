@@ -50,7 +50,11 @@ public class PrintDocumentTests
         Diagnosis = "Acute pharyngitis",
         FollowUpOn = new DateTime(2026, 8, 1),
         Patient = new Patient { Name = "Baby Anika", PatientNo = "P00012", Age = 4, Gender = Gender.Female },
-        Doctor = new Doctor { Name = "Dr. A. Kumar", Speciality = "Paediatrics", RegistrationNo = "REG-4471" }
+        Doctor = new Doctor
+        {
+            Name = "Dr. A. Kumar", Speciality = "Paediatrics", RegistrationNo = "REG-4471",
+            Qualification = "MBBS, MD (Paediatrics)"
+        }
     };
 
     // ── Fee receipt ────────────────────────────────────────────────────────
@@ -69,36 +73,117 @@ public class PrintDocumentTests
         Assert.Contains("Rupees Three Hundred Fifty only", text);
     }
 
+    /// <summary>
+    /// Registration and speciality each get their own label rather than being
+    /// run together after the name, and the degrees sit beside the name — the
+    /// three things a receipt is expected to state plainly about who gave the
+    /// consultation.
+    /// </summary>
     [StaFact]
-    public void A_fee_receipt_names_the_doctor_with_their_registration_number()
+    public void A_fee_receipt_labels_the_doctors_registration_speciality_and_degrees()
     {
         var text = TextOf(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
 
-        Assert.Contains("Dr. A. Kumar", text);
-        Assert.Contains("Reg. No: REG-4471", text);
+        Assert.Contains("Dr. A. Kumar, MBBS, MD (Paediatrics)", text);
+        Assert.Contains("Reg. No", text);
+        Assert.Contains("REG-4471", text);
+        Assert.Contains("Speciality", text);
+        Assert.Contains("Paediatrics", text);
     }
 
+    /// <summary>
+    /// The reverse of what this document used to do, at the clinic's request.
+    ///
+    /// The token — the patient's place in the day's queue — is what the desk and
+    /// the parent both used to refer to the visit while they were in the
+    /// building, so it goes on the receipt. The visit number and the patient
+    /// number come off: both are internal references the parent cannot act on,
+    /// and the receipt number is what they are asked to quote.
+    /// </summary>
     [StaFact]
-    public void A_fee_receipt_quotes_the_visit_number_and_not_the_token()
+    public void A_fee_receipt_carries_the_days_token_and_not_the_internal_numbers()
     {
-        // The token calls the next patient in on the day and means nothing on a
-        // receipt kept for months. The visit number is the reference to quote.
         var text = TextOf(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
 
-        Assert.Contains("V00007", text);
-        Assert.DoesNotContain("Token", text);
+        Assert.Contains("Token No", text);
+        Assert.Contains("RCP00004", text);
+
+        Assert.DoesNotContain("V00007", text);
+        Assert.DoesNotContain("P00012", text);
     }
 
+    /// <summary>
+    /// A doctor with nothing on file still prints. The labels stay — a receipt
+    /// with a gap where the registration should be is a question the desk gets
+    /// asked, and an em dash answers it — but the name must not be left with a
+    /// dangling comma where the degrees would have gone.
+    /// </summary>
     [StaFact]
-    public void A_fee_receipt_still_prints_when_the_doctor_has_no_registration_number()
+    public void A_fee_receipt_still_prints_when_the_doctor_has_no_registration_or_degrees()
     {
         var visit = Visit();
         visit.Doctor.RegistrationNo = null;
+        visit.Doctor.Qualification = null;
 
         var text = TextOf(FeeReceiptDocument.Build(visit, Clinic(), Theme()));
 
         Assert.Contains("Dr. A. Kumar", text);
-        Assert.DoesNotContain("Reg. No:", text);
+        Assert.DoesNotContain("Dr. A. Kumar,", text);
+        Assert.DoesNotContain("REG-4471", text);
+    }
+
+    [StaFact]
+    public void A_paid_first_visit_reads_as_new_and_prints_the_date_its_cover_runs_to()
+    {
+        var visit = Visit();
+        visit.FreeFollowUpUntil = new DateTime(2026, 8, 1);
+
+        var text = TextOf(FeeReceiptDocument.Build(visit, Clinic(), Theme()));
+
+        Assert.Contains("New", text);
+
+        // A date, never a number of days to count from something. This is the
+        // line the desk points at when a parent asks if they must pay again.
+        Assert.Contains("01 Aug 2026", text);
+        Assert.DoesNotContain("7 days", text);
+    }
+
+    [StaFact]
+    public void A_visit_with_no_cover_prints_no_review_promise()
+    {
+        var text = TextOf(FeeReceiptDocument.Build(Visit(), Clinic(), Theme()));
+
+        Assert.Contains("New", text);
+        Assert.DoesNotContain("Free review until", text);
+        Assert.DoesNotContain("Review free with", text);
+    }
+
+    /// <summary>
+    /// A review takes no money, so its slip must not read like a cash receipt
+    /// for nothing. It names the receipt the fee was actually paid on, which is
+    /// what the patient needs if anyone later asks why they were seen free.
+    /// </summary>
+    [StaFact]
+    public void A_review_prints_a_visit_slip_rather_than_a_receipt_for_zero()
+    {
+        var paid = Visit();
+        var review = Visit(paid: false);
+        review.Fee = 0m;
+        review.TokenNo = 12;
+        review.FeeWaivedAgainstVisitId = paid.Id;
+        review.FeeWaivedAgainstVisit = paid;
+
+        var text = TextOf(FeeReceiptDocument.Build(review, Clinic(), Theme()));
+
+        Assert.Contains("VISIT SLIP", text);
+        Assert.Contains("Review", text);
+        Assert.Contains("NO FEE", text);
+        Assert.Contains("RCP00004", text);
+
+        // The things that would make it read as a failed payment.
+        Assert.DoesNotContain("CASH RECEIPT", text);
+        Assert.DoesNotContain("RECEIVED", text);
+        Assert.DoesNotContain("Rupees Zero only", text);
     }
 
     [StaFact]

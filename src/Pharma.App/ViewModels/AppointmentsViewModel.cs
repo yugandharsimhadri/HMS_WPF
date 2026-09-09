@@ -131,12 +131,25 @@ public partial class AppointmentsViewModel(
                 case AppointmentModuleContext.General:
                 {
                     var doctor = Doctors.FirstOrDefault(d => d.Id == appointment.DoctorId);
+
+                    // The doctor's OPD validity window applies however the visit
+                    // was created. Checking in an appointment from a patient who
+                    // is still covered and taking the fee anyway would charge
+                    // them for something they have already paid for, purely
+                    // because they booked ahead instead of walking in.
+                    var cover = doctor is { OpdValidDays: > 0 }
+                        ? await opd.FindFeeCoverAsync(appointment.PatientId, appointment.DoctorId, DateTime.Today)
+                        : null;
+
                     var visit = await opd.BookVisitAsync(
                         appointment.PatientId, appointment.DoctorId, DateTime.Now,
-                        appointment.Reason, doctor?.ConsultationFee ?? 0, appointment.Id);
+                        appointment.Reason, cover is null ? doctor?.ConsultationFee ?? 0 : 0m,
+                        appointment.Id, feeWaivedAgainstVisitId: cover?.Id);
 
                     await appointments.MarkCheckedInAsync(appointment.Id, visit.Id);
-                    DailyStatus = $"{appointment.PatientName} checked in — token {visit.TokenNo}.";
+                    DailyStatus = cover is null
+                        ? $"{appointment.PatientName} checked in — token {visit.TokenNo}."
+                        : $"{appointment.PatientName} checked in — token {visit.TokenNo}, review, no fee due.";
                     break;
                 }
 

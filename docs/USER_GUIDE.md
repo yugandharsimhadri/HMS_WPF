@@ -575,11 +575,42 @@ Everything printed on a medicine bill.
 | **Registration no** | Printed on the prescription. Required on a real one |
 | **Phone (optional)** | Not printed |
 | **Default consultation fee** | Fills in automatically when booking for this doctor |
+| **Qualification (optional)** | Degrees, printed beside the name on the receipt — e.g. `MBBS, MD (Paediatrics)` |
+| **OPD valid for (days)** | How long one fee covers this doctor. `0` charges every visit |
 | **Save doctor** | Saves the one being edited, then clears the form |
 | **Clear** | Empties the form. Saved doctors are unchanged |
 | **+ New doctor** | Clears the form to add another |
 
 **At least one doctor is needed before any visit can be booked.**
+
+### OPD valid for — one fee, several visits
+
+Most clinics let a patient come back for a short while on the fee they have
+already paid. Set **OPD valid for** to 7 and a patient who pays this doctor
+today may see them again free for the next seven days.
+
+- It is **per doctor**, because it is that doctor's own money being given away.
+  A fee paid to one doctor never buys a free visit with another.
+- It is counted in **whole days**, never hours. Paid at 9pm on the 1st with
+  seven days set, they are still covered all day on the 8th.
+- The window is fixed **when the money is taken**, and printed on the receipt.
+  Changing this number later does not shorten or extend a window already given
+  to somebody — they were told a date, and that date stands.
+- Only a payment opens a window. A free review does **not** start a new one, or
+  a patient returning every sixth day would never pay again.
+- `0` — the default, and what every doctor already on file stays at — turns the
+  whole thing off and charges every visit.
+
+At the desk this is automatic. Book a patient who is still inside the window
+with the same doctor and the booking form says so, and sets the fee to zero:
+
+> Review — ₹300 paid on 02 Sep (receipt RCP00041), free with this doctor until
+> 09 Sep 2026.
+
+**The fee box stays editable.** A patient returning inside the window but for a
+genuinely new complaint is usually still charged, and that is the desk's call to
+make — type the fee back in and the visit is recorded as New and paid, exactly
+as if there had been no window at all.
 
 ## Reports — document branding
 
@@ -700,7 +731,7 @@ A patient moves from one to the other and can be moved back.
 | Button | What it does |
 |---|---|
 | **Consult** | Opens the consultation window for this patient |
-| **Fee** | Opens the fee form — see [section 5](#5-taking-the-consultation-fee) |
+| **Fee** | Opens the fee form — see [section 5](#5-taking-the-consultation-fee). Greyed out on a review, which owes nothing |
 | **Done** | Moves the tile to Completed without a consultation |
 | **Cancel** | Cancels the visit. Asks first. Greyed out once the fee has been taken or the visit is finished — see below |
 
@@ -1517,10 +1548,31 @@ page until you zoom yourself, after which it leaves your zoom alone.
 |---|---|---|
 | Tax invoice (medicines) | `INV00001` | Counter · Reports day book · patient record |
 | Consultation receipt | `RCP00001` | OPD tile · patient record |
+| Visit slip (review, no fee) | none issued | OPD tile · patient record |
 | Prescription | `V00001` | Consultation · OPD tile · patient record |
 
 **Anything can be reprinted at any time.** A reprint is stamped **DUPLICATE** so
 it cannot be mistaken for the original.
+
+## What the consultation receipt carries
+
+| Line | Notes |
+|---|---|
+| Receipt no, date, time | The number to quote if anyone asks about this payment |
+| Patient, age / sex, **token no** | The token is the patient's place in that day's queue |
+| Doctor **with degrees**, **Reg. No**, **Speciality** | Each under its own label — what a receipt is expected to state about who gave the consultation |
+| **Visit: New or Review** | Review means an earlier fee to the same doctor still covers it |
+| Amount, payment mode, amount in words | |
+| Free review until *date* | Only when the doctor has an OPD validity window — see [section 2](#doctors) |
+
+The **visit number and patient number are not printed**. Both are internal
+references nobody at the counter can act on; the receipt number is the one to
+quote.
+
+A **review** prints a **VISIT SLIP** rather than a cash receipt: no amount, no
+receipt number of its own, and a line naming the receipt the fee was actually
+paid on. Nothing changed hands, so calling it a receipt would be untrue on a
+document the patient keeps.
 
 ---
 

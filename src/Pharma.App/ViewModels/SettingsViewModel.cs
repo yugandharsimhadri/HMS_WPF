@@ -468,6 +468,23 @@ public partial class SettingsViewModel(
     [ObservableProperty] private string _speciality = "";
     [ObservableProperty] private string _doctorPhone = "";
     [ObservableProperty] private decimal _consultationFee;
+    [ObservableProperty] private string _qualification = "";
+
+    /// <summary>
+    /// How long one fee covers this doctor. Zero is off, and off is what every
+    /// doctor is until somebody deliberately turns it on.
+    /// </summary>
+    [ObservableProperty] private int _opdValidDays;
+
+    /// <summary>Says back what the number means, because "7" on its own does not
+    /// tell the person typing it whether they have just made reviews free for a
+    /// week or charged them for seven days.</summary>
+    public string OpdValidDaysNote => OpdValidDays <= 0
+        ? "0 — every visit is charged."
+        : $"One fee covers this doctor for {OpdValidDays} day{(OpdValidDays == 1 ? "" : "s")}; " +
+          "a return inside that is a free review.";
+
+    partial void OnOpdValidDaysChanged(int value) => OnPropertyChanged(nameof(OpdValidDaysNote));
 
     private async Task LoadDoctorsAsync()
     {
@@ -483,14 +500,17 @@ public partial class SettingsViewModel(
         Speciality = value.Speciality ?? "";
         DoctorPhone = value.Phone ?? "";
         ConsultationFee = value.ConsultationFee;
+        Qualification = value.Qualification ?? "";
+        OpdValidDays = value.OpdValidDays;
     }
 
     [RelayCommand]
     private void NewDoctor()
     {
         SelectedDoctor = null;
-        DoctorName = RegistrationNo = Speciality = DoctorPhone = "";
+        DoctorName = RegistrationNo = Speciality = DoctorPhone = Qualification = "";
         ConsultationFee = 0;
+        OpdValidDays = 0;
     }
 
     [RelayCommand]
@@ -511,6 +531,11 @@ public partial class SettingsViewModel(
         doctor.Speciality = string.IsNullOrWhiteSpace(Speciality) ? null : Speciality.Trim();
         doctor.Phone = string.IsNullOrWhiteSpace(DoctorPhone) ? null : DoctorPhone.Trim();
         doctor.ConsultationFee = ConsultationFee;
+        doctor.Qualification = string.IsNullOrWhiteSpace(Qualification) ? null : Qualification.Trim();
+
+        // A negative window is a typo, not a policy, and it would make every
+        // visit look like it was already covered.
+        doctor.OpdValidDays = Math.Max(0, OpdValidDays);
         doctor.IsActive = true;
 
         await opd.SaveDoctorAsync(doctor);

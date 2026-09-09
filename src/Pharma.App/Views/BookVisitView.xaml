@@ -147,6 +147,20 @@
                         </StackPanel>
                     </Grid>
 
+                    <!-- Only ever seen when the doctor runs an OPD validity
+                         window and this patient is inside it. Says which
+                         payment covers them and until when, so the desk can
+                         answer the parent without opening another screen — and
+                         the fee box above stays editable, because a return for
+                         a new complaint is usually still chargeable. -->
+                    <Border Background="{DynamicResource AccentSoft}" CornerRadius="4"
+                            Padding="10,7" Margin="0,8,0,0"
+                            Visibility="{Binding HasFeeCover, Converter={StaticResource BoolVis}}">
+                        <TextBlock Text="{Binding FeeCoverNote}" TextWrapping="Wrap"
+                                   Foreground="{DynamicResource AccentDark}"
+                                   AutomationProperties.AutomationId="OpdFeeCoverNote"/>
+                    </Border>
+
                     <TextBlock Text="3 — Complaint (optional)" Style="{StaticResource Label}" Margin="0,8,0,4"/>
                     <TextBox Text="{Binding Complaint, UpdateSourceTrigger=PropertyChanged}"
                              AcceptsReturn="True" Height="118" TextWrapping="Wrap"

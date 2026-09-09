@@ -21,38 +21,60 @@ public static class FeeReceiptDocument
     {
         var doc = NewDocument();
 
-        AddClinicHeader(doc, clinic, theme, "CASH RECEIPT");
+        // A review takes no money, so calling its slip a cash receipt would be a
+        // lie on a document the parent keeps.
+        AddClinicHeader(doc, clinic, theme, visit.IsReview ? "VISIT SLIP" : "CASH RECEIPT");
 
-        // Date and time sit side by side rather than one under the other,
-        // in row 1 with the receipt no; patient identity in row 2; doctor,
-        // speciality and the visit reference in row 3.
+        // Row 1 is the receipt itself, row 2 the patient, row 3 the doctor, and
+        // row 4 what kind of visit this was.
+        //
+        // Neither the visit number nor the patient number is printed. Both are
+        // internal references the parent has no use for and cannot act on; what
+        // they need to quote is the receipt number, which row 1 carries.
         var when = visit.FeePaidOn ?? visit.ScheduledOn;
 
         var grid = NewTable(1, 1, 1);
         var group = new TableRowGroup();
+
         group.Rows.Add(IdentityRow(SizeDelta,
             ("Receipt No", visit.FeeReceiptNo ?? "(not issued)"),
             ("Date", $"{when:dd/MM/yyyy}"),
             ("Time", $"{when:hh\\:mm tt}")));
+
+        // The token is the patient's place in the day's queue, and it goes back
+        // on the receipt at the clinic's request: it is what the desk and the
+        // parent both used to refer to the visit while they were in the building.
         group.Rows.Add(IdentityRow(SizeDelta,
             ("Patient", visit.Patient.Name),
-            ("Patient No", visit.Patient.PatientNo),
-            ("Age / Sex", $"{visit.Patient.Age} / {visit.Patient.Gender}")));
-        // The registration number belongs beside the name of the doctor who saw
-        // the child; "Reg. No:" is worded as the prescription words it, so the
-        // two documents a parent leaves with read the same way.
-        //
-        // The token is not printed. It is how the desk calls the next patient in
-        // on the day, and it means nothing on a receipt kept for months — the
-        // visit number is the reference to quote.
-        var doctor = string.IsNullOrWhiteSpace(visit.Doctor.RegistrationNo)
-            ? visit.Doctor.Name
-            : $"{visit.Doctor.Name}  ·  Reg. No: {visit.Doctor.RegistrationNo}";
+            ("Age / Sex", $"{visit.Patient.Age} / {visit.Patient.Gender}"),
+            ("Token No", visit.TokenNo.ToString())));
+
+        // Degrees beside the name, registration and speciality each under their
+        // own label rather than run together after the name — a receipt is a
+        // medico-legal document and these are the three things it is expected to
+        // state plainly about who gave the consultation.
+        group.Rows.Add(IdentityRow(SizeDelta,
+            ("Doctor", visit.Doctor.NameWithQualification),
+            ("Reg. No", visit.Doctor.RegistrationNo ?? "—"),
+            ("Speciality", visit.Doctor.Speciality ?? "—")));
+
+        // New or Review, and what the payment covers. A review is free because
+        // an earlier fee to the same doctor is still inside its window, so the
+        // slip names the receipt that money was taken on; a first visit that
+        // opens a window prints the date the cover runs to, which is the whole
+        // point of printing it — the parent leaves knowing the date rather than
+        // being told a number of days to count from something.
+        var third = visit.IsReview
+            ? ("Covered by receipt", visit.FeeWaivedAgainstVisit?.FeeReceiptNo ?? "—")
+            : visit.FreeFollowUpUntil is { } until
+                ? ("Free review until", $"{until:dd MMM yyyy}")
+                : ("", "");
 
         group.Rows.Add(IdentityRow(SizeDelta,
-            ("Doctor", doctor),
-            ("Speciality", visit.Doctor.Speciality ?? ""),
-            ("Visit", visit.VisitNo)));
+            ("Visit", visit.VisitKind),
+            third,
+            ("", "")));
+
         grid.RowGroups.Add(group);
         doc.Blocks.Add(grid);
         doc.Blocks.Add(Rule());
@@ -60,10 +82,12 @@ public static class FeeReceiptDocument
         var lines = NewTable(3, 0.2, 1.2);
         var lineGroup = new TableRowGroup();
         lineGroup.Rows.Add(Row(true, SizeDelta, "PARTICULARS", "", "AMOUNT"));
+        var particulars = string.IsNullOrWhiteSpace(visit.Doctor.Speciality)
+            ? "Consultation fee"
+            : $"Consultation fee — {visit.Doctor.Speciality}";
+
         lineGroup.Rows.Add(Row(false, SizeDelta,
-            string.IsNullOrWhiteSpace(visit.Doctor.Speciality)
-                ? "Consultation fee"
-                : $"Consultation fee — {visit.Doctor.Speciality}",
+            visit.IsReview ? $"{particulars} (review — already paid)" : particulars,
             "",
             visit.Fee.ToString("0.00")));
         lines.RowGroups.Add(lineGroup);
@@ -71,14 +95,37 @@ public static class FeeReceiptDocument
 
         doc.Blocks.Add(Rule());
 
-        doc.Blocks.Add(Text($"RECEIVED   ₹{visit.Fee:0.00}", 13 + SizeDelta, FontWeights.Bold,
-                            align: TextAlignment.Right, topMargin: 1));
+        if (visit.IsReview)
+        {
+            // No amount, no payment mode and no words: nothing was taken today,
+            // and a bold "RECEIVED ₹0.00" reads like a failed transaction rather
+            // than like a visit the patient had already paid for.
+            doc.Blocks.Add(Text("NO FEE — REVIEW VISIT", 13 + SizeDelta, FontWeights.Bold,
+                                align: TextAlignment.Right, topMargin: 1));
 
-        doc.Blocks.Add(Text($"Paid by {visit.FeePaymentMode?.ToString() ?? "Cash"}",
-                            8 + SizeDelta, brush: Muted, align: TextAlignment.Right));
+            var paidOn = visit.FeeWaivedAgainstVisit?.FeePaidOn;
+            if (paidOn is { } on)
+                doc.Blocks.Add(Text($"Covered by the fee paid on {on:dd MMM yyyy}",
+                                    8 + SizeDelta, brush: Muted, align: TextAlignment.Right));
+        }
+        else
+        {
+            doc.Blocks.Add(Text($"RECEIVED   ₹{visit.Fee:0.00}", 13 + SizeDelta, FontWeights.Bold,
+                                align: TextAlignment.Right, topMargin: 1));
 
-        doc.Blocks.Add(Text(InWords(visit.Fee), 8 + SizeDelta, brush: Muted,
-                            align: TextAlignment.Right, topMargin: 4));
+            doc.Blocks.Add(Text($"Paid by {visit.FeePaymentMode?.ToString() ?? "Cash"}",
+                                8 + SizeDelta, brush: Muted, align: TextAlignment.Right));
+
+            doc.Blocks.Add(Text(InWords(visit.Fee), 8 + SizeDelta, brush: Muted,
+                                align: TextAlignment.Right, topMargin: 4));
+
+            // Says the date, not a number of days to count. This is the line the
+            // desk points at when a parent asks whether they have to pay again.
+            if (visit.FreeFollowUpUntil is { } coverUntil)
+                doc.Blocks.Add(Text(
+                    $"Review free with {visit.Doctor.Name} until {coverUntil:dd MMM yyyy}",
+                    9 + SizeDelta, FontWeights.SemiBold, topMargin: 5));
+        }
 
         if (visit.FollowUpOn is { } follow)
             doc.Blocks.Add(Text($"Review on {follow:dd MMM yyyy}", 9 + SizeDelta, FontWeights.SemiBold, topMargin: 5));
