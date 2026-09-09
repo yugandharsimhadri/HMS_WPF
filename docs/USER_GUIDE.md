@@ -596,7 +596,7 @@ today may see them again free for the next seven days.
 - The window is fixed **when the money is taken**, and printed on the receipt.
   Changing this number later does not shorten or extend a window already given
   to somebody — they were told a date, and that date stands.
-- Only a payment opens a window. A free renewal does **not** start a new one, or
+- Only a payment opens a window. A free review does **not** start a new one, or
   a patient returning every sixth day would never pay again.
 - `0` — the default, and what every doctor already on file stays at — turns the
   whole thing off and charges every visit.
@@ -604,7 +604,7 @@ today may see them again free for the next seven days.
 At the desk this is automatic. Book a patient who is still inside the window
 with the same doctor and the booking form says so, and sets the fee to zero:
 
-> Renew — ₹300 paid on 02 Sep (receipt RCP00041), free with this doctor until
+> Review — ₹300 paid on 02 Sep (receipt RCP00041), free with this doctor until
 > 09 Sep 2026.
 
 **The fee box stays editable.** A patient returning inside the window but for a
@@ -731,7 +731,7 @@ A patient moves from one to the other and can be moved back.
 | Button | What it does |
 |---|---|
 | **Consult** | Opens the consultation window for this patient |
-| **Fee** | Opens the fee form — see [section 5](#5-taking-the-consultation-fee). Greyed out on a renewal, which owes nothing |
+| **Fee** | Opens the fee form — see [section 5](#5-taking-the-consultation-fee). Greyed out on a review, which owes nothing |
 | **Done** | Moves the tile to Completed without a consultation |
 | **Cancel** | Cancels the visit. Asks first. Greyed out once the fee has been taken or the visit is finished — see below |
 
@@ -1559,7 +1559,7 @@ Two rows of four, and nothing in them left blank:
 
 | | | | |
 |---|---|---|---|
-| **Receipt No** | **Date & time** | **Visit** — New or Renew | **Token No** |
+| **Receipt No** | **Date & time** | **Visit** — New or Review | **Token No** |
 | **Patient** | **Age / Sex** | **Doctor**, with degrees | **Reg. No** |
 
 Then the fee line, the amount, the payment mode and the amount in words. A
@@ -1574,15 +1574,15 @@ The **visit number and patient number are not printed**. Both are internal
 references nobody at the counter can act on; the receipt number is the one to
 quote.
 
-A **renewal** — a return inside the doctor's OPD validity window — prints the
+A **review** — a return inside the doctor's OPD validity window — prints the
 same receipt, with three differences:
 
-- **Visit** reads **Renew** instead of New.
+- **Visit** reads **Review** instead of New.
 - The amount is **₹0.00**, said out loud rather than left blank. A receipt with
   no figure on it invites exactly the question the figure answers.
 - It is given **no receipt number of its own**. **Receipt No** shows the number
   the fee was actually taken on. Burning an `RCP` number on a nil amount would
-  leave a hole in the day when the collection is reconciled — so a renewal and
+  leave a hole in the day when the collection is reconciled — so a review and
   the visit it rides on show the same number, and it is the **Visit** line and
   the nil amount that tell the two apart.
 

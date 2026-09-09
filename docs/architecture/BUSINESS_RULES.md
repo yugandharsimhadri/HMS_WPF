@@ -180,7 +180,7 @@ so booking ahead past the window is still charged. Inclusive at the far end —
 seven days paid on the 1st covers the 8th.
 
 A covered booking is stored with `Visit.FeeWaivedAgainstVisitId` pointing at the
-paying visit, which makes `IsReview` true (printed as **Renew**), `FeeSettled` true and `FeePaid`
+paying visit, which makes `IsReview` true (printed as **Review**), `FeeSettled` true and `FeePaid`
 false. **Only a payment opens a window** — a review never sets
 `FreeFollowUpUntil`, or cover would roll forward indefinitely.
 

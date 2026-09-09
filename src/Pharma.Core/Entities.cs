@@ -205,10 +205,10 @@ public class Visit : BaseEntity
     /// </summary>
     public bool FeeSettled => FeePaid || IsReview;
 
-    /// <summary>"New" or "Renew", as the receipt prints it.</summary>
-    public string VisitKind => IsReview ? "Renew" : "New";
+    /// <summary>"New" or "Review", as the receipt prints it.</summary>
+    public string VisitKind => IsReview ? "Review" : "New";
 
-    public string FeeBadge => IsReview ? "Renew · no fee" : FeePaid ? "Fee paid" : "Fee due";
+    public string FeeBadge => IsReview ? "Review · no fee" : FeePaid ? "Fee paid" : "Fee due";
 
     /// <summary>
     /// Whether there is still money to take. False on a review, which owes

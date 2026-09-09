@@ -64,7 +64,7 @@ public class ReceiptSampleCapture
     };
 
     /// <summary>The return four days later — inside the window, so nil.</summary>
-    private static Visit RenewVisit(Visit paid) => new()
+    private static Visit ReviewVisit(Visit paid) => new()
     {
         Id = Guid.NewGuid(),
         VisitNo = "V00048",
@@ -142,7 +142,7 @@ public class ReceiptSampleCapture
         Render(FeeReceiptDocument.Build(paid, Clinic(), Theme()),
                Path.Combine(samples, "receipt-new.png"));
 
-        Render(FeeReceiptDocument.Build(RenewVisit(paid), Clinic(), Theme()),
-               Path.Combine(samples, "receipt-renew.png"));
+        Render(FeeReceiptDocument.Build(ReviewVisit(paid), Clinic(), Theme()),
+               Path.Combine(samples, "receipt-review.png"));
     }
 }

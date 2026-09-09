@@ -42,11 +42,11 @@ public static class FeeReceiptDocument
         var grid = NewTable(1.0, 1.1, 1.4, 0.9);
         var group = new TableRowGroup();
 
-        // A renewal is never given a receipt number of its own. No money is
+        // A review is never given a receipt number of its own. No money is
         // taken, and burning an RCP number on a nil amount would put a hole in
         // the day's collection when the receipts are reconciled. It carries the
         // number the fee was actually taken on instead, under the same label —
-        // so a renewal slip and the receipt it rides on quote the same number,
+        // so a review slip and the receipt it rides on quote the same number,
         // and the Visit line and the nil amount are what tell them apart.
         var receiptNo = visit.IsReview
             ? visit.FeeWaivedAgainstVisit?.FeeReceiptNo ?? "—"
@@ -82,7 +82,7 @@ public static class FeeReceiptDocument
             : $"Consultation fee — {visit.Doctor.Speciality}";
 
         lineGroup.Rows.Add(Row(false, SizeDelta,
-            visit.IsReview ? $"{particulars} (renewal — already paid)" : particulars,
+            visit.IsReview ? $"{particulars} (review — already paid)" : particulars,
             "",
             visit.Fee.ToString("0.00")));
         lines.RowGroups.Add(lineGroup);
@@ -90,7 +90,7 @@ public static class FeeReceiptDocument
 
         doc.Blocks.Add(Rule());
 
-        // Nil on a renewal, and said out loud rather than left blank — a receipt
+        // Nil on a review, and said out loud rather than left blank — a receipt
         // with no amount on it invites the question the figure answers.
         doc.Blocks.Add(Text($"RECEIVED   ₹{visit.Fee:0.00}", 13 + SizeDelta, FontWeights.Bold,
                             align: TextAlignment.Right, topMargin: 1));
@@ -117,7 +117,7 @@ public static class FeeReceiptDocument
         // desk points at when a parent asks whether they have to pay again.
         if (!visit.IsReview && visit.FreeFollowUpUntil is { } coverUntil)
             doc.Blocks.Add(Text(
-                $"Renewal free with {visit.Doctor.Name} until {coverUntil:dd MMM yyyy}",
+                $"Free review with {visit.Doctor.Name} until {coverUntil:dd MMM yyyy}",
                 9 + SizeDelta, FontWeights.SemiBold, topMargin: 5));
 
         if (visit.FollowUpOn is { } follow)
