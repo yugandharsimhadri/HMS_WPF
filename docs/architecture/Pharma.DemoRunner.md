@@ -80,6 +80,46 @@ dotnet run --project tools/Pharma.DemoRunner
 There is no configuration file, no workflow selection, and no second
 workflow in this phase — deliberately.
 
+## Demo pacing
+
+A workflow runs in about six seconds, which is correct, fast, and far too
+quick to narrate: a voiceover explaining a module wants ten to twenty. The
+runner therefore has two speeds, and the fast one is the default — a bare run
+behaves exactly as it always has, in both duration and output.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `HMS_DEMO_RUN_MODE` | `test` | `demo` paces the run for recording; anything else runs flat out |
+| `HMS_DEMO_MIN_SECONDS_PER_WORKFLOW` | `12` | Least time a workflow stays on screen, in demo mode only |
+
+```
+HMS_DEMO_RUN_MODE=demo dotnet run --project tools/Pharma.DemoRunner
+```
+
+Pacing works by **holding, not by slowing**. Every click runs at full speed and
+the workflow's own final screen is then held until the minimum is reached. The
+alternative — putting a delay between actions — would make the product itself
+look sluggish on camera, which is the opposite of the point. Workflows that
+already take longer than the minimum are never cut short, and a workflow that
+throws is not held at all: there is no sense lingering on an error, and the run
+is about to report failure anyway.
+
+`Starting {Name}...` and `Completed {Name}.` are a contract, not just logging —
+the content engine that assembles the video reads them to map each workflow
+onto the recording's timeline. Two consequences:
+
+- `Completed` is printed **after** the hold, so the gap between these lines is
+  the time the workflow was genuinely on screen.
+- They are written as they happen, not buffered to the end. `Console.Out`
+  auto-flushes even when stdout is a pipe (verified by timestamping arrival
+  through one), so nothing extra is needed here — but note the lines end
+  **CRLF** on Windows. A reader that does not translate or strip newlines will
+  fail a `$`-anchored match against the stray `\r`.
+
+Pacing is reported by the run itself: the effective minimum once at the start,
+each hold as it happens with what the workflow actually took, and the total
+held at the end.
+
 ## How this differs from Pharma.UiTests
 
 | | Pharma.UiTests | Pharma.DemoRunner |
