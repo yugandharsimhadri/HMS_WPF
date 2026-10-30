@@ -56,7 +56,7 @@ public static class ReportExcelBuilder
         ws.Cell(3, 1).Style.Font.Bold = true;
         ws.Cell(3, 1).Style.Font.FontSize = 12;
 
-        ws.Cell(4, 1).Value = ReportNaming.DateLabel(kind, vm.Date, vm.FromDate, vm.ToDate);
+        ws.Cell(4, 1).Value = ReportNaming.DateLabel(kind, vm.FromDate, vm.ToDate);
         ws.Cell(4, 1).Style.Font.FontColor = XLColor.FromHtml("#61707E");
 
         var span = Math.Max(columns, 1);

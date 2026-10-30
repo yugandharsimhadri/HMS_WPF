@@ -32,16 +32,21 @@ public static class ReportNaming
         _ => "Report"
     };
 
-    /// <summary>GST summary and the Schedule H1 register are read over a From/To range;
-    /// everything else follows the single Date picker.</summary>
-    public static bool IsRangeBased(ReportKind kind) => kind is ReportKind.GstSummary or ReportKind.ScheduleH1;
+    /// <summary>
+    /// Which reports answer "over what period?" at all.
+    ///
+    /// The other three do not, and giving them a range would be a lie: the
+    /// stock register and the low-stock list are a picture of the shelf right
+    /// now, and expiring-soon looks forward over its own horizon in days. A
+    /// date range cannot change what any of the three says.
+    /// </summary>
+    public static bool IsRangeBased(ReportKind kind) =>
+        kind is ReportKind.DayBook or ReportKind.GstSummary
+             or ReportKind.OpdRegister or ReportKind.ScheduleH1;
 
-    public static string DateLabel(ReportKind kind, DateTime date, DateTime from, DateTime to)
+    public static string DateLabel(ReportKind kind, DateTime from, DateTime to)
     {
-        // Stock Register is a live snapshot, not tied to the Date picker at all.
-        if (kind == ReportKind.StockRegister) return $"As of {DateTime.Now:dd MMM yyyy, HH:mm}";
-
-        if (!IsRangeBased(kind)) return date.ToString("dd MMM yyyy");
+        if (!IsRangeBased(kind)) return $"As of {DateTime.Now:dd MMM yyyy, HH:mm}";
 
         var (start, end) = from <= to ? (from, to) : (to, from);
         return start.Date == end.Date
@@ -49,7 +54,7 @@ public static class ReportNaming
             : $"{start:dd MMM yyyy} to {end:dd MMM yyyy}";
     }
 
-    public static string FileName(ReportKind kind, DateTime date, DateTime from, DateTime to, string extension)
+    public static string FileName(ReportKind kind, DateTime from, DateTime to, string extension)
     {
         var stem = kind switch
         {
@@ -64,22 +69,18 @@ public static class ReportNaming
         };
 
         string suffix;
-        if (kind == ReportKind.StockRegister)
+        if (!IsRangeBased(kind))
         {
-            // A live snapshot — the filename is today's date, not whatever the
-            // page's (unrelated) Date picker happens to be set to.
+            // A snapshot of now — the filename is today, whatever period the
+            // range pickers happen to be set to.
             suffix = DateTime.Today.ToString("yyyy-MM-dd");
         }
-        else if (IsRangeBased(kind))
+        else
         {
             var (start, end) = from <= to ? (from, to) : (to, from);
             suffix = start.Date == end.Date
                 ? start.ToString("yyyy-MM-dd")
                 : $"{start:yyyy-MM-dd}_to_{end:yyyy-MM-dd}";
-        }
-        else
-        {
-            suffix = date.ToString("yyyy-MM-dd");
         }
 
         return Sanitize($"{stem}_{suffix}.{extension}");

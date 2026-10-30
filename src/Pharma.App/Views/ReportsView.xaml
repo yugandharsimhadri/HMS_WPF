@@ -11,8 +11,18 @@
 
         <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="0,0,0,14">
             <DockPanel>
-                <DatePicker DockPanel.Dock="Right" Width="150" SelectedDate="{Binding Date, Mode=TwoWay}" Margin="0"
-                            AutomationProperties.AutomationId="ReportsDate"/>
+                <!-- One range for every date-based tab. There used to be a
+                     single Date here and a second From/To repeated inside the
+                     GST and H1 tabs, so "what period is this?" had two answers
+                     depending on which tab was open. -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="From" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,0"/>
+                    <DatePicker Width="132" SelectedDate="{Binding FromDate, Mode=TwoWay}" Margin="0,0,12,0"
+                                AutomationProperties.AutomationId="ReportsFromDate"/>
+                    <TextBlock Text="To" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,0"/>
+                    <DatePicker Width="132" SelectedDate="{Binding ToDate, Mode=TwoWay}"
+                                AutomationProperties.AutomationId="ReportsToDate"/>
+                </StackPanel>
                 <UniformGrid Rows="1" Columns="5">
                     <StackPanel>
                         <TextBlock Text="PHARMACY SALES" Style="{StaticResource Label}"/>
@@ -124,12 +134,6 @@
 
                     <TabItem Header="GST summary">
                         <DockPanel Margin="0,10,0,0">
-                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="2,0,0,10">
-                                <TextBlock Text="From" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
-                                <DatePicker Width="130" SelectedDate="{Binding FromDate, Mode=TwoWay}" Margin="0,0,14,0"/>
-                                <TextBlock Text="To" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
-                                <DatePicker Width="130" SelectedDate="{Binding ToDate, Mode=TwoWay}"/>
-                            </StackPanel>
                             <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
                                     Margin="0,6,0,0" Padding="8,10,8,2">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -346,12 +350,6 @@
                         <DockPanel Margin="0,10,0,0">
                             <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" Margin="2,0,0,8"
                                        Text="Statutory record of Schedule H1 sales. Retain for three years."/>
-                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="2,0,0,10">
-                                <TextBlock Text="From" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
-                                <DatePicker Width="130" SelectedDate="{Binding FromDate, Mode=TwoWay}" Margin="0,0,14,0"/>
-                                <TextBlock Text="To" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,10"/>
-                                <DatePicker Width="130" SelectedDate="{Binding ToDate, Mode=TwoWay}"/>
-                            </StackPanel>
                             <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0"
                                     Margin="0,6,0,0" Padding="8,10,8,2">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">

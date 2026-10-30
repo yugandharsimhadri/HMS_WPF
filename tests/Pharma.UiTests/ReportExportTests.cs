@@ -65,12 +65,12 @@ public class ReportExportTests : IDisposable
     public void The_stock_register_is_named_for_today_whatever_the_page_date_says()
     {
         // The stock register is a live snapshot of the shelf, so it is named
-        // for today on purpose — not for the Date picker on the Reports page,
+        // for today on purpose — not for the From/To range on the Reports page,
         // which belongs to the other reports. The dates passed here are
         // deliberately nowhere near today to prove they are ignored.
         var name = ReportNaming.FileName(
             ReportKind.StockRegister,
-            new DateTime(2020, 1, 2), new DateTime(2020, 1, 1), new DateTime(2020, 1, 3), "xlsx");
+            new DateTime(2020, 1, 1), new DateTime(2020, 1, 3), "xlsx");
 
         Assert.Equal($"StockRegister_{DateTime.Today:yyyy-MM-dd}.xlsx", name);
     }

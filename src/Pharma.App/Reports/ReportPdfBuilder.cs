@@ -48,7 +48,7 @@ public static class ReportPdfBuilder
                     col.Item().AlignCenter().Text("OPD & Pharmacy").FontSize(10).FontColor(Colors.Grey.Darken2);
                     col.Item().PaddingTop(6).AlignCenter().Text(ReportNaming.Title(kind)).FontSize(13).SemiBold();
                     col.Item().AlignCenter()
-                        .Text(ReportNaming.DateLabel(kind, vm.Date, vm.FromDate, vm.ToDate))
+                        .Text(ReportNaming.DateLabel(kind, vm.FromDate, vm.ToDate))
                         .FontSize(9).FontColor(Colors.Grey.Darken1);
                     col.Item().PaddingTop(8).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                 });

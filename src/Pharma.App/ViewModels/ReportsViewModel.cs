@@ -15,7 +15,7 @@ namespace Pharma.App.ViewModels;
 /// <summary>One row of the GST summary that appears on a tax invoice and in GSTR-1.</summary>
 public record GstSlab(decimal Rate, decimal Taxable, decimal Cgst, decimal Sgst, decimal Total);
 
-/// <summary>One day's diagnostic revenue, for the Date-wise Revenue section.</summary>
+/// <summary>One day's diagnostic revenue, for the day-wise revenue section.</summary>
 public record DiagnosticsRevenueRow(DateTime Date, int Bills, decimal Revenue);
 
 /// <summary>One test's billing frequency, for the Most Frequently Ordered Tests section.</summary>
@@ -46,7 +46,7 @@ public partial class ReportsViewModel(
     IDbContextFactory<AppDbContext> factory) : ObservableObject, IPage
 {
     public string Title => "Reports";
-    public string Subtitle => $"{Sales.Count} bill(s) on {Date:ddd, dd MMM} · ₹{TotalCollected:0.00}";
+    public string Subtitle => $"{Sales.Count} bill(s) · {RangeLabel} · ₹{TotalCollected:0.00}";
 
     public ObservableCollection<Sale> Sales { get; } = [];
     public ObservableCollection<Visit> Visits { get; } = [];
@@ -104,7 +104,12 @@ public partial class ReportsViewModel(
     ];
 
     // ── Filters ────────────────────────────────────────────────────────────
-    [ObservableProperty] private DateTime _date = DateTime.Today;
+    //
+    // One From/To range drives every date-based tab. There used to be a single
+    // Date picker for the day book, the OPD register and the diagnostics bills,
+    // and a second From/To pair repeated inside the GST and H1 tabs — so "what
+    // period am I looking at?" had two different answers depending on which tab
+    // was open, and moving one never moved the other.
     [ObservableProperty] private Sale? _selectedSale;
     [ObservableProperty] private string _billSearch = "";
     [ObservableProperty] private Visit? _selectedVisit;
@@ -146,6 +151,25 @@ public partial class ReportsViewModel(
     [ObservableProperty] private decimal _stockTotalCostValue;
     [ObservableProperty] private decimal _stockTotalMrpValue;
 
+    /// <summary>
+    /// The chosen range, lowest date first. The pickers do not stop somebody
+    /// setting From after To, and a reversed range would silently return
+    /// nothing rather than saying so — so it is ordered here, once, and every
+    /// loader asks for it rather than ordering its own.
+    /// </summary>
+    public (DateTime From, DateTime To) Range =>
+        FromDate <= ToDate ? (FromDate.Date, ToDate.Date) : (ToDate.Date, FromDate.Date);
+
+    /// <summary>The range in words, for the screen and for exported headers.</summary>
+    public string RangeLabel
+    {
+        get
+        {
+            var (from, to) = Range;
+            return from == to ? $"{from:dd MMM yyyy}" : $"{from:dd MMM yyyy} to {to:dd MMM yyyy}";
+        }
+    }
+
     public async Task LoadAsync()
     {
         DiagnosticsEnabled = (await settings.GetGeneralAsync()).DiagnosticsEnabled;
@@ -157,21 +181,24 @@ public partial class ReportsViewModel(
         OnPropertyChanged(nameof(Subtitle));
     }
 
-    /// <summary>Today's bills off the Date picker; revenue-by-day and the most
-    /// frequently ordered tests off the From/To range — the same split the
-    /// day book and the GST summary already use.</summary>
+    /// <summary>
+    /// The bills in the chosen range, the revenue broken down by day within it,
+    /// and the tests most often ordered across it. One range answers all three:
+    /// the list, the daily split and the ranking are the same bills asked three
+    /// different questions, so reading them twice could only disagree.
+    /// </summary>
     private async Task LoadDiagnosticsReportAsync()
     {
-        var todays = (await diagnostics.SearchBillsAsync(Date, Date))
+        var (from, to) = Range;
+
+        var todays = (await diagnostics.SearchBillsAsync(from, to))
             .OrderByDescending(b => b.BillDate).ToList();
 
         DiagnosticsTodayBills.Clear();
         foreach (var b in todays) DiagnosticsTodayBills.Add(b);
         DiagnosticsTodayTotal = todays.Sum(b => b.FinalAmount);
 
-        var from = FromDate <= ToDate ? FromDate : ToDate;
-        var to = FromDate <= ToDate ? ToDate : FromDate;
-        var ranged = await diagnostics.SearchBillsAsync(from, to);
+        var ranged = todays;
 
         DiagnosticsRevenue.Clear();
         foreach (var day in ranged.GroupBy(b => b.BillDate.Date).OrderByDescending(g => g.Key))
@@ -186,20 +213,23 @@ public partial class ReportsViewModel(
                 test.Key, test.Sum(i => i.Quantity), test.Sum(i => i.Amount)));
     }
 
-    partial void OnDateChanged(DateTime value)
+    partial void OnFromDateChanged(DateTime value) => RangeChanged();
+
+    partial void OnToDateChanged(DateTime value) => RangeChanged();
+
+    /// <summary>
+    /// Every date-based tab reloads together, so whichever one is open is
+    /// already right when the operator gets to it — and the two that are not
+    /// date-based (low stock and the stock register) are deliberately left
+    /// alone, being a picture of the shelf right now rather than of a period.
+    /// </summary>
+    private void RangeChanged()
     {
+        OnPropertyChanged(nameof(Range));
+        OnPropertyChanged(nameof(RangeLabel));
+        OnPropertyChanged(nameof(Subtitle));
+
         LoadDayAsync().Forget("Loading reports");
-        if (DiagnosticsEnabled) LoadDiagnosticsReportAsync().Forget("Loading diagnostics report");
-    }
-
-    partial void OnFromDateChanged(DateTime value)
-    {
-        LoadRangeAsync().Forget("Loading GST/H1 range");
-        if (DiagnosticsEnabled) LoadDiagnosticsReportAsync().Forget("Loading diagnostics report");
-    }
-
-    partial void OnToDateChanged(DateTime value)
-    {
         LoadRangeAsync().Forget("Loading GST/H1 range");
         if (DiagnosticsEnabled) LoadDiagnosticsReportAsync().Forget("Loading diagnostics report");
     }
@@ -209,14 +239,17 @@ public partial class ReportsViewModel(
 
     partial void OnSelectedTabIndexChanged(int value) => NotifyExportCanExecute();
 
-    /// <summary>Everything driven by the single Date picker: cards, day book, OPD
-    /// register, expiring soon and low stock.</summary>
+    /// <summary>The summary cards, the day book and the OPD register over the
+    /// chosen range, plus the two shelf snapshots that hang off no date at
+    /// all.</summary>
     private async Task LoadDayAsync()
     {
         // Day book must only ever show completed bills — a cancelled or returned
         // sale is not revenue, and leaving it in would double count against the
         // summary cards (which already exclude it).
-        var completed = (await pharmacy.GetSalesAsync(Date))
+        var (from, to) = Range;
+
+        var completed = (await pharmacy.GetSalesAsync(from, to))
             .Where(s => s.Status == SaleStatus.Completed)
             .OrderByDescending(s => s.BillDate)
             .ToList();
@@ -224,7 +257,7 @@ public partial class ReportsViewModel(
         Sales.Clear();
         foreach (var s in completed) Sales.Add(s);
 
-        var visits = await opd.GetVisitsAsync(Date);
+        var visits = await opd.GetVisitsAsync(from, to);
         Visits.Clear();
         foreach (var v in visits) Visits.Add(v);
 
@@ -259,8 +292,7 @@ public partial class ReportsViewModel(
     /// <summary>GST summary and the Schedule H1 register, over the From/To range.</summary>
     private async Task LoadRangeAsync()
     {
-        var from = FromDate <= ToDate ? FromDate : ToDate;
-        var to = FromDate <= ToDate ? ToDate : FromDate;
+        var (from, to) = Range;
 
         var completed = (await pharmacy.GetSalesAsync(from, to))
             .Where(s => s.Status == SaleStatus.Completed)
@@ -297,7 +329,7 @@ public partial class ReportsViewModel(
     }
 
     /// <summary>Every batch currently on the shelf — a live snapshot, not tied to
-    /// the Date/From/To pickers. Reloaded whenever "Include Zero Stock" flips;
+    /// the From/To range. Reloaded whenever "Include Zero Stock" flips;
     /// the search box then just re-filters the already-loaded rows in memory.</summary>
     private List<Batch> _stockRegisterRaw = [];
 
@@ -437,7 +469,7 @@ public partial class ReportsViewModel(
 
         var dialog = new SaveFileDialog
         {
-            FileName = ReportNaming.FileName(kind, Date, FromDate, ToDate, "pdf"),
+            FileName = ReportNaming.FileName(kind, FromDate, ToDate, "pdf"),
             Filter = "PDF file (*.pdf)|*.pdf",
             DefaultExt = "pdf"
         };
@@ -468,7 +500,7 @@ public partial class ReportsViewModel(
 
         var dialog = new SaveFileDialog
         {
-            FileName = ReportNaming.FileName(kind, Date, FromDate, ToDate, "xlsx"),
+            FileName = ReportNaming.FileName(kind, FromDate, ToDate, "xlsx"),
             Filter = "Excel workbook (*.xlsx)|*.xlsx",
             DefaultExt = "xlsx"
         };
