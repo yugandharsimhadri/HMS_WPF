@@ -108,7 +108,7 @@ public class OpdUiTests(AppFixture app) : IClassFixture<AppFixture>
         Assert.StartsWith("P", cells[0]);            // a patient number was allocated
         Assert.Equal(name, cells[1]);
         Assert.Equal("9876500022", cells[2]);
-        Assert.Equal("41", cells[3]);
+        Assert.Equal("41y", cells[3]);
     }
 
     [Fact]

@@ -54,6 +54,10 @@ public partial class BookVisitViewModel : ObservableObject
     [ObservableProperty] private string _newName = "";
     [ObservableProperty] private string _newPhone = "";
     [ObservableProperty] private string _newAge = "";
+
+    /// <summary>The months part, 0-11. A walk-in baby is registered here as
+    /// often as in the patient editor, so it has to be askable in both.</summary>
+    [ObservableProperty] private string _newAgeMonths = "";
     [ObservableProperty] private Gender _newGender = Gender.Male;
     [ObservableProperty] private Doctor? _selectedDoctor;
     [ObservableProperty] private string _time = DateTime.Now.ToString("HH:mm");
@@ -183,7 +187,7 @@ public partial class BookVisitViewModel : ObservableObject
     private void CancelNewPatient()
     {
         AddingPatient = false;
-        NewName = NewPhone = NewAge = "";
+        NewName = NewPhone = NewAge = NewAgeMonths = "";
     }
 
     [RelayCommand]
@@ -223,11 +227,18 @@ public partial class BookVisitViewModel : ObservableObject
                 NewNameMissing = false;
 
                 int.TryParse(NewAge, out var age);
+
+                // Clamped to 0-11: twelve months quietly meaning a year would
+                // make the same child two different ages depending on how the
+                // desk chose to type it.
+                var months = int.TryParse(NewAgeMonths, out var m) ? Math.Clamp(m, 0, 11) : 0;
+
                 patient = await _opd.SavePatientAsync(new Patient
                 {
                     Name = NewName.Trim(),
                     Phone = NewPhone.Trim(),
-                    Age = age,
+                    Age = Math.Max(0, age),
+                    AgeMonths = months,
                     Gender = NewGender
                 });
             }
@@ -276,7 +287,7 @@ public partial class BookVisitViewModel : ObservableObject
     {
         AddingPatient = false;
         NewNameMissing = false;
-        Search = NewName = NewPhone = NewAge = Complaint = "";
+        Search = NewName = NewPhone = NewAge = NewAgeMonths = Complaint = "";
         SelectedPatient = null;
         Matches.Clear();
         Fee = SelectedDoctor?.ConsultationFee ?? 0;

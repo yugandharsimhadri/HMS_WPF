@@ -567,7 +567,11 @@ public partial class PediatricsViewModel(
         if (SelectedPatient?.DateOfBirth is { } dob)
             return Math.Max(0, (on - dob.Date).TotalDays / 30.4368);
 
-        return (SelectedPatient?.Age ?? 0) * 12.0;
+        // Years and months, not years alone. The old fallback multiplied
+        // whole years by twelve, so every infant without a date of birth
+        // plotted at month zero — the one age band where the percentile
+        // curves move fastest and a wrong month is most misleading.
+        return SelectedPatient?.AgeInMonths ?? 0;
     }
 
     private void BuildGrowthChart()

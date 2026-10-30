@@ -66,7 +66,7 @@ public static class FeeReceiptDocument
         // what it is expected to state plainly.
         group.Rows.Add(IdentityRow(SizeDelta,
             ("Patient", visit.Patient.Name),
-            ("Age / Sex", $"{visit.Patient.Age} / {visit.Patient.Gender}"),
+            ("Age / Sex", $"{visit.Patient.AgeLabel} / {visit.Patient.Gender}"),
             ("Doctor", visit.Doctor.NameWithQualification),
             ("Reg. No", visit.Doctor.RegistrationNo ?? "—")));
 

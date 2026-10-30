@@ -81,12 +81,38 @@
                             <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
+                        <!-- Years and months side by side. A paediatric register
+                             cannot work in whole years: "0" is the same answer
+                             for a newborn and an eleven-month-old. -->
                         <StackPanel Grid.Column="0">
-                            <local:RequiredLabel Text="Age" ToolTip="Required unless a date of birth is set"/>
-                            <TextBox Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}"
-                                     IsEnabled="{Binding AgeIsEditable}"
-                                     local:Field.IsMissing="{Binding DobOrAgeMissing}"
-                                     AutomationProperties.AutomationId="PatientAge"/>
+                            <local:RequiredLabel Text="Age" ToolTip="Years is required unless a date of birth is set. Months is optional — leave it blank for a whole number of years."/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Text="{Binding Age, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding AgeIsEditable}"
+                                         local:NumericInput.Mode="Whole"
+                                         local:Field.IsMissing="{Binding DobOrAgeMissing}"
+                                         ToolTip="Years"
+                                         AutomationProperties.AutomationId="PatientAge"/>
+                                <TextBox Grid.Column="2" Text="{Binding AgeMonths, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding AgeIsEditable}"
+                                         local:NumericInput.Mode="Whole"
+                                         ToolTip="Optional — 0 to 11. Leave blank for a whole number of years."
+                                         AutomationProperties.AutomationId="PatientAgeMonths"/>
+                            </Grid>
+                            <Grid Margin="0,2,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Years" Style="{StaticResource Muted}"/>
+                                <TextBlock Grid.Column="2" Text="Months (optional)" Style="{StaticResource Muted}"/>
+                            </Grid>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Sex" Style="{StaticResource Label}"/>

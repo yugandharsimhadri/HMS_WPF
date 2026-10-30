@@ -42,7 +42,7 @@ public static class PrescriptionPrinter
         group.Rows.Add(IdentityRow(SizeDelta,
             ("Patient", visit.Patient.Name),
             ("Patient No", visit.Patient.PatientNo),
-            ("Age / Sex", $"{visit.Patient.Age} / {visit.Patient.Gender}")));
+            ("Age / Sex", $"{visit.Patient.AgeLabel} / {visit.Patient.Gender}")));
         group.Rows.Add(IdentityRow(SizeDelta,
             ("Doctor", visit.Doctor.Name),
             ("Speciality", visit.Doctor.Speciality ?? ""),

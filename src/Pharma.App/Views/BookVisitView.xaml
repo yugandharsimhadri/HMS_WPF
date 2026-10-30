@@ -89,7 +89,9 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="10"/>
-                                <ColumnDefinition Width="60"/>
+                                <ColumnDefinition Width="52"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="52"/>
                                 <ColumnDefinition Width="10"/>
                                 <ColumnDefinition Width="88"/>
                             </Grid.ColumnDefinitions>
@@ -98,12 +100,22 @@
                                 <TextBox Text="{Binding NewPhone, UpdateSourceTrigger=PropertyChanged}"
                                          AutomationProperties.AutomationId="OpdNewPhone"/>
                             </StackPanel>
+                            <!-- Years and months, because half a paediatric list
+                                 is under two and "0" tells the doctor nothing. -->
                             <StackPanel Grid.Column="2">
-                                <TextBlock Text="Age" Style="{StaticResource Label}"/>
+                                <TextBlock Text="Years" Style="{StaticResource Label}"/>
                                 <TextBox Text="{Binding NewAge, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Whole"
                                          AutomationProperties.AutomationId="OpdNewAge"/>
                             </StackPanel>
                             <StackPanel Grid.Column="4">
+                                <TextBlock Text="Months" Style="{StaticResource Label}"/>
+                                <TextBox Text="{Binding NewAgeMonths, UpdateSourceTrigger=PropertyChanged}"
+                                         local:NumericInput.Mode="Whole"
+                                         ToolTip="Optional — 0 to 11. Leave blank for a whole number of years."
+                                         AutomationProperties.AutomationId="OpdNewAgeMonths"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="6">
                                 <TextBlock Text="Sex" Style="{StaticResource Label}"/>
                                 <ComboBox ItemsSource="{Binding Genders}" SelectedItem="{Binding NewGender, Mode=TwoWay}"
                                           AutomationProperties.AutomationId="OpdNewGender"/>

@@ -46,7 +46,7 @@
                                    FontSize="{StaticResource FontSubheading}"
                                    AutomationProperties.AutomationId="PediatricsSelectedPatient"/>
                         <TextBlock Style="{StaticResource Muted}">
-                            <Run Text="{Binding SelectedPatient.PatientNo, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.Age, Mode=OneWay}"/><Run Text=" yrs · "/><Run Text="{Binding SelectedPatient.Phone, Mode=OneWay}"/>
+                            <Run Text="{Binding SelectedPatient.PatientNo, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.AgeLabel, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.Phone, Mode=OneWay}"/>
                         </TextBlock>
                     </StackPanel>
                 </DockPanel>

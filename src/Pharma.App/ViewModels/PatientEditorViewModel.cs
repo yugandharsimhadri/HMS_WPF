@@ -37,6 +37,7 @@ public partial class PatientEditorViewModel : ObservableObject
         Name = existing.Name;
         Phone = existing.Phone;
         Age = existing.Age > 0 ? existing.Age.ToString() : "";
+        AgeMonths = existing.AgeMonths > 0 ? existing.AgeMonths.ToString() : "";
         DateOfBirth = existing.DateOfBirth;
         BloodGroup = existing.BloodGroup ?? "";
         GuardianName = existing.GuardianName ?? "";
@@ -67,6 +68,9 @@ public partial class PatientEditorViewModel : ObservableObject
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _phone = "";
     [ObservableProperty] private string _age = "";
+
+    /// <summary>The months part, 0-11. Blank means none, not unknown.</summary>
+    [ObservableProperty] private string _ageMonths = "";
     [ObservableProperty] private DateTime? _dateOfBirth;
     [ObservableProperty] private string _bloodGroup = "";
     [ObservableProperty] private string _guardianName = "";
@@ -81,8 +85,38 @@ public partial class PatientEditorViewModel : ObservableObject
     /// box is locked while one is set — nothing to reconcile between the two.</summary>
     public bool AgeIsEditable => DateOfBirth is null;
 
-    /// <summary>Guardian's name only means anything for a minor.</summary>
-    public bool ShowGuardian => int.TryParse(Age, out var years) && years > 0 && years < 18;
+    /// <summary>
+    /// Years and months as typed, with a date of birth overriding both — it is
+    /// the more precise of the two, and re-typing an age every birthday is the
+    /// reason ages on a register drift.
+    ///
+    /// Months are clamped to 0-11: anything above that is a miskey, and twelve
+    /// months silently meaning a year would make the same child two different
+    /// ages depending on how the desk chose to type it.
+    /// </summary>
+    private (int Years, int Months) AgeEntered()
+    {
+        if (DateOfBirth is { } dob) return Patient.AgeAndMonthsFromDob(dob);
+
+        var years = int.TryParse(Age, out var y) ? Math.Max(0, y) : 0;
+        var months = int.TryParse(AgeMonths, out var m) ? Math.Clamp(m, 0, 11) : 0;
+        return (years, months);
+    }
+
+    /// <summary>
+    /// Guardian's name only means anything for a minor — and most of all for a
+    /// baby. This used to require years above zero, which excluded every infant
+    /// under one: exactly the patient whose guardian the clinic most needs on
+    /// file. Asked on months, so a seven-month-old qualifies.
+    /// </summary>
+    public bool ShowGuardian
+    {
+        get
+        {
+            var (years, months) = AgeEntered();
+            return years * 12 + months is > 0 and < 18 * 12;
+        }
+    }
 
     /// <summary>Set when a save was turned away for want of a name; cleared the
     /// moment one is typed, so the field is never left red once it is right.</summary>
@@ -103,12 +137,25 @@ public partial class PatientEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowGuardian));
     }
 
+    partial void OnAgeMonthsChanged(string value)
+    {
+        // Months alone are a complete answer for a baby, so they satisfy the
+        // "date of birth or age" requirement the same way years do.
+        if (!string.IsNullOrWhiteSpace(value)) DobOrAgeMissing = false;
+        OnPropertyChanged(nameof(ShowGuardian));
+    }
+
     /// <summary>A date of birth always wins over a typed age — it is the more
     /// precise of the two, and re-typing an age every birthday is the reason
     /// ages on a register drift.</summary>
     partial void OnDateOfBirthChanged(DateTime? value)
     {
-        if (value is { } dob) Age = Patient.AgeFromDob(dob).ToString();
+        if (value is { } dob)
+        {
+            var (years, months) = Patient.AgeAndMonthsFromDob(dob);
+            Age = years.ToString();
+            AgeMonths = months.ToString();
+        }
 
         OnPropertyChanged(nameof(AgeIsEditable));
         OnPropertyChanged(nameof(ShowGuardian));
@@ -126,7 +173,7 @@ public partial class PatientEditorViewModel : ObservableObject
 
         NameMissing = false;
 
-        if (DateOfBirth is null && string.IsNullOrWhiteSpace(Age))
+        if (DateOfBirth is null && string.IsNullOrWhiteSpace(Age) && string.IsNullOrWhiteSpace(AgeMonths))
         {
             DobOrAgeMissing = true;
             Warn("Provide a date of birth or an age.");
@@ -135,12 +182,13 @@ public partial class PatientEditorViewModel : ObservableObject
 
         DobOrAgeMissing = false;
 
-        var age = DateOfBirth is { } dob ? Patient.AgeFromDob(dob) : int.TryParse(Age, out var a) ? a : 0;
+        var (age, months) = AgeEntered();
 
         var patient = _existing ?? new Patient();
         patient.Name = Name.Trim();
         patient.Phone = Phone.Trim();
         patient.Age = age;
+        patient.AgeMonths = months;
         patient.DateOfBirth = DateOfBirth;
         patient.BloodGroup = Empty(BloodGroup);
         patient.GuardianName = age < 18 ? Empty(GuardianName) : null;

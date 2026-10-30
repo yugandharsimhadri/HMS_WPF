@@ -247,7 +247,7 @@ public partial class ConsultationViewModel : ObservableObject
             return;
         }
 
-        Header = $"Token {Visit.TokenNo} · {Visit.Patient.Name} · {Visit.Patient.Age}{Visit.Patient.Gender.ToString()[0]} · {Visit.Doctor.Name}";
+        Header = $"Token {Visit.TokenNo} · {Visit.Patient.Name} · {Visit.Patient.AgeLabel} {Visit.Patient.Gender.ToString()[0]} · {Visit.Doctor.Name}";
         Complaint = Visit.Complaint ?? "";
         Diagnosis = Visit.Diagnosis ?? "";
         Notes = Visit.Notes ?? "";

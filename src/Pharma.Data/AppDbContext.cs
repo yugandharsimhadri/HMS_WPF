@@ -89,6 +89,8 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.Phone);
             e.HasIndex(x => x.Name);
             e.Ignore(x => x.Display);
+            e.Ignore(x => x.AgeLabel);
+            e.Ignore(x => x.AgeInMonths);
         });
 
         b.Entity<Doctor>(e => e.Ignore(x => x.NameWithQualification));

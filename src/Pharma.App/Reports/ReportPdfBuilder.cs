@@ -186,7 +186,7 @@ public static class ReportPdfBuilder
                 table.Cell().Element(Cell).Text(v.VisitNo);
                 table.Cell().Element(Cell).Text(v.ScheduledOn.ToString("HH:mm"));
                 table.Cell().Element(Cell).Text(v.Patient.Name);
-                table.Cell().Element(Cell).Text($"{v.Patient.Age}/{v.Patient.Gender.ToString()[0]}");
+                table.Cell().Element(Cell).Text($"{v.Patient.AgeLabel}/{v.Patient.Gender.ToString()[0]}");
                 table.Cell().Element(Cell).Text(v.Doctor.Name);
                 table.Cell().Element(Cell).AlignRight().Text(Num(v.Fee));
                 table.Cell().Element(Cell).Text(v.FeePaid ? "Yes" : "No");

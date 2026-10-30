@@ -36,6 +36,19 @@ public class Patient : BaseEntity
     /// tiles, receipts, search results) keeps working unchanged.</summary>
     public int Age { get; set; }
 
+    /// <summary>
+    /// The months part of the age, 0-11, on top of whole <see cref="Age"/> years.
+    ///
+    /// A paediatric clinic cannot work in whole years: half its patients are
+    /// under two, and "0 years" is the same label for a newborn and an
+    /// eleven-month-old who are nothing alike clinically. Dose-by-weight,
+    /// growth percentiles and the vaccine schedule all turn on the months.
+    ///
+    /// Zero for an adult, which is every patient already on file when this
+    /// arrives — so nothing that reads years alone changes meaning.
+    /// </summary>
+    public int AgeMonths { get; set; }
+
     /// <summary>Optional; when given, Age is calculated from it rather than
     /// typed. One of DateOfBirth or Age is required, not both.</summary>
     public DateTime? DateOfBirth { get; set; }
@@ -51,7 +64,27 @@ public class Patient : BaseEntity
 
     public ICollection<Visit> Visits { get; set; } = [];
 
-    public string Display => $"{Name} ({Age}{Gender.ToString()[0]}) · {Phone}";
+    public string Display => $"{Name} ({AgeLabel} {Gender.ToString()[0]}) · {Phone}";
+
+    /// <summary>
+    /// Age the way a clinic says it out loud: "7m", "2y", "4y 3m".
+    ///
+    /// The months are dropped once they are zero, so an adult reads "41y" and
+    /// not "41y 0m"; and the years are dropped under one, so an infant reads
+    /// "7m" and not "0y 7m".
+    /// </summary>
+    public string AgeLabel => (Age, AgeMonths) switch
+    {
+        (0, 0) => "0m",
+        (0, var m) => $"{m}m",
+        (var y, 0) => $"{y}y",
+        (var y, var m) => $"{y}y {m}m"
+    };
+
+    /// <summary>Whole months lived, for anything that has to compute with the
+    /// age rather than print it — growth percentiles, the vaccine schedule,
+    /// dose-by-age lookups.</summary>
+    public int AgeInMonths => Age * 12 + AgeMonths;
 
     /// <summary>Whole years between a date of birth and today.</summary>
     public static int AgeFromDob(DateTime dob)
@@ -60,6 +93,24 @@ public class Patient : BaseEntity
         var age = today.Year - dob.Year;
         if (dob.Date > today.AddYears(-age)) age--;
         return Math.Max(0, age);
+    }
+
+    /// <summary>
+    /// Years and the leftover months between a date of birth and today.
+    ///
+    /// Counted off the anniversary rather than by dividing days: months are
+    /// uneven, and a child born on 31 January is five months old on 30 June by
+    /// every calendar a parent owns.
+    /// </summary>
+    public static (int Years, int Months) AgeAndMonthsFromDob(DateTime dob)
+    {
+        var years = AgeFromDob(dob);
+        var anniversary = dob.Date.AddYears(years);
+
+        var months = 0;
+        while (months < 11 && anniversary.AddMonths(months + 1) <= DateTime.Today) months++;
+
+        return (years, months);
     }
 }
 
@@ -191,7 +242,7 @@ public class Visit : BaseEntity
 
     public string PatientLine => Patient is null
         ? ""
-        : $"{Patient.Age}{Patient.Gender.ToString()[0]} · {ScheduledOn:HH:mm}";
+        : $"{Patient.AgeLabel} {Patient.Gender.ToString()[0]} · {ScheduledOn:HH:mm}";
 
     /// <summary>A return inside the paying visit's window — free, and not the
     /// same thing as a visit that simply has not paid yet.</summary>

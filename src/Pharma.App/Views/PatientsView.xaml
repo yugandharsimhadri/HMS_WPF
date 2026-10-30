@@ -69,9 +69,8 @@
                             <DataGridTextColumn Header="NAME" Binding="{Binding Name}" Width="220*" MinWidth="105"
                                                 ElementStyle="{StaticResource GridName}"/>
                             <DataGridTextColumn Header="PHONE" Binding="{Binding Phone}" Width="Auto" ElementStyle="{StaticResource GridText}"/>
-                            <DataGridTextColumn Header="AGE" Binding="{Binding Age}" Width="Auto"
-                                                ElementStyle="{StaticResource GridNumber}"
-                                                HeaderStyle="{StaticResource GridNumberHeader}"/>
+                            <DataGridTextColumn Header="AGE" Binding="{Binding AgeLabel}" Width="Auto"
+                                                ElementStyle="{StaticResource GridMuted}"/>
                             <DataGridTextColumn Header="SEX" Binding="{Binding Gender}" Width="Auto"
                                                 ElementStyle="{StaticResource GridMuted}"/>
                             <!-- An allergy is the one thing on this row that can

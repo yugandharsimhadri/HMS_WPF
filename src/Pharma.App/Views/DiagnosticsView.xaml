@@ -61,7 +61,7 @@
                                                            AutomationProperties.AutomationId="DiagnosticsSelectedPatient"/>
                                                 <TextBlock Style="{StaticResource Muted}"
                                                            AutomationProperties.AutomationId="DiagnosticsSelectedPatientDetails">
-                                                    <Run Text="{Binding SelectedPatient.PatientNo, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.Age, Mode=OneWay}"/><Run Text=" yrs · "/><Run Text="{Binding SelectedPatient.Gender, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.Phone, Mode=OneWay}"/>
+                                                    <Run Text="{Binding SelectedPatient.PatientNo, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.AgeLabel, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.Gender, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding SelectedPatient.Phone, Mode=OneWay}"/>
                                                 </TextBlock>
                                                 <TextBlock Text="{Binding SelectedPatient.Address}" Style="{StaticResource Muted}"
                                                            TextWrapping="Wrap" Margin="0,2,0,0"

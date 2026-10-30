@@ -242,10 +242,13 @@ public static class ReportExcelBuilder
 
     private static int OpdSheet(IXLWorksheet ws, ReportsViewModel vm, string shopName)
     {
-        const int cols = 9;
+        const int cols = 10;
         var headerRow = WriteTitle(ws, ReportKind.OpdRegister, vm, shopName, cols);
 
-        string[] headers = ["Visit No", "Date", "Time", "Patient", "Age", "Gender", "Doctor", "Fee", "Paid"];
+        // Years and months stay two numeric columns rather than becoming one
+        // "4y 3m" string: a spreadsheet is opened to sort and filter on age,
+        // and text sorts "10" before "9".
+        string[] headers = ["Visit No", "Date", "Time", "Patient", "Age (Y)", "Age (M)", "Gender", "Doctor", "Fee", "Paid"];
         for (var i = 0; i < headers.Length; i++) Head(ws, headerRow, i + 1, headers[i]);
 
         var row = headerRow + 1;
@@ -257,10 +260,11 @@ public static class ReportExcelBuilder
             TimeCell(ws, row, 3, v.ScheduledOn);
             Str(ws, row, 4, v.Patient.Name);
             Int(ws, row, 5, v.Patient.Age);
-            Str(ws, row, 6, v.Patient.Gender.ToString());
-            Str(ws, row, 7, v.Doctor.Name);
-            Money(ws, row, 8, v.Fee);
-            Str(ws, row, 9, v.FeePaid ? "Yes" : "No");
+            Int(ws, row, 6, v.Patient.AgeMonths);
+            Str(ws, row, 7, v.Patient.Gender.ToString());
+            Str(ws, row, 8, v.Doctor.Name);
+            Money(ws, row, 9, v.Fee);
+            Str(ws, row, 10, v.FeePaid ? "Yes" : "No");
             row++;
         }
         var lastData = row - 1;
