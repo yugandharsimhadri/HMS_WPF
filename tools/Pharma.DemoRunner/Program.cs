@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using Pharma.Automation;
+using Pharma.DemoRunner;
 
 // Phase 2: one continuous HMS session running any number of selected
 // workflows in order, instead of one hard-coded workflow per launch.
@@ -7,9 +9,14 @@ using Pharma.Automation;
 //     dotnet run --project tools/Pharma.DemoRunner -- --workflow PatientRegistration
 //     dotnet run --project tools/Pharma.DemoRunner -- --workflow PatientRegistration PatientSearch Consultation
 //
+// Set HMS_DEMO_RUN_MODE=demo to pace the run for a screen recording; see
+// DemoPacing. Without it the run is the fast one, unchanged.
+//
 // See docs/architecture/Pharma.DemoRunner.md for what this is and is not.
 
 var names = ParseWorkflowNames(args);
+var pacing = DemoPacing.FromEnvironment();
+pacing.Announce();
 
 Console.WriteLine("Launching HMS...");
 
@@ -41,13 +48,27 @@ using (app)
         }
 
         Console.WriteLine($"Starting {workflow.Name}...");
+        var ranFor = Stopwatch.StartNew();
         try
         {
             workflow.Execute(app);
+            ranFor.Stop();
+
+            // The hold belongs here, before the screen is tidied up: what the
+            // recording should linger on is the state the workflow itself
+            // ended in, not a cleaned-up page. "Completed" is printed after
+            // the hold so that the gap between two of these lines is the time
+            // the workflow was really on screen, however the recording's
+            // timeline is reconstructed from them afterwards.
+            pacing.HoldFinalScreen(workflow.Name, ranFor.Elapsed);
+
             Console.WriteLine($"Completed {workflow.Name}.");
         }
         catch (Exception ex)
         {
+            // Not paced: a workflow that threw has left an error on screen,
+            // and holding that for the narration helps nobody. The run is
+            // already going to report failure.
             Console.Error.WriteLine($"{workflow.Name} failed: {ex.Message}");
             failures.Add(workflow.Name);
         }
@@ -58,6 +79,8 @@ using (app)
             TryStabilize(app);
         }
     }
+
+    pacing.Summarise();
 
     Console.WriteLine("Closing HMS...");
 }
