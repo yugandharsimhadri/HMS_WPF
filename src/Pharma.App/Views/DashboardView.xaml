@@ -14,6 +14,21 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="20">
 
+            <!-- The period. Today to today until somebody changes it, which is
+                 what this screen has always shown. -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,12">
+                <TextBlock Text="From" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,0"/>
+                <DatePicker Width="132" SelectedDate="{Binding FromDate, Mode=TwoWay}" Margin="0,0,12,0"
+                            AutomationProperties.AutomationId="DashFromDate"/>
+                <TextBlock Text="To" VerticalAlignment="Center" Style="{StaticResource Label}" Margin="0,0,6,0"/>
+                <DatePicker Width="132" SelectedDate="{Binding ToDate, Mode=TwoWay}" Margin="0,0,12,0"
+                            AutomationProperties.AutomationId="DashToDate"/>
+                <Button Content="Today" Style="{StaticResource BtnGhost}"
+                        Command="{Binding ResetToTodayCommand}"
+                        ToolTip="Back to today"
+                        AutomationProperties.AutomationId="DashToday"/>
+            </StackPanel>
+
             <!-- ══════════════════════════════ KPI tiles ══════════════════════════════ -->
             <Grid Margin="0,0,0,16">
                 <Grid.ColumnDefinitions>
@@ -28,7 +43,7 @@
 
                 <Border Grid.Column="0" Style="{StaticResource Card}">
                     <StackPanel>
-                        <TextBlock Text="Patients today" Style="{StaticResource Label}"/>
+                        <TextBlock Text="{Binding PatientsLabel}" Style="{StaticResource Label}" TextWrapping="Wrap"/>
                         <TextBlock Text="{Binding PatientsToday}" FontSize="{StaticResource FontHeading}" FontWeight="Bold"
                                    AutomationProperties.AutomationId="DashPatientsToday"/>
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -45,7 +60,7 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <TextBlock Text=" vs yesterday" Style="{StaticResource Muted}" Margin="4,0,0,0"/>
+                            <TextBlock Text="{Binding ComparisonLabel}" Style="{StaticResource Muted}" Margin="4,0,0,0"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -61,7 +76,7 @@
 
                 <Border Grid.Column="4" Style="{StaticResource Card}">
                     <StackPanel>
-                        <TextBlock Text="Revenue today" Style="{StaticResource Label}"/>
+                        <TextBlock Text="{Binding RevenueLabel}" Style="{StaticResource Label}" TextWrapping="Wrap"/>
                         <TextBlock Text="{Binding RevenueToday, StringFormat='₹{0:N0}'}" FontSize="{StaticResource FontHeading}" FontWeight="Bold"
                                    AutomationProperties.AutomationId="DashRevenueToday"/>
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -77,7 +92,7 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <TextBlock Text=" vs yesterday" Style="{StaticResource Muted}" Margin="4,0,0,0"/>
+                            <TextBlock Text="{Binding ComparisonLabel}" Style="{StaticResource Muted}" Margin="4,0,0,0"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -105,10 +120,10 @@
                     <StackPanel>
                         <DockPanel>
                             <TextBlock DockPanel.Dock="Right" Style="{StaticResource Muted}"
-                                       Text="{Binding RevenueTrendTotal, StringFormat='₹{0:N0} · 14 days'}"/>
+                                       Text="{Binding RevenueTrendTotal, StringFormat='₹{0:N0}'}"/>
                             <TextBlock Text="Revenue trend" Style="{StaticResource H2}" Margin="0"/>
                         </DockPanel>
-                        <TextBlock Text="Last 14 days" Style="{StaticResource Muted}" Margin="0,0,0,12"/>
+                        <TextBlock Text="{Binding TrendCaption}" Style="{StaticResource Muted}" Margin="0,0,0,12"/>
 
                         <!-- Three lines, not a bar per day — the question a
                              glance asks is "is this going up", which a line
@@ -180,8 +195,8 @@
 
                 <Border Grid.Column="2" Style="{StaticResource Card}">
                     <StackPanel>
-                        <TextBlock Text="Today's revenue split" Style="{StaticResource H2}"/>
-                        <TextBlock Text="Where today's collection came from" Style="{StaticResource Muted}" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding SplitTitle}" Style="{StaticResource H2}"/>
+                        <TextBlock Text="{Binding SplitSubtitle}" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                         <Grid HorizontalAlignment="Center" Width="124" Height="124" Margin="0,4,0,10">
                             <Path Data="{Binding OpdSegmentPath}" Fill="{DynamicResource Accent}"/>
@@ -190,7 +205,8 @@
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding RevenueToday, StringFormat='₹{0:N0}'}" FontWeight="Bold"
                                            FontSize="{StaticResource FontSubheading}" HorizontalAlignment="Center"/>
-                                <TextBlock Text="today" Style="{StaticResource Muted}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding PeriodShort}" Style="{StaticResource Muted}" HorizontalAlignment="Center"
+                                           TextWrapping="Wrap" TextAlignment="Center" MaxWidth="90"/>
                             </StackPanel>
                         </Grid>
 

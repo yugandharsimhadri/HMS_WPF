@@ -1,3 +1,5 @@
+using FlaUI.Core.AutomationElements;
+
 namespace Pharma.UiTests;
 
 /// <summary>
@@ -91,11 +93,31 @@ public class PatientAgeMonthsUiTests(AppFixture app) : IClassFixture<AppFixture>
     }
 
     /// <summary>
-    /// Years blank and months filled is a complete answer for an infant, so it
-    /// must not be turned away for want of a year.
+    /// Months of 0 mean the same as months left blank: a whole number of years.
     /// </summary>
     [Fact]
-    public void Months_alone_is_a_complete_age()
+    public void Months_of_zero_read_the_same_as_months_left_blank()
+    {
+        var suffix = DateTime.Now.ToString("HHmmssfff");
+        var name = $"Zero Months {suffix}";
+
+        OpenNewPatientForm();
+        app.Type("PatientName", name);
+        app.Type("PatientPhone", $"9{suffix}");
+        app.Type("PatientAge", "6");
+        app.Type("PatientAgeMonths", "0");
+        SaveAndWait();
+
+        Assert.Equal("6y", FindAgeOf(name));
+    }
+
+    /// <summary>
+    /// The age is a date of birth, or years. Months never stand in for years -
+    /// a baby is entered as 0 years and some months - so months with the years
+    /// left empty is refused and the form stays open.
+    /// </summary>
+    [Fact]
+    public void Months_without_years_is_refused()
     {
         var suffix = DateTime.Now.ToString("HHmmssfff");
         var name = $"Months Only {suffix}";
@@ -104,8 +126,17 @@ public class PatientAgeMonthsUiTests(AppFixture app) : IClassFixture<AppFixture>
         app.Type("PatientName", name);
         app.Type("PatientPhone", $"9{suffix}");
         app.Type("PatientAgeMonths", "5");
-        SaveAndWait();
+        app.Click("PatientSave");
 
-        Assert.Equal("5m", FindAgeOf(name));
+        // Refused with a warning the operator has to acknowledge.
+        AppFixture.WaitUntil(() => app.MainWindow.ModalWindows.Length > 0, "the age warning");
+        app.MainWindow.ModalWindows[0].FindFirstDescendant(cf => cf.ByName("OK"))?.AsButton().Invoke();
+
+        // And the form is still up: nothing was registered.
+        Assert.NotNull(app.Find("PatientName"));
+
+        // Leave the shared app as it was found, or the next test cannot open the form.
+        app.Click("PatientEditorCancel");
+        AppFixture.WaitUntil(() => app.Find("PatientName") is null, "the form to close");
     }
 }

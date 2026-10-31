@@ -28,9 +28,89 @@ public partial class DashboardViewModel(
     : ObservableObject, IPage
 {
     public string Title => "Dashboard";
-    public string Subtitle => DateTime.Today.ToString("dddd, d MMMM yyyy");
+    public string Subtitle => IsToday ? DateTime.Today.ToString("dddd, d MMMM yyyy") : RangeText;
 
-    private const int TrendDays = 14;
+    /// <summary>The shortest stretch the trend line is drawn over. A line
+    /// through one or two points says nothing, so a short range is widened
+    /// backwards to this many days for the chart only - the figures above it
+    /// stay strictly the chosen range.</summary>
+    private const int MinTrendDays = 14;
+
+    // -- The period ---------------------------------------------------------
+    //
+    // Today to today, which is exactly what this screen always showed, so a
+    // clinic that never touches the pickers sees no change at all.
+    [ObservableProperty] private DateTime _fromDate = DateTime.Today;
+    [ObservableProperty] private DateTime _toDate = DateTime.Today;
+
+    private bool _loadingRange;
+
+    /// <summary>The range, lowest first. The pickers do not stop From being set
+    /// after To, and a reversed range would quietly total nothing.</summary>
+    private (DateTime From, DateTime To) Range =>
+        FromDate <= ToDate ? (FromDate.Date, ToDate.Date) : (ToDate.Date, FromDate.Date);
+
+    private int RangeDays => (Range.To - Range.From).Days + 1;
+    private bool IsToday => Range.From == DateTime.Today && Range.To == DateTime.Today;
+
+    private string RangeText
+    {
+        get
+        {
+            var (from, to) = Range;
+            return from == to ? $"{from:dd MMM yyyy}" : $"{from:dd MMM yyyy} to {to:dd MMM yyyy}";
+        }
+    }
+
+    /// <summary>"today" for the default view, otherwise the dates themselves.</summary>
+    public string PeriodShort => IsToday ? "today" : RangeText;
+    public string PatientsLabel => IsToday ? "Patients today" : $"Patients · {RangeText}";
+    public string RevenueLabel => IsToday ? "Revenue today" : $"Revenue · {RangeText}";
+    public string SplitTitle => IsToday ? "Today's revenue split" : "Revenue split";
+    public string SplitSubtitle => IsToday ? "Where today's collection came from" : $"Where the collection came from, {RangeText}";
+
+    /// <summary>What the arrows are measured against: yesterday for a single
+    /// day, otherwise the stretch of the same length straight before it. A week
+    /// against the week before is a fair comparison; a week against yesterday
+    /// is not.</summary>
+    public string ComparisonLabel => RangeDays == 1 ? " vs yesterday" : $" vs previous {RangeDays} days";
+
+    private int TrendDaysShown => Math.Max(RangeDays, MinTrendDays);
+
+    public string TrendCaption => RangeDays < MinTrendDays
+        ? $"Last {MinTrendDays} days to {Range.To:dd MMM}"
+        : $"{Range.From:dd MMM} to {Range.To:dd MMM}";
+
+    public string TrendTotalCaption => $"{TrendDaysShown} days";
+
+    partial void OnFromDateChanged(DateTime value) => RangeChanged();
+    partial void OnToDateChanged(DateTime value) => RangeChanged();
+
+    private void RangeChanged()
+    {
+        if (_loadingRange) return;
+        NotifyPeriodText();
+        LoadAsync().Forget("Loading the dashboard");
+    }
+
+    private void NotifyPeriodText()
+    {
+        foreach (var name in new[]
+        {
+            nameof(Subtitle), nameof(PeriodShort), nameof(PatientsLabel), nameof(RevenueLabel),
+            nameof(SplitTitle), nameof(SplitSubtitle), nameof(ComparisonLabel),
+            nameof(TrendCaption), nameof(TrendTotalCaption)
+        }) OnPropertyChanged(name);
+    }
+
+    [RelayCommand]
+    private void ResetToToday()
+    {
+        _loadingRange = true;
+        FromDate = ToDate = DateTime.Today;
+        _loadingRange = false;
+        RangeChanged();
+    }
 
     // ── KPI tiles ──────────────────────────────────────────────────────────
     [ObservableProperty] private int _patientsToday;
@@ -107,61 +187,80 @@ public partial class DashboardViewModel(
         DentistEnabled = general.DentistEnabled;
         PathologyLabEnabled = general.PathologyLabEnabled;
 
-        var from = DateTime.Today.AddDays(-(TrendDays - 1));
-        var to = DateTime.Today;
+        var (rangeFrom, to) = Range;
+        var days = RangeDays;
 
-        // Three range queries, not fourteen daily ones — the same shape
-        // ReportsViewModel already uses for its own GST-summary and
-        // diagnostics-revenue ranges.
-        var salesRange = await pharmacy.GetSalesAsync(from, to);
-        var visitsRange = await opd.GetVisitsAsync(from, to);
-        var diagRange = DiagnosticsEnabled ? await diagnostics.SearchBillsAsync(from, to) : [];
+        // The chart is drawn over the range, widened backwards if it is too
+        // short to make a line; the comparison runs over the same length
+        // straight before the range. One fetch covers whichever starts first.
+        var trendFrom = to.AddDays(-(TrendDaysShown - 1));
+        var prevFrom = rangeFrom.AddDays(-days);
+        var prevTo = rangeFrom.AddDays(-1);
+        var fetchFrom = trendFrom < prevFrom ? trendFrom : prevFrom;
 
-        var dailyOpd = new List<decimal>(TrendDays);
-        var dailyPharmacy = new List<decimal>(TrendDays);
-        var dailyDiag = new List<decimal>(TrendDays);
-        var dailyTotals = new List<decimal>(TrendDays);
-        var dailyPatients = new List<int>(TrendDays);
-        decimal todayOpd = 0, todayPharmacy = 0, todayDiag = 0;
-        decimal yesterdayTotal = 0;
-        int todayPatients = 0, yesterdayPatients = 0;
+        // Three range queries, not one per day - the same shape
+        // ReportsViewModel already uses for its own ranges.
+        var salesRange = await pharmacy.GetSalesAsync(fetchFrom, to);
+        var visitsRange = await opd.GetVisitsAsync(fetchFrom, to);
+        var diagRange = DiagnosticsEnabled ? await diagnostics.SearchBillsAsync(fetchFrom, to) : [];
 
-        for (var i = 0; i < TrendDays; i++)
+        // Grouped by day once, so a year-long range is one pass over each list
+        // rather than a scan per day.
+        var pharmacyByDay = salesRange.Where(x => x.Status == SaleStatus.Completed)
+            .GroupBy(x => x.BillDate.Date).ToDictionary(g => g.Key, g => g.Sum(x => x.NetAmount));
+        var opdByDay = visitsRange.Where(v => v.FeePaid && v.FeePaidOn is not null)
+            .GroupBy(v => v.FeePaidOn!.Value.Date).ToDictionary(g => g.Key, g => g.Sum(v => v.Fee));
+        var diagByDay = diagRange
+            .GroupBy(x => x.BillDate.Date).ToDictionary(g => g.Key, g => g.Sum(x => x.FinalAmount));
+        var patientsByDay = visitsRange.Where(v => v.Status != VisitStatus.Cancelled)
+            .GroupBy(v => v.ScheduledOn.Date).ToDictionary(g => g.Key, g => g.Count());
+
+        static T On<T>(Dictionary<DateTime, T> map, DateTime day) => map.TryGetValue(day, out var v) ? v : default!;
+
+        var dailyOpd = new List<decimal>();
+        var dailyPharmacy = new List<decimal>();
+        var dailyDiag = new List<decimal>();
+        var dailyTotals = new List<decimal>();
+
+        for (var day = trendFrom; day <= to; day = day.AddDays(1))
         {
-            var day = from.AddDays(i).Date;
+            var o = On(opdByDay, day);
+            var ph = On(pharmacyByDay, day);
+            var d = On(diagByDay, day);
 
-            var dayPharmacy = salesRange
-                .Where(s => s.Status == SaleStatus.Completed && s.BillDate.Date == day)
-                .Sum(s => s.NetAmount);
-
-            var dayOpd = visitsRange
-                .Where(v => v.FeePaid && v.FeePaidOn?.Date == day)
-                .Sum(v => v.Fee);
-
-            var dayDiag = diagRange.Where(b => b.BillDate.Date == day).Sum(b => b.FinalAmount);
-
-            var dayPatients = visitsRange.Count(v => v.ScheduledOn.Date == day && v.Status != VisitStatus.Cancelled);
-
-            dailyOpd.Add(dayOpd);
-            dailyPharmacy.Add(dayPharmacy);
-            dailyDiag.Add(dayDiag);
-            dailyTotals.Add(dayPharmacy + dayOpd + dayDiag);
-            dailyPatients.Add(dayPatients);
-
-            if (day == to) { todayOpd = dayOpd; todayPharmacy = dayPharmacy; todayDiag = dayDiag; todayPatients = dayPatients; }
-            if (day == to.AddDays(-1)) { yesterdayTotal = dayPharmacy + dayOpd + dayDiag; yesterdayPatients = dayPatients; }
+            dailyOpd.Add(o);
+            dailyPharmacy.Add(ph);
+            dailyDiag.Add(d);
+            dailyTotals.Add(o + ph + d);
         }
 
-        RevenueToday = todayOpd + todayPharmacy + todayDiag;
-        RevenueDeltaPercent = DeltaPercent((double)RevenueToday, (double)yesterdayTotal);
+        decimal periodOpd = 0, periodPharmacy = 0, periodDiag = 0, previousTotal = 0;
+        int periodPatients = 0, previousPatients = 0;
+
+        for (var day = rangeFrom; day <= to; day = day.AddDays(1))
+        {
+            periodOpd += On(opdByDay, day);
+            periodPharmacy += On(pharmacyByDay, day);
+            periodDiag += On(diagByDay, day);
+            periodPatients += On(patientsByDay, day);
+        }
+
+        for (var day = prevFrom; day <= prevTo; day = day.AddDays(1))
+        {
+            previousTotal += On(opdByDay, day) + On(pharmacyByDay, day) + On(diagByDay, day);
+            previousPatients += On(patientsByDay, day);
+        }
+
+        RevenueToday = periodOpd + periodPharmacy + periodDiag;
+        RevenueDeltaPercent = DeltaPercent((double)RevenueToday, (double)previousTotal);
         RevenueTrendTotal = dailyTotals.Sum();
 
-        PatientsToday = todayPatients;
-        PatientsDeltaPercent = DeltaPercent(todayPatients, yesterdayPatients);
+        PatientsToday = periodPatients;
+        PatientsDeltaPercent = DeltaPercent(periodPatients, previousPatients);
 
-        OpdRevenueToday = todayOpd;
-        PharmacyRevenueToday = todayPharmacy;
-        DiagnosticsRevenueToday = todayDiag;
+        OpdRevenueToday = periodOpd;
+        PharmacyRevenueToday = periodPharmacy;
+        DiagnosticsRevenueToday = periodDiag;
         BuildDonut();
 
         // One shared scale across all three lines — each stretched to its
@@ -190,15 +289,22 @@ public partial class DashboardViewModel(
         LowStock.Clear();
         foreach (var p in lowStock.Take(5)) LowStock.Add(p);
 
-        var procedureBillsToday = PediatricsEnabled || DentistEnabled ? await procedureBills.SearchBillsAsync(to, to) : [];
-        var dentalPaymentsToday = DentistEnabled ? await dentist.SearchPaymentsAsync(to, to) : [];
-        var labOrdersToday = PathologyLabEnabled ? await pathologyLab.SearchOrdersAsync(to, to) : [];
+        // The feed follows the chosen range too. Only the queue above stays
+        // pinned to today: who is waiting now is a fact about this minute.
+        var procedureBillsInRange = PediatricsEnabled || DentistEnabled ? await procedureBills.SearchBillsAsync(rangeFrom, to) : [];
+        var dentalPaymentsInRange = DentistEnabled ? await dentist.SearchPaymentsAsync(rangeFrom, to) : [];
+        var labOrdersInRange = PathologyLabEnabled ? await pathologyLab.SearchOrdersAsync(rangeFrom, to) : [];
+        var visitsInRange = rangeFrom == to && to == DateTime.Today
+            ? todaysVisits
+            : await opd.GetVisitsAsync(rangeFrom, to);
 
         BuildActivityFeed(
-            todaysVisits, salesRange.Where(s => s.BillDate.Date == to), diagRange.Where(b => b.BillDate.Date == to),
-            procedureBillsToday, dentalPaymentsToday, labOrdersToday);
+            visitsInRange,
+            salesRange.Where(x => x.BillDate.Date >= rangeFrom && x.BillDate.Date <= to),
+            diagRange.Where(x => x.BillDate.Date >= rangeFrom && x.BillDate.Date <= to),
+            procedureBillsInRange, dentalPaymentsInRange, labOrdersInRange);
 
-        OnPropertyChanged(nameof(Subtitle));
+        NotifyPeriodText();
     }
 
     private void BuildDonut()

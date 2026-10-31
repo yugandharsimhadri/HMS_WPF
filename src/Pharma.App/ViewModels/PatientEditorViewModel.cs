@@ -139,9 +139,8 @@ public partial class PatientEditorViewModel : ObservableObject
 
     partial void OnAgeMonthsChanged(string value)
     {
-        // Months alone are a complete answer for a baby, so they satisfy the
-        // "date of birth or age" requirement the same way years do.
-        if (!string.IsNullOrWhiteSpace(value)) DobOrAgeMissing = false;
+        // Months never satisfy the age requirement on their own - they only
+        // refine the years. The requirement is a date of birth, or years.
         OnPropertyChanged(nameof(ShowGuardian));
     }
 
@@ -173,10 +172,15 @@ public partial class PatientEditorViewModel : ObservableObject
 
         NameMissing = false;
 
-        if (DateOfBirth is null && string.IsNullOrWhiteSpace(Age) && string.IsNullOrWhiteSpace(AgeMonths))
+        // Either a date of birth, or the age in years. Months are optional on
+        // top of the years - blank or 0 both mean "no extra months" - and are
+        // never enough alone, so a baby is entered as 0 years and some months.
+        if (DateOfBirth is null && string.IsNullOrWhiteSpace(Age))
         {
             DobOrAgeMissing = true;
-            Warn("Provide a date of birth or an age.");
+            Warn(string.IsNullOrWhiteSpace(AgeMonths)
+                ? "Provide a date of birth, or the age in years."
+                : "Enter the years as well - 0 for a baby under one. Months are optional.");
             return;
         }
 

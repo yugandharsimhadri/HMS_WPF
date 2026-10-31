@@ -386,14 +386,28 @@ the detail.
 
 | Card | Shows |
 |---|---|
-| The four tiles | Patients today, how many are in queue right now, revenue today, and medicines running low — each against yesterday where that means anything |
-| **Revenue trend** | One line per department — OPD, Pharmacy, Diagnostics — over the last 14 days, all three drawn to the same scale so they are honestly comparable |
-| **Today's revenue split** | The same three departments, as a proportion of today's collection |
-| **Recent activity** | The day's OPD fees, pharmacy bills and diagnostic bills, newest first |
+| The four tiles | Patients and revenue for the chosen period, how many are in queue right now, and medicines running low — the first two against the period before where that means anything |
+| **Revenue trend** | One line per department — OPD, Pharmacy, Diagnostics — over the period, all three drawn to the same scale so they are honestly comparable. A short period is drawn over at least 14 days so there is a line to read; the figures above stay strictly the period you chose |
+| **Revenue split** | The same three departments, as a proportion of the period's collection |
+| **Recent activity** | The period's OPD fees, pharmacy bills and diagnostic bills, newest first |
 | **Low stock** | The five medicines closest to running out |
 
 The Diagnostics line, slice and legend entry only appear once that module is
 switched on.
+
+### Choosing the period
+
+**From** and **To** at the top right set the period. It opens on **today to
+today**, exactly as it always has, and **Today** brings it back.
+
+- The heading, the tile labels and the arrows all say which period you are
+  looking at, so a week's total is never mistaken for a day's.
+- The arrows compare against **yesterday** for a single day, and otherwise
+  against the stretch of the **same length straight before** — a week against
+  the week before, never a week against yesterday.
+- **In queue now** and **Low stock** ignore the period on purpose: who is
+  waiting, and what is running out, are facts about this minute.
+- From after To is accepted and read the right way round.
 
 **Medicines and Inventory are deliberately separate.** Describing a medicine is
 a one-off job usually done by whoever sets the shop up; receiving stock happens
@@ -799,7 +813,8 @@ already filled in.
 |---|---|
 | **Name** | The only one that is required |
 | **Phone** | The parent's number. Shared across siblings is normal |
-| **Age** | In years |
+| **Years** | The age in years. Use **0** for a baby under one |
+| **Months** | Optional. Blank and **0** mean the same — a whole number of years |
 | **Sex** | Male, Female or Other |
 | **Back to search** | Returns to the list without adding anyone |
 
@@ -1445,7 +1460,8 @@ Every control, ringed and explained:
 | **Name** | Required |
 | **Phone** | The parent's number. Shared across siblings is normal |
 | **Date of birth** | Optional — set it and **Age fills in and locks itself**, worked out from it |
-| **Age** | Required **unless a date of birth is set**. Typed directly otherwise |
+| **Age — Years** | Required **unless a date of birth is set**. Use **0** for a baby under one |
+| **Age — Months** | Optional, 0 to 11. Blank and **0** mean the same. Never enough on its own — a baby is **0 years** and some months. Locks along with Years when a date of birth is set |
 | **Sex** | |
 | **Blood group** | Optional |
 | **Parent / guardian** | Optional, and only shown once the age is under 18 |
@@ -1454,7 +1470,9 @@ Every control, ringed and explained:
 | **Cancel** | Closes without saving. Nothing already saved is changed |
 | **Remove** | Only for somebody already registered, and it asks first. Refused if they have visits on record |
 
-**Name, and either an age or a date of birth, are required.** Nothing else is.
+**Name, and either a date of birth or the age in years, are required.** Nothing else is.
+Ages print the way a clinic says them — **7m**, **4y 3m**, **41y** — on the
+register, the queue tiles, the receipt and the prescription.
 
 > **The register clearing after Save is deliberate.** This screen used to keep the
 > patient loaded in a column on the right, and typing the next child's name over
@@ -1490,21 +1508,35 @@ recent included. Both shown only once that module is on.
 
 ![Reports](images/reports.png)
 
-Across the top for the chosen date: pharmacy sales, cash, UPI, consultation fees
+Across the top for the chosen period: pharmacy sales, cash, UPI, consultation fees
 collected, and OPD visits.
+
+### One period for the whole screen
+
+**From** and **To** at the top right set the period for every report that is
+about a stretch of time: **Day book**, **GST summary**, **OPD register**,
+**Schedule H1 register** and **Diagnostics**. They open on today to today. The
+heading, the exported PDF and Excel headers and the file names all carry the
+period, as `DayBook_2026-10-01_to_2026-10-31.xlsx`.
+
+**Expiring soon**, **Low stock** and **Stock Register** have no period, on
+purpose: they are a picture of the shelf right now, and no choice of dates could
+change what they say. Exports of those three are dated today.
+
+From after To is accepted and read the right way round.
 
 | Tab | What it is for |
 |---|---|
-| **Day book** | Every bill for the day. **Find any bill** searches every date by bill number or customer name. **Reprint selected bill** prints it again |
+| **Day book** | Every bill in the period. **Find any bill** searches every date by bill number or customer name. **Reprint selected bill** prints it again |
 | **GST summary** | Taxable value, CGST and SGST grouped by rate — what a return needs |
-| **OPD register** | Every visit, diagnosis, fee, and whether it was paid |
+| **OPD register** | Every visit in the period, diagnosis, fee, and whether it was paid. Age prints as 4y 3m; the Excel export keeps years and months as two numeric columns so they sort |
 | **Expiring soon** | Batches within 90 days of expiry. Return these to the distributor |
 | **Part packs** | Opened strips with less than a full pack left — sell these first, or write them off deliberately under Inventory → Correct the stock count |
 | **Stock to reconcile** | Everything put on the shelf at the counter with no supplier bill behind it. See below |
 | **Low stock** | Anything at or below its reorder level |
 | **Stock Register** | Every batch on hand, searchable, with running totals for products, batches, units, cost value and MRP value |
 | **Schedule H1 register** | Statutory record of H1 sales, by date range, with a running total. **Keep for three years** |
-| **Diagnostics** | Today's diagnostic bills, with **Reprint selected bill**. Only shown once that module is on |
+| **Diagnostics** | The period's diagnostic bills, with **Reprint selected bill**. Only shown once that module is on |
 
 ## Stock to reconcile
 
